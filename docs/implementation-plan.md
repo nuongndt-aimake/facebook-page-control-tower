@@ -89,7 +89,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | Bulk selector và bulk reporting-line API | Đang dùng | Bổ sung audit log/metric vận hành nếu cần |
 | Post metric snapshots/refresh có chủ đích | Roadmap/Thử nghiệm | Migration, worker và pilot riêng |
 | Cấu hình ba slot đồng bộ 06:00/14:00/22:00 | Đang dùng (cấu hình an toàn) | Kiểm tra plan Vercel, dispatcher, quota và rollback trước khi bật |
-| Dispatcher chạy hàng loạt theo slot | Roadmap/Thử nghiệm | Chỉ bật sau pilot và xác minh quota/lock |
+| Dispatcher chạy hàng loạt theo slot | Roadmap/Thử nghiệm | Đã nối giới hạn concurrency + delay/jitter; vẫn chỉ bật sau pilot và xác minh quota/lock |
 | Meta token secret store | Roadmap | Migration an toàn, không làm gián đoạn connection hiện tại |
 | Admin preview nhiều tầng | Thử nghiệm | Pilot với membership thực tế và kiểm thử read-only |
 

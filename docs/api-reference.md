@@ -68,7 +68,7 @@ Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action nh�
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
 
-Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100; luồng cũ vẫn là mặc định khi cờ tắt.
+Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `concurrency`, `pacing`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100 nhưng còn bị chặn bởi `sync_schedule_slots.max_concurrency` (vận hành 1–10); luồng cũ vẫn là mặc định khi cờ tắt.
 
 API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) đã tích hợp vào `/api/analytics` qua rewrite/action; worker `/api/cron/post-sync` tích hợp vào `/api/cron/sync?worker=post`. Cả hai vẫn có feature flag và mặc định không tự chạy hàng loạt.
 

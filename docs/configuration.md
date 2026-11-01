@@ -12,6 +12,8 @@
 | `CRON_SECRET` | Vercel cron | Không dùng làm user token |
 | `ENABLE_SYNC_ORCHESTRATOR` | Queue dispatcher | `false` mặc định; chỉ bật sau pilot một Page |
 | `SYNC_DISPATCH_BATCH` | Queue dispatcher | Số job tối đa mỗi invocation, giới hạn 1–100; mặc định `1` |
+| `SYNC_JOB_DELAY_MS` | Queue pacing | Delay tối thiểu giữa job trong cùng batch; mặc định `900`, server giới hạn 250–10000 ms |
+| `SYNC_JOB_JITTER_MS` | Queue pacing | Jitter ngẫu nhiên để tránh nhịp gọi đều; mặc định `300`, server giới hạn 0–3000 ms |
 | `ENABLE_POST_SYNC_WORKER` | Post metric worker | `false` mặc định; chỉ bật sau khi có request cụ thể và pilot |
 | `POST_SYNC_BATCH` | Post metric worker | Số yêu cầu bài viết tối đa mỗi invocation; mặc định `1` |
 | `META_APP_ID` | Meta OAuth | App ID |

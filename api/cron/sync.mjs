@@ -338,42 +338,65 @@ async function finishJob(job, status, details = {}) {
   return nextStatus;
 }
 
+async function loadSlotConfig(slotKey) {
+  if (!slotKey || slotKey === "manual" || String(slotKey).startsWith("pilot")) return { max_concurrency: 1, delay_ms: 900, jitter_ms: 300 };
+  const rows = await db(`sync_schedule_slots?select=max_concurrency&slot_key=eq.${encodeURIComponent(slotKey)}&limit=1`).catch(() => []);
+  const maxConcurrency = Math.min(Math.max(Number(rows?.[0]?.max_concurrency || 1), 1), 10);
+  const delayMs = Math.min(Math.max(Number.parseInt(process.env.SYNC_JOB_DELAY_MS || "900", 10) || 900, 250), 10000);
+  const jitterMs = Math.min(Math.max(Number.parseInt(process.env.SYNC_JOB_JITTER_MS || "300", 10) || 300, 0), 3000);
+  return { max_concurrency: maxConcurrency, delay_ms: delayMs, jitter_ms: jitterMs };
+}
+
+async function processSyncJob(job) {
+  const startedAt = new Date().toISOString();
+  try {
+    const report = await runSync({ since: job.since_date, until: job.until_date, force: true, pageIds: [String(job.page_id)] });
+    const failed = Number(report.failed_requests || 0) > 0;
+    await recordAttempt(job, failed ? "failed" : (report.metric_rows || report.posts ? "succeeded" : "empty"), {
+      started_at: startedAt,
+      rows_written: Number(report.metric_rows || 0) + Number(report.posts || 0),
+      error_message: failed ? (report.warnings || []).slice(-1).join("; ") : null,
+      metadata: { page_id: job.page_id, report }
+    });
+    const finalStatus = await finishJob(job, failed ? "failed" : "succeeded", { error: failed ? { warnings: report.warnings } : {} });
+    return { job_id: job.id, page_id: job.page_id, status: finalStatus, report };
+  } catch (error) {
+    await recordAttempt(job, "failed", { started_at: startedAt, error_message: errorText(error), metadata: { page_id: job.page_id } }).catch(() => {});
+    const finalStatus = await finishJob(job, "failed", { error: { message: errorText(error) } }).catch(() => "failed");
+    return { job_id: job.id, page_id: job.page_id, status: finalStatus, error: errorText(error) };
+  }
+}
+
 export async function runOrchestratedSync({ since = yesterdayUTC(), until = todayUTC(), period = "day", slotKey = "manual", limit = dispatchBatchSize(), pageId = null } = {}) {
   const queued = await enqueueSyncJobs({ since, until, period, slotKey, pageId });
+  const slotConfig = await loadSlotConfig(slotKey);
+  const effectiveLimit = Math.min(Math.max(Number(limit) || 1, 1), slotConfig.max_concurrency);
   let jobs = [];
   try {
-    jobs = await claimSyncJobs(workerId(), limit);
+    jobs = await claimSyncJobs(workerId(), effectiveLimit);
   } catch (error) {
     return { mode: "orchestrator", queued: queued.queued, claimed: 0, completed: 0, failed: 0, warnings: [...queued.warnings, `Nhận việc đồng bộ thất bại: ${errorText(error)}`] };
   }
   const results = [];
-  for (const job of Array.isArray(jobs) ? jobs : []) {
-    const startedAt = new Date().toISOString();
-    try {
-      const report = await runSync({ since: job.since_date, until: job.until_date, force: true, pageIds: [String(job.page_id)] });
-      const failed = Number(report.failed_requests || 0) > 0;
-      await recordAttempt(job, failed ? "failed" : (report.metric_rows || report.posts ? "succeeded" : "empty"), {
-        started_at: startedAt,
-        rows_written: Number(report.metric_rows || 0) + Number(report.posts || 0),
-        error_message: failed ? (report.warnings || []).slice(-1).join("; ") : null,
-        metadata: { page_id: job.page_id, report }
-      });
-      const finalStatus = await finishJob(job, failed ? "failed" : "succeeded", { error: failed ? { warnings: report.warnings } : {} });
-      results.push({ job_id: job.id, page_id: job.page_id, status: finalStatus, report });
-    } catch (error) {
-      await recordAttempt(job, "failed", { started_at: startedAt, error_message: errorText(error), metadata: { page_id: job.page_id } }).catch(() => {});
-      const finalStatus = await finishJob(job, "failed", { error: { message: errorText(error) } }).catch(() => "failed");
-      results.push({ job_id: job.id, page_id: job.page_id, status: finalStatus, error: errorText(error) });
-    }
+  const claimedJobs = Array.isArray(jobs) ? jobs : [];
+  for (let offset = 0; offset < claimedJobs.length; offset += slotConfig.max_concurrency) {
+    const batch = claimedJobs.slice(offset, offset + slotConfig.max_concurrency);
+    const batchResults = await Promise.all(batch.map(async (job, index) => {
+      if (index > 0) await sleep(slotConfig.delay_ms * index + Math.floor(Math.random() * slotConfig.jitter_ms));
+      return processSyncJob(job);
+    }));
+    results.push(...batchResults);
   }
   return {
     mode: "orchestrator",
     queued: queued.queued,
-    claimed: Array.isArray(jobs) ? jobs.length : 0,
+    claimed: claimedJobs.length,
     completed: results.filter(item => ["succeeded", "empty"].includes(item.status)).length,
     failed: results.filter(item => item.status === "failed").length,
     warnings: queued.warnings,
-    results
+    results,
+    concurrency: slotConfig.max_concurrency,
+    pacing: { delay_ms: slotConfig.delay_ms, jitter_ms: slotConfig.jitter_ms }
   };
 }
 

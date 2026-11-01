@@ -23,7 +23,7 @@ Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi 
 
 Màn hình `/connect-meta` đã có bảng cấu hình slot cho quản trị viên: xem trạng thái, giờ Asia/Ho_Chi_Minh, kỳ dữ liệu, concurrency và bật/tắt từng slot. Thao tác dùng `update_sync_slot`, được kiểm tra server-side và ghi `admin_audit_logs`; việc bật slot không tự bật `ENABLE_SYNC_ORCHESTRATOR` và không thay thế bước pilot.
 
-`max_concurrency` chỉ là số job chạy đồng thời. Đây không phải số lần retry. Retry job/request hiện tối đa 3 lần với backoff; lỗi quyền/token bị phân loại và không retry vô hạn.
+`max_concurrency` chỉ là số job chạy đồng thời. Đây không phải số lần retry. Dispatcher hiện áp dụng giá trị slot (giới hạn vận hành 1–10 job mỗi invocation), thêm delay tối thiểu `SYNC_JOB_DELAY_MS` và jitter `SYNC_JOB_JITTER_MS` giữa các job trong batch. Retry job/request hiện tối đa 3 lần với backoff; lỗi quyền/token bị phân loại và không retry vô hạn.
 
 ## Retry và lỗi
 
