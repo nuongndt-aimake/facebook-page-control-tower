@@ -39,6 +39,16 @@ read_insights
 business_management
 ```
 
+### Kiểm tra Meta App ngày 2026-11-01
+
+- App `1610985613812933` hiển thị trạng thái **Đã đăng** trong Meta for Developers.
+- App Domains có `money.aiecom.vn`; Privacy Policy và Terms dùng domain production.
+- Use case `Quản lý Trang` đang được cấu hình.
+- `pages_show_list`, `pages_read_engagement`, `read_insights` và `business_management` hiển thị **Sẵn sàng thử nghiệm**, không đồng nghĩa đã được Meta App Review cấp cho mọi người dùng bên ngoài vai trò ứng dụng.
+- `pages_read_user_content` cũng chỉ ở trạng thái sẵn sàng thử nghiệm và hiện không nằm trong scope OAuth của code.
+- Không có hành động bắt buộc đang chờ trên dashboard tại thời điểm kiểm tra.
+- Pilot trước đó đã đọc được Page insights cho các Page được authorize; bài cộng đồng mẫu trả `OAuthException #10` và cần App Review/khả năng truy cập tương ứng.
+
 Không tự kết luận rằng `business_management` là đủ để đọc payout/monetization; các quyền tài chính và metric kiếm tiền có thể bị Meta giới hạn riêng.
 
 ## 3. Luồng authorize và refresh connection
