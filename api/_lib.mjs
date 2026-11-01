@@ -93,6 +93,9 @@ export async function accessContext(request) {
 export async function requireViewer(request) {
   return accessContext(request);
 }
+export function assertMutableContext(context) {
+  if (context?.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");
+}
 
 export async function requirePlatformAdmin(request) {
   const context = await accessContext(request);

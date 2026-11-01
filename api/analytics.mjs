@@ -48,7 +48,7 @@ export default async function handler(request, response) {
     const url = new URL(request.url, `https://${request.headers.host}`);
     const key = url.searchParams.get("period") || "7d";
     const range = ranges()[key];
-    if (!range) return send(response, 400, { error: "period must be day, 7d, 28d, this_month or last_month" });
+    if (!range) return send(response, 400, { error: "period must be day, 7d, 28d, 60d, 90d, 365d, this_month or last_month" });
     const requestedPage = url.searchParams.get("page_id") || null;
     const query = (url.searchParams.get("q") || "").trim().toLowerCase();
     const assetScope = url.searchParams.get("asset_scope") || "";
@@ -115,8 +115,11 @@ export default async function handler(request, response) {
     }
     const manualEarnings = reportRevenue.filter(row => (row.currency || currency) === currency).reduce((sum, row) => sum + number(row.gross_amount), 0);
     const latestSync = syncRuns[0] || null;
-    const latestSyncWarnings = latestSync && Array.isArray(latestSync.summary?.warnings) ? latestSync.summary.warnings : [];
-    const latestPageStatuses = new Map((latestSync?.summary?.page_statuses || []).map(item => [String(item.id), item]));
+    const allSyncWarnings = latestSync && Array.isArray(latestSync.summary?.warnings) ? latestSync.summary.warnings : [];
+    const latestSyncWarnings = restricted ? allSyncWarnings.filter(warning => (allowed || []).some(id => String(warning).includes(String(id)))) : allSyncWarnings;
+    const allPageStatuses = latestSync?.summary?.page_statuses || [];
+    const visiblePageStatuses = restricted ? allPageStatuses.filter(item => (allowed || []).includes(String(item.id))) : allPageStatuses;
+    const latestPageStatuses = new Map(visiblePageStatuses.map(item => [String(item.id), item]));
     const approximateMetric = metricRows.some(row => row.entity_type === "page" && row.metric === "monetization_approximate_earnings")
       ? "monetization_approximate_earnings"
       : (metricRows.some(row => row.entity_type === "page" && row.metric === "content_monetization_earnings") ? "content_monetization_earnings" : null);
@@ -186,9 +189,9 @@ export default async function handler(request, response) {
     const postInteractionBreakdown = scopedPosts.reduce((acc, post) => { const stats = interactionStats(post); acc.comments += stats.comments; acc.shares += stats.shares; acc.reactions += stats.reactions; acc.total += stats.total; return acc; }, { comments: 0, shares: 0, reactions: 0, total: 0 });
     return send(response, 200, { range, page_id: pageId, summary: { posts: scopedPosts.length, earnings, earnings_source: earningsSource, currency, views: pageViewMetric ? pageMetricTotals[pageViewMetric] || 0 : null, views_metric: pageViewMetric, engagements: pageEngagements, interactions: pageEngagements || postInteractionBreakdown.total, interaction_breakdown: postInteractionBreakdown, metrics: totals, monetization_groups: Object.fromEntries(Object.entries(monetizationGroups).map(([key, ids]) => [key, ids.length])) },
       sync: latestSync ? { ran_at: latestSync.ran_at, since_date: latestSync.since_date, until_date: latestSync.until_date, status: latestSync.status,
-        pages: latestSync.summary?.pages || 0, metric_rows: latestSync.summary?.metric_rows || 0,
-        failed_requests: latestSync.summary?.failed_requests || 0, empty_requests: latestSync.summary?.empty_requests || 0,
-        warnings: Array.isArray(latestSync.summary?.warnings) ? latestSync.summary.warnings : [] } : null,
+        pages: restricted ? visiblePageStatuses.length : (latestSync.summary?.pages || 0), metric_rows: restricted ? metricRows.filter(row => pageIds.has(String(row.entity_id))).length : (latestSync.summary?.metric_rows || 0),
+        failed_requests: restricted ? visiblePageStatuses.filter(item => item.status === "warning").length : (latestSync.summary?.failed_requests || 0), empty_requests: restricted ? visiblePageStatuses.filter(item => item.status === "empty").length : (latestSync.summary?.empty_requests || 0),
+        warnings: latestSyncWarnings } : null,
       pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => ({ ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: interactionStats(post), metrics: perEntity.get(post.id) || {} })), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed, visible_user_ids: context.visibleUserIds || [], managed_user_ids: context.managedUserIds || [], direct_page_ids: context.directPageIds || [], inherited_page_ids: context.inheritedPageIds || [] }});
   } catch (error) { response.setHeader("Cache-Control", "no-store, max-age=0"); return send(response, error.message === "Unauthorized" ? 401 : error.message === "Forbidden" ? 403 : 500, { error: error.message }); }
 }

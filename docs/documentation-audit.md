@@ -25,7 +25,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 | Cao | Admin preview cần kiểm thử nhiều tầng membership thực tế | Endpoint read-only, token hết hạn và audit đã có; tiếp tục pilot dữ liệu thật |
 | Cao | Token Meta còn được lưu ở `meta_connections.user_access_token` | Đã ghi rõ rủi ro và đưa encryption/secret store vào P0 |
 | Trung bình | Ba slot 06:00/14:00/22:00 chưa tương thích cron Hobby và `vercel.json` hiện chỉ có một cron/ngày | Đã ghi rõ hiện trạng và điều kiện triển khai |
-| Trung bình | Daily snapshot/queue/attempt/lock chưa có bảng | Đã phân loại là roadmap, không mô tả là schema hiện hữu |
+| Trung bình | Ba slot lịch vẫn inactive và dispatcher chưa mở hàng loạt | Snapshot/queue/attempt/lock đã có migration; chỉ bật từng slot sau pilot và kiểm tra quota |
 | Thấp | `META_USER_ACCESS_TOKEN` còn trong file mẫu legacy | Đã ghi chú để không dùng nhầm cho Vercel production |
 
 ## Đối chiếu cấu trúc
@@ -42,9 +42,9 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 `pages`, `posts`, `metrics`, `sync_runs`, `businesses`, `meta_connections`, `page_connection_history`, `profiles`, `page_access`, `page_assignments`, `content_categories`, `content_groups`, `page_group_assignments`, `team_memberships`, `payment_profiles`, `page_payment_profiles`, `payment_profile_access`, `payment_profile_managers`, `revenue_entries`, `page_commissions`, `deals`, `access_requests`, `handover_audit`.
 
-### Bảng chưa hoàn thiện chức năng
+### Bảng đã có nhưng còn giới hạn vận hành
 
-`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`; các bảng `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` và RPC claim đã có migration. Dispatcher vẫn bị khóa mặc định.
+`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`, `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` và RPC claim đã có migration. Dispatcher và cả ba slot lịch vẫn bị khóa mặc định.
 
 ## Kiểm thử đã thực hiện
 
@@ -56,8 +56,13 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 ## Việc cần làm tiếp theo
 
 1. Tách token Meta khỏi plaintext DB.
-2. Tạo queue/attempt/lock và idempotency.
-3. Thêm daily snapshot và audit log.
-4. Triển khai admin preview read-only có audit.
-5. Quyết định dùng Supabase session cho toàn bộ admin endpoint hay duy trì legacy admin key có giới hạn.
-6. Chỉ bật ba slot đồng bộ khi plan Vercel và cơ chế lock đáp ứng.
+2. Pilot admin preview với membership nhiều tầng và kiểm tra banner/thoát trên mọi route.
+3. Bật từng slot đồng bộ sau khi kiểm tra plan Vercel, lock, quota và rollback.
+4. Quyết định lộ trình loại bỏ các endpoint legacy dùng `DASHBOARD_ADMIN_KEY`.
+
+## Xung đột đã rà soát trong đợt 2026-11-01
+
+- API báo cáo đã chấp nhận đủ các kỳ `day`, `7d`, `28d`, `60d`, `90d`, `365d`, `this_month` và `last_month`; thông báo lỗi cũ đã được sửa để không mâu thuẫn với bộ chọn giao diện.
+- Preview read-only được chặn ở các endpoint tạo yêu cầu/lưu bài viết và thao tác admin; token preview không còn mở đường ghi dữ liệu.
+- Báo cáo người dùng bị giới hạn không còn trả nguyên cảnh báo và số liệu sync toàn nền tảng; metadata sync được lọc theo Page trong access context.
+- README cài đặt cũ được đánh dấu legacy và đồng nhất với cron thực tế `0 1 * * *` UTC; hướng dẫn chính thức vẫn là migration theo timestamp và Google/Supabase Auth.

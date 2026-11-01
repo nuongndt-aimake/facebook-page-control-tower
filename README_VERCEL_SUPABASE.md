@@ -1,6 +1,6 @@
 # Triển khai Meta Control Tower trên Vercel + Supabase
 
-Đây là phiên bản cloud của công cụ trong `api/`. Nó phục vụ `dashboard.html`, chạy cron hằng ngày và lưu dữ liệu vào Supabase. **Token Meta chỉ có trong Vercel Environment Variables**, không lưu Supabase và không đưa xuống trình duyệt.
+Đây là tài liệu cài đặt legacy cho công cụ trong `api/`. Luồng hiện hành dùng Google/Supabase Auth, `analytics.html` và access context; `dashboard.html`/`DASHBOARD_ADMIN_KEY` chỉ giữ để tương thích, không dùng làm luồng người dùng chính. **Token Meta chỉ có trong Vercel Environment Variables**, không lưu Supabase và không đưa xuống trình duyệt.
 
 ## 1. Tạo database
 
@@ -28,11 +28,11 @@ Ví dụ `META_CONNECTIONS_JSON` cho nhiều tài khoản Facebook/App (một d�
 
 Mỗi token nên là long-lived User Access Token, do người có task `ANALYZE` trên Page cấp; app/token cần `pages_show_list`, `pages_read_engagement`, `read_insights`. Tool mặc định phát hiện qua `/me/accounts`. Nếu Page trong BM không xuất hiện ở đó, thêm `business_ids` (và quyền `business_management`) hoặc thêm thẳng `page_ids` vào đúng connection; tool sẽ thử lấy Page token thông qua tài khoản quản trị. Đây là phương án fallback, không phải lưu token Page trong database.
 
-Deploy xong, mở `https://ten-project.vercel.app/dashboard` và đăng nhập bằng `DASHBOARD_ADMIN_KEY`.
+Deploy xong, mở `https://ten-project.vercel.app/analytics` và đăng nhập bằng Google/Supabase. Chỉ dùng `/dashboard` với `DASHBOARD_ADMIN_KEY` khi kiểm tra endpoint legacy.
 
 ## 3. Đồng bộ và cron
 
-`vercel.json` đặt cron `05 02 * * *` UTC (09:05 giờ Việt Nam). Gọi thử đồng bộ ngay bằng:
+`vercel.json` hiện đặt cron `0 1 * * *` UTC (08:00 giờ Việt Nam). Các slot 06:00/14:00/22:00 trong Database đang inactive và chưa bật đồng bộ hàng loạt.
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://ten-project.vercel.app/api/cron/sync

@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { accessContext, db, readBody, send } from "../_lib.mjs";
+import { accessContext, assertMutableContext, db, readBody, send } from "../_lib.mjs";
 
 const adminRoles = new Set(["platform_admin", "super_admin"]);
 
 export default async function handler(request, response) {
   try {
     const context = await accessContext(request);
+    assertMutableContext(context);
     if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
     const body = await readBody(request);
     const postId = String(body.post_id || "").trim();

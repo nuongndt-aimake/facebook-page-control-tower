@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { accessContext, db, readBody, send } from "../_lib.mjs";
+import { accessContext, assertMutableContext, db, readBody, send } from "../_lib.mjs";
 
 const adminRoles = new Set(["platform_admin", "super_admin"]);
 const isoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? String(value) : null;
@@ -7,6 +7,7 @@ const isoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? Strin
 export default async function handler(request, response) {
   try {
     const context = await accessContext(request);
+    if (request.method === "POST") assertMutableContext(context);
     const admin = adminRoles.has(context.profile.role);
     if (request.method === "POST") {
       const body = await readBody(request);
