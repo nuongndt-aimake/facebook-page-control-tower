@@ -113,7 +113,7 @@ export async function runSync({ since = daysAgoUTC(364), until = todayUTC(), for
   const report = { since, until, skipped: false, pages: 0, posts: 0, metric_rows: 0, failed_requests: 0, empty_requests: 0, warnings: [], page_statuses: [] };
   for (const connection of await connections()) {
     try {
-      const resolved = await resolveConnectionPages(connection);
+      const resolved = await resolveConnectionPages(connection, { pageIds: pageIds || undefined });
       const readable = (Array.isArray(resolved?.pages) ? resolved.pages : []).filter(page => !Array.isArray(pageIds) || pageIds.includes(String(page.id)));
       report.warnings.push(...(resolved?.warnings || []).map(x => `${connection.label}: ${x}`));
       if (Array.isArray(resolved?.businesses) && resolved.businesses.length) {
@@ -203,14 +203,15 @@ export async function runSync({ since = daysAgoUTC(364), until = todayUTC(), for
   return report;
 }
 
-async function enqueueSyncJobs({ since, until, period = "day", slotKey = "manual" } = {}) {
+async function enqueueSyncJobs({ since, until, period = "day", slotKey = "manual", pageId = null } = {}) {
   const now = new Date().toISOString();
   const jobs = [];
   const warnings = [];
+  const persistedSlotKey = ["manual", "pilot"].includes(String(slotKey)) ? null : slotKey;
   for (const connection of await connections()) {
     let resolved;
     try {
-      resolved = await resolveConnectionPages(connection);
+      resolved = await resolveConnectionPages(connection, { pageIds: pageId ? [pageId] : undefined });
     } catch (error) {
       warnings.push(`${connection.label}: ${errorText(error)}`);
       continue;
@@ -228,12 +229,12 @@ async function enqueueSyncJobs({ since, until, period = "day", slotKey = "manual
     } catch (error) {
       warnings.push(`${connection.label}: cập nhật registry trước khi xếp hàng thất bại: ${errorText(error)}`);
     }
-    for (const page of resolved?.pages || []) {
+    for (const page of (resolved?.pages || []).filter(item => !pageId || String(item.id) === String(pageId))) {
       const connectionKey = connection.id || connection.label;
       jobs.push({
         connection_id: connection.id || null,
         page_id: String(page.id),
-        slot_key: slotKey,
+        slot_key: persistedSlotKey,
         job_type: "page_sync",
         period,
         since_date: since,
@@ -303,8 +304,8 @@ async function finishJob(job, status, details = {}) {
   return nextStatus;
 }
 
-export async function runOrchestratedSync({ since = yesterdayUTC(), until = todayUTC(), period = "day", slotKey = "manual", limit = dispatchBatchSize() } = {}) {
-  const queued = await enqueueSyncJobs({ since, until, period, slotKey });
+export async function runOrchestratedSync({ since = yesterdayUTC(), until = todayUTC(), period = "day", slotKey = "manual", limit = dispatchBatchSize(), pageId = null } = {}) {
+  const queued = await enqueueSyncJobs({ since, until, period, slotKey, pageId });
   let jobs = [];
   try {
     jobs = await claimSyncJobs(workerId(), limit);
@@ -352,8 +353,9 @@ export default async function handler(request, response) {
     if (orchestratorEnabled()) {
       const period = url.searchParams.get("period") || "day";
       const slotKey = url.searchParams.get("slot") || "manual";
+      const pageId = url.searchParams.get("page_id") || null;
       const limit = Number.parseInt(url.searchParams.get("limit") || String(dispatchBatchSize()), 10);
-      return send(response, 200, await runOrchestratedSync({ since, until, period, slotKey, limit }));
+      return send(response, 200, await runOrchestratedSync({ since, until, period, slotKey, limit, pageId }));
     }
     return send(response, 200, await runSync({ since, until, force }));
   } catch (error) {

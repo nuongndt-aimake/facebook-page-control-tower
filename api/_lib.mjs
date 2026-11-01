@@ -113,8 +113,9 @@ export async function graphPages(path, token, params = {}) {
 // Portfolio, the owner can optionally supply business_ids or page_ids as a
 // reliable fallback. Page tokens are never persisted; they exist only during
 // the current serverless run.
-export async function resolveConnectionPages(connection) {
+export async function resolveConnectionPages(connection, options = {}) {
   const token = connection.user_access_token;
+  const requestedPageIds = Array.isArray(options.pageIds) ? options.pageIds.map(String).filter(Boolean) : [];
   const found = new Map();
   const businessNames = new Map();
   const warnings = [];
@@ -130,7 +131,9 @@ export async function resolveConnectionPages(connection) {
     }
     if (!page.access_token) {
       try {
-        page = await graph(page.id, token, { fields: "id,name,category,tasks,access_token" });
+        // `tasks` is not returned consistently for direct Page reads on newer
+        // Graph versions; keep the token bootstrap request to stable fields.
+        page = await graph(page.id, token, { fields: "id,name,category,access_token" });
       } catch (error) {
         warnings.push(`${page.id}: không lấy được Page token (${error.message})`);
         return;
@@ -139,6 +142,10 @@ export async function resolveConnectionPages(connection) {
     if (page.access_token) found.set(page.id, { ...page, custodian_business_id: businessId ? String(businessId) : null, custodian_business_name: businessId ? (businessNames.get(String(businessId)) || null) : null, managed_by_connection: connection.label || null, asset_scope: businessId ? "bm" : source });
     else warnings.push(`${page.id}: token không có quyền truy cập Page`);
   };
+  if (requestedPageIds.length) {
+    for (const pageId of requestedPageIds) await add({ id: pageId }, "configured");
+    return { pages: [...found.values()], businesses: [], warnings };
+  }
   try {
     const direct = await graphPages("me/accounts", token, { fields: "id,name,category,tasks,access_token", limit: "100" });
     for (const page of direct) await add(page, "personal");

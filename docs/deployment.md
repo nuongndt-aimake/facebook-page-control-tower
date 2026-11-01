@@ -64,5 +64,5 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 - Trạng thái: đã apply Supabase production và xác minh 5 bảng/RLS.
 - Code commit: `90f73fe` (`feat: add guarded sync job dispatcher`)
 - Migration RPC: `20261101100000_sync_job_claim_rpc.sql`.
-- Worker/dispatcher: đã có code nhưng chưa bật production; chỉ bật sau pilot.
+- Worker/dispatcher: đã có code; pilot Page `1217277164808495` đạt, nhưng chưa bật production hàng loạt.
 
