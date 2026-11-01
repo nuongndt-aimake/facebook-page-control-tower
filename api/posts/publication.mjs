@@ -13,9 +13,17 @@ export default async function handler(request, response) {
     const destinationType = body.destination_type === "community" ? "community" : "page";
     if (!postId) return send(response, 400, { error: "post_id là bắt buộc" });
     const postRows = await db(`posts?select=id,page_id&id=eq.${encodeURIComponent(postId)}&limit=1`);
-    if (!postRows[0]) return send(response, 404, { error: "Không tìm thấy bài viết; hãy đồng bộ nội dung trước" });
-    const effectivePageId = pageId || postRows[0].page_id;
-    if (!new Set(["platform_admin", "super_admin"].includes(context.profile.role) ? [effectivePageId] : context.pageIds).has(String(effectivePageId))) throw new Error("Forbidden");
+    const effectivePageId = pageId || postRows[0]?.page_id || null;
+    if (effectivePageId && !new Set(["platform_admin", "super_admin"].includes(context.profile.role) ? [effectivePageId] : context.pageIds).has(String(effectivePageId))) throw new Error("Forbidden");
+    if (!postRows[0]) {
+      if (destinationType !== "community" || !body.community_id) return send(response, 404, { error: "Bài viết chưa có trong registry; bài cộng đồng mới cần community_id" });
+      await db("posts?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({
+        id: postId, page_id: null, created_time: body.published_at || null, message: body.message || null,
+        permalink_url: body.external_url || null, media_type: body.media_type || null, raw_json: body.metadata || {},
+        synced_at: new Date().toISOString(), origin_type: "community", source_group_id: String(body.community_id), source_group_name: body.community_name || null,
+        external_url: body.external_url || null, ingested_source: body.discovered_source === "meta" ? "meta" : (body.discovered_source === "manual" ? "manual" : "extension"), discovered_by: context.user.id
+      }) });
+    }
     const publicationKey = String(body.publication_key || randomUUID());
     await db("post_publications?on_conflict=publication_key", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({
       post_id: postId, page_id: effectivePageId, destination_type: destinationType,

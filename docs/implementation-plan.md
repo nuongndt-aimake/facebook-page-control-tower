@@ -130,6 +130,10 @@ Tiện ích chỉ gửi URL/Meta Post ID, nơi đăng, thời điểm, Page liê
 - Bài Page và bài cộng đồng được phân nhóm rõ, có provenance.
 - RBAC áp dụng cho cả xem snapshot và tạo yêu cầu làm mới.
 
+### Kết quả kiểm tra mẫu cộng đồng
+
+Post `2488016458602946` trong group `483081615763117` chưa tồn tại trong `posts`. Graph API trả lỗi `OAuthException #10` yêu cầu App Review. Vì vậy bài này chỉ được ingest qua extension/manual khi người dùng cung cấp metadata; metric chỉ chạy khi Meta cấp quyền tương ứng.
+
 ### Giai đoạn 2 — Sync engine và registry
 
 1. Tách discovery BM/Page khỏi tải metric.

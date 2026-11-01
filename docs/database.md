@@ -34,6 +34,8 @@ Migration `20261101110000_post_observation_foundation.sql` đã tạo ba bảng 
 
 Migration `20261101120000_post_sync_worker.sql` bổ sung `post_sync_attempts` và RPC `claim_post_sync_requests`; worker vẫn tắt mặc định bằng `ENABLE_POST_SYNC_WORKER`.
 
+Migration `20261101130000_community_post_identity.sql` cho phép `posts.page_id` rỗng đối với bài chỉ tồn tại trong cộng đồng, đồng thời lưu `origin_type`, group nguồn, URL ngoài và nguồn ingest. Bản ghi cộng đồng không được suy diễn là bài của Page.
+
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
 - `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.
