@@ -37,7 +37,8 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/meta/callback` | `GET` | Đổi OAuth code, lưu connection và redirect | OAuth state |
 | `/api/admin/access` | `GET` | Đọc Page/BM/user/assignment/group/payout/commission | `platform_admin`/`super_admin` |
 | `/api/admin/access` | `POST` | Sync, gán Page, nhóm, nhân sự, payout, hoa hồng | Theo action và role |
-| `/api/admin/access` | `POST` `set_reporting_line` / `end_reporting_line` | Gán hoặc kết thúc quan hệ quản lý–nhân viên độc lập với nhóm nội dung | `platform_admin`/`super_admin` |
+| `/api/admin/access` | `POST` `set_reporting_line` / `end_reporting_line` | Gán hoặc kết thúc một quan hệ quản lý–nhân viên độc lập với nhóm nội dung | `platform_admin`/`super_admin` |
+| `/api/admin/access` | `POST` `set_reporting_lines` / `end_reporting_lines` | Gán hoặc kết thúc nhiều nhân viên cho một quản lý trong một thao tác; mỗi nhân viên vẫn chỉ có một quản lý active | `platform_admin`/`super_admin` |
 | `/api/admin/revenue` | `GET/POST` | Đọc/ghi khoản doanh thu manual | Admin |
 | `/api/admin/deals` | `GET/POST` | Quản lý deal và yêu cầu truy cập | Admin |
 | `/api/admin/handover` | `POST` | Bàn giao tài sản/người phụ trách | Admin |

@@ -9,6 +9,8 @@
 
 ## Kết luận
 
+Đối chiếu production lần cuối: alias production đang chạy commit `5fa8d02` ở trạng thái `READY`; `HEAD` và `origin/main` cùng commit này. Vì vậy các thay đổi gần đây về module map, navigator hai lớp, responsive submenu, `/team` một-nhiều và bulk actions đã được phát hành; không có commit tính năng bị bỏ lại ngoài production.
+
 Tài liệu đủ để onboarding và vận hành phiên bản hiện tại nếu phân biệt ba lớp:
 
 1. **Đã chạy:** HTML/JS, Vercel Functions, Supabase REST, Meta OAuth, registry Page/BM, access context và sync hiện tại.
@@ -59,6 +61,12 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 2. Pilot admin preview với membership nhiều tầng và kiểm tra banner/thoát trên mọi route.
 3. Bật từng slot đồng bộ sau khi kiểm tra plan Vercel, lock, quota và rollback.
 4. Quyết định lộ trình loại bỏ các endpoint legacy dùng `DASHBOARD_ADMIN_KEY`.
+
+### Bổ sung sau audit production
+
+- `auth-nav.js` là nguồn điều hướng chuẩn; menu con không còn trải phẳng trên thanh ngang và CSS đã có cache-bust tương ứng.
+- `/team` đã có bulk `set_reporting_lines`/`end_reporting_lines`, nhưng việc nghiệm thu quyền kế thừa vẫn cần pilot bằng dữ liệu người dùng thực tế.
+- Không đánh dấu các hạng mục này là Roadmap nữa; chỉ phần pilot, token hardening, dispatcher nhiều slot và post metric snapshots vẫn là Roadmap/Thử nghiệm.
 
 ## Xung đột đã rà soát trong đợt 2026-11-01
 

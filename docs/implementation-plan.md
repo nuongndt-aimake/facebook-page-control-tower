@@ -78,6 +78,22 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 
 **Trạng thái thực thi hiện tại:** control-plane, RPC claim, queue/attempt/retry code, daily snapshot migration và tài liệu đã hoàn tất. Pilot 5 Page đã đạt: 5/5 job `succeeded`, mỗi job 1 attempt và 4 metric rows, 0 failed/empty request; Page `1217277164808495` đã được kiểm tra ghi snapshot vào DB. Giai đoạn 2 đạt pilot; chưa bật đồng bộ hàng loạt và ba slot lịch vẫn inactive.
 
+## Trạng thái sau đối chiếu production 2026-11-01
+
+| Hạng mục | Trạng thái production | Việc còn lại |
+| --- | --- | --- |
+| Module hóa Function và rewrite | Đang dùng | Theo dõi giới hạn 12 Function khi thêm route |
+| Navigator hai lớp theo module | Đang dùng | Audit trực quan từng màn hình |
+| Responsive menu/submenu | Đang dùng | Regression 390px/desktop sau mỗi thay đổi CSS |
+| Tuyến quản lý một-nhiều `/team` | Đang dùng | Pilot nhiều tầng và xác minh quyền kế thừa |
+| Bulk selector và bulk reporting-line API | Đang dùng | Bổ sung audit log/metric vận hành nếu cần |
+| Post metric snapshots/refresh có chủ đích | Roadmap/Thử nghiệm | Migration, worker và pilot riêng |
+| Ba slot đồng bộ 06:00/14:00/22:00 | Roadmap/Thử nghiệm | Kiểm tra plan Vercel, dispatcher, quota và rollback |
+| Meta token secret store | Roadmap | Migration an toàn, không làm gián đoạn connection hiện tại |
+| Admin preview nhiều tầng | Thử nghiệm | Pilot với membership thực tế và kiểm thử read-only |
+
+Production hiện đã khớp `HEAD`/`origin/main`; không cần tạo lại các commit UI/menu đã phát hành. Bước tiếp theo phải ưu tiên các dòng còn Roadmap/Thử nghiệm ở bảng này.
+
 ## Bổ sung kế hoạch: bài viết, tương tác và bài đăng cộng đồng (Roadmap)
 
 ### Đối chiếu hiện trạng
