@@ -72,6 +72,8 @@ Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `pe
 
 `/api/admin/access` trả `sync_job_counts` là bộ đếm theo trạng thái trên toàn bộ job đọc được; `sync_jobs` chỉ là danh sách gần nhất để hiển thị chi tiết, không dùng làm nguồn đếm tổng. Thao tác `sync` trả thêm `selected_period`; `all` dùng cửa sổ 365 ngày. Thao tác `sync_page` trả `page_id` và chu kỳ đã thực thi.
 
+`/api/analytics` trả `pages[].latest_snapshot` theo đúng khoảng `period` đang xem, gồm `status`, `window_start`, `window_end`, `snapshot_date`, `observed_at` và `posts_count`. `sync_warnings` là cảnh báo request/permission đã ghi nhận; không suy diễn trạng thái vi phạm chính sách khi Meta không cấp endpoint/quyền tương ứng.
+
 API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) đã tích hợp vào `/api/analytics` qua rewrite/action; worker `/api/cron/post-sync` tích hợp vào `/api/cron/sync?worker=post`. Cả hai vẫn có feature flag và mặc định không tự chạy hàng loạt.
 
 Với bài đăng cộng đồng, request phải phân biệt: `publisher_page_id` là Page đăng bài, `community_id`/`community_url` là nơi nhận bài, còn `editor_user_id` được lấy từ Supabase session của tài khoản biên tập viên. Không dùng `page_id` đơn độc để suy đoán cộng đồng đích.
