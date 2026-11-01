@@ -35,6 +35,7 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 - Kỳ dữ liệu luôn hiển thị cạnh bảng/biểu đồ.
 - Trạng thái đồng bộ phải có nhãn màu: thành công, thất bại/cảnh báo, rỗng hoặc chưa khả dụng. Biểu tượng cảnh báo phải mở được nội dung lỗi cụ thể, không chỉ có tooltip rỗng.
 - Cột cập nhật metric và cập nhật tương tác dùng `synced_at`, không dùng thời điểm dữ liệu Meta (`end_time`) để tránh hiển thị snapshot cũ như mới.
+- Bảng Page chỉ hiển thị cột vận hành chính; `Tương tác`, `Metric API` và `Trạng thái kiếm tiền` nằm trong vùng `Xem thêm`. Nút `Đồng bộ danh sách đang lọc` chạy tuần tự trên toàn bộ tập kết quả sau bộ lọc, không chỉ trang hiện tại.
 - Button, input, label dùng token kích thước chung trong `system.css`.
 - Chart phải có container có chiều cao tối thiểu, legend không chồng dữ liệu.
 - Mobile dùng card, accordion và bottom/overlay menu; không dùng bảng cố định gây tràn ngang.
