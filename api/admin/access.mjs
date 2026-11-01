@@ -26,7 +26,7 @@ export default async function handler(request, response) {
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (!isAdmin) throw new Error("Forbidden");
-      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers, scheduleSlots, syncJobs, syncRuns] = await Promise.all([
+      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers, scheduleSlots, syncJobs, syncRuns, syncJobStatuses] = await Promise.all([
         db("pages?select=id,registry_id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,current_status,group_name,topic,first_connected_at,last_seen_at,last_synced_at,updated_at&order=name.asc&limit=5000").catch(() => db("pages?select=id,name,category,meta_connection,custodian_business_id,updated_at&order=name.asc&limit=5000")),
         db("businesses?select=id,name,meta_connection,managed,last_synced_at&order=name.asc&limit=1000").catch(() => []),
         db("profiles?select=id,email,display_name,role,status,suspended_at,deleted_at,last_seen_at,admin_note&order=email.asc&limit=5000"),
@@ -45,11 +45,13 @@ export default async function handler(request, response) {
         db("payment_profile_managers?select=*&status=eq.active&limit=20000").catch(() => []),
         db("sync_schedule_slots?select=slot_key,label,timezone,local_time,active,periods,max_concurrency,updated_at&order=local_time.asc&limit=20").catch(() => []),
         db("sync_jobs?select=id,page_id,slot_key,status,attempt_count,last_error,available_at,updated_at&order=updated_at.desc&limit=100").catch(() => []),
-        db("sync_runs?select=id,ran_at,since_date,until_date,status,summary&order=ran_at.desc&limit=20").catch(() => [])
+        db("sync_runs?select=id,ran_at,since_date,until_date,status,summary&order=ran_at.desc&limit=20").catch(() => []),
+        db("sync_jobs?select=status&limit=10000").catch(() => [])
       ]);
       // Empty is a valid state. Do not silently create categories or groups while a
       // read request is running: creation belongs to the explicit Groups workflow.
-      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, reporting_lines: reportingLines, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers, schedule_slots: scheduleSlots, sync_jobs: syncJobs, sync_runs: syncRuns });
+      const syncJobCounts = syncJobStatuses.reduce((counts, row) => { const status = String(row.status || "unknown"); counts[status] = (counts[status] || 0) + 1; return counts; }, {});
+      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, reporting_lines: reportingLines, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers, schedule_slots: scheduleSlots, sync_jobs: syncJobs, sync_runs: syncRuns, sync_job_counts: syncJobCounts });
     }
     if (request.method === "POST") {
       if (context.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");

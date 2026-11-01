@@ -70,6 +70,8 @@ Mọi action mới phải được thêm vào bảng này, kiểm tra role ở s
 
 Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `concurrency`, `pacing`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100 nhưng còn bị chặn bởi `sync_schedule_slots.max_concurrency` (vận hành 1–10); luồng cũ vẫn là mặc định khi cờ tắt.
 
+`/api/admin/access` trả `sync_job_counts` là bộ đếm theo trạng thái trên toàn bộ job đọc được; `sync_jobs` chỉ là danh sách gần nhất để hiển thị chi tiết, không dùng làm nguồn đếm tổng.
+
 API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) đã tích hợp vào `/api/analytics` qua rewrite/action; worker `/api/cron/post-sync` tích hợp vào `/api/cron/sync?worker=post`. Cả hai vẫn có feature flag và mặc định không tự chạy hàng loạt.
 
 Với bài đăng cộng đồng, request phải phân biệt: `publisher_page_id` là Page đăng bài, `community_id`/`community_url` là nơi nhận bài, còn `editor_user_id` được lấy từ Supabase session của tài khoản biên tập viên. Không dùng `page_id` đơn độc để suy đoán cộng đồng đích.

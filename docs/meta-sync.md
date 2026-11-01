@@ -25,7 +25,7 @@ Màn hình `/connect-meta` đã có bảng cấu hình slot cho quản trị vi�
 
 `max_concurrency` chỉ là số job chạy đồng thời. Đây không phải số lần retry. Dispatcher hiện áp dụng giá trị slot (giới hạn vận hành 1–10 job mỗi invocation), thêm delay tối thiểu `SYNC_JOB_DELAY_MS` và jitter `SYNC_JOB_JITTER_MS` giữa các job trong batch. Retry job/request hiện tối đa 3 lần với backoff; lỗi quyền/token bị phân loại và không retry vô hạn.
 
-`/api/admin/access` trả thêm `sync_jobs` (100 job gần nhất) và `sync_runs` (20 phiên gần nhất) để màn hình vận hành có thể hiển thị Page nào đang chờ, đang chạy, thành công, thất bại hoặc dead-letter.
+`/api/admin/access` trả thêm `sync_job_counts` (bộ đếm toàn bộ job theo trạng thái), `sync_jobs` (100 job gần nhất) và `sync_runs` (20 phiên gần nhất). UI dùng `sync_job_counts` để đếm và `sync_jobs` để hiển thị chi tiết, tránh nhầm danh sách 100 bản ghi với tổng hàng đợi.
 
 ## Retry và lỗi
 
