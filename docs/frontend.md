@@ -10,7 +10,9 @@
 | `/report-content` | `report-content.html` | Bài đăng và metric nội dung |
 | `/report-revenue` | `report-revenue.html` | Doanh thu |
 | `/payout` | `payout.html` | Hồ sơ payout và quyền tài chính |
-| `/team` | `team.html` | Gán một quản lý cho nhiều nhân viên; tìm kiếm, checkbox, chọn/bỏ chọn tất cả, lọc mục đã chọn, kết thúc hàng loạt |
+| `/team` | `team.html` | Gán một quản lý cho nhiều nhân viên; tìm kiếm, checkbox, chọn/bỏ chọn tất cả, lọc mục đã chọn, kết thúc hàng loạt; layout card trên mobile |
+
+Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 | `/commissions` | `commissions.html` | Chia sẻ hoa hồng |
 | `/groups` | `groups.html` | Danh mục cấp 1/cấp 2 và gán Page |
 | `/users` | `users.html` | Nhân sự, role, tuyến quản lý |
