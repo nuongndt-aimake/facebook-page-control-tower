@@ -122,7 +122,7 @@ export default async function handler(request, response) {
     const action = url.searchParams.get("action");
     if (action === "publication" || action === "sync-request") {
       const context = await accessContext(request);
-      return action === "publication" ? handlePublication(request, response, context) : handlePostSyncRequest(request, response, context);
+      return action === "publication" ? await handlePublication(request, response, context) : await handlePostSyncRequest(request, response, context);
     }
     const context = await requireViewer(request);
     const key = url.searchParams.get("period") || "7d";
