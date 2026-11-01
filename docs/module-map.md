@@ -42,7 +42,7 @@ Không cho UI gọi Meta trực tiếp. UI chỉ đọc read model hoặc tạo 
 Menu quản trị là một phần hạ tầng dùng chung, không phải cấu hình riêng của từng màn hình:
 
 - `auth-nav.js` là nguồn cấu hình chuẩn cho toàn bộ màn hình đã xác thực.
-- Menu được chia hai lớp: lớp module lớn (`Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`) và lớp route con bên trong từng module.
+- Menu được chia hai lớp: lớp module lớn (`Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`) và lớp route con bên trong từng module. Các module nhiều route mở submenu; không trải phẳng route con thành các mục ngang độc lập.
 - Route chuẩn: Báo cáo gồm Page, Nội dung, Doanh thu, Payout, Hoa hồng; Vận hành gồm Tài sản, Nhóm nội dung, Nhân sự, Tuyến quản lý, Kết nối Meta.
 - Mỗi mục chỉ có một URL chuẩn; màn hình cũ có thể giữ route tương thích nhưng không được tạo thêm mục menu trùng lặp.
 - Menu desktop dùng thanh điều hướng cố định; menu mobile dùng cùng danh sách liên kết trong panel có `z-index` riêng, đóng khi chọn liên kết, bấm ngoài hoặc nhấn Escape.
