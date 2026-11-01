@@ -6,6 +6,7 @@
 - [ ] Không có secret, token, file `.env`, CSV/ZIP dữ liệu hoặc output cá nhân trong diff.
 - [ ] API/JS đã chạy `node --check`.
 - [ ] Migration mới có timestamp, index, RLS và ghi chú rollback.
+- [ ] Nếu bật dispatcher: chạy pilot `limit=1`, kiểm tra `sync_jobs`, `sync_attempts`, `sync_runs`; nếu lỗi đặt `ENABLE_SYNC_ORCHESTRATOR=false`.
 - [ ] Action mới có kiểm tra quyền server-side.
 - [ ] Tài liệu API, database và runbook đã cập nhật.
 

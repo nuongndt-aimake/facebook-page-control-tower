@@ -15,7 +15,11 @@ Một connection gồm nhãn, User Access Token, BM IDs, Page IDs và thời h�
 
 Có tối đa ba slot mặc định 06:00, 14:00 và 22:00 giờ Việt Nam. Slot có thể active/inactive và đổi giờ. Chỉ slot active mới tạo `sync_run`.
 
-**Hiện trạng:** `vercel.json` hiện chỉ khai báo cron `0 1 * * *` (một lần/ngày theo UTC). Ba slot active là thiết kế mục tiêu; muốn chạy thật cần bổ sung bảng cấu hình slot, idempotency, queue/lock và cơ chế kích hoạt phù hợp plan Vercel.
+## Queue dispatcher có cờ bật/tắt
+
+Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi `ENABLE_SYNC_ORCHESTRATOR=false` (mặc định), `/api/cron/sync` giữ luồng cũ. Khi bật, endpoint sẽ xếp job theo Page/kết nối/kỳ, nhận việc bằng `FOR UPDATE SKIP LOCKED`, ghi attempt và retry lỗi tối đa 3 lần. `SYNC_DISPATCH_BATCH` giới hạn số job mỗi invocation để phù hợp quota Vercel/Meta. Cần chạy pilot một Page và kiểm tra `sync_jobs`, `sync_attempts`, `sync_runs` trước khi bật production.
+
+**Hiện trạng:** `vercel.json` hiện chỉ khai báo cron `0 1 * * *` (một lần/ngày theo UTC). Bảng slot, idempotency, queue/lock và RPC claim đã có; dispatcher vẫn tắt mặc định để tránh bật hàng loạt ngoài pilot.
 
 ## Retry và lỗi
 

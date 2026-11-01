@@ -26,17 +26,17 @@
 - `page_payment_profiles`: quan hệ nhiều-nhiều Page ↔ hồ sơ thanh toán.
 - `page_commissions`: lịch sử tỷ lệ chia sẻ theo người và thời gian hiệu lực.
 
-## Bảng cần bổ sung theo roadmap/worker
+## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
-- `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa sử dụng production.
+- `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.
 - `page_daily_snapshots`
 - `post_daily_snapshots`
 - `revenue_daily_snapshots`
 - `admin_audit_logs` đã có migration; các endpoint quản trị cần bổ sung ghi audit đầy đủ.
 
-Các bảng snapshot/queue/audit trong mục này là phần cần bổ sung để đáp ứng lịch đồng bộ ba slot và truy vết từng request; không được coi là đã tồn tại chỉ vì đã có trong roadmap.
+Các bảng snapshot vẫn là phần cần bổ sung. Queue/audit đã tồn tại ở mức control-plane nhưng phần tích hợp snapshot/audit nghiệp vụ vẫn còn trong roadmap.
 
-Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply production và tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`; cả 5 bảng đã được xác minh bật RLS. Worker/dispatcher vẫn phải bật theo feature flag sau khi kiểm tra rollback.
+Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply production và tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`; migration `20261101100000_sync_job_claim_rpc.sql` bổ sung RPC nhận job nguyên tử. Cả 5 bảng đã được xác minh bật RLS. Worker/dispatcher vẫn mặc định tắt theo feature flag sau khi kiểm tra rollback.
 
 ## Quy tắc migration
 

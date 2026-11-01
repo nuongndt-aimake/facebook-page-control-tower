@@ -13,7 +13,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 1. **Đã chạy:** HTML/JS, Vercel Functions, Supabase REST, Meta OAuth, registry Page/BM, access context và sync hiện tại.
 2. **Tương thích/legacy:** `/api/report` dùng `DASHBOARD_ADMIN_KEY`, `META_USER_ACCESS_TOKEN` trong `.env.meta.example`.
-3. **Roadmap:** worker queue/lock/snapshot daily, ba slot active, admin preview đầy đủ, mã hóa token. Control-plane tables và `admin_audit_logs` đã apply nhưng chưa được worker/audit integration dùng đầy đủ.
+3. **Roadmap:** snapshot daily, ba slot active, admin preview đầy đủ, mã hóa token. Control-plane tables và RPC claim đã có; dispatcher/attempt logging chạy có điều kiện khi bật `ENABLE_SYNC_ORCHESTRATOR` và vẫn cần pilot production.
 
 ## Phát hiện và xử lý
 
@@ -44,7 +44,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 ### Bảng chưa hoàn thiện chức năng
 
-`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`; các bảng `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` đã có migration nhưng chưa có worker/audit integration đầy đủ.
+`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`; các bảng `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` và RPC claim đã có migration. Dispatcher vẫn bị khóa mặc định.
 
 ## Kiểm thử đã thực hiện
 

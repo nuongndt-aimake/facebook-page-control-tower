@@ -1,4 +1,4 @@
-import { connections, db, graph, graphPost, graphPages, resolveConnectionPages, send, requireAdmin, upsert, yesterdayUTC, todayUTC } from "../_lib.mjs";
+import { connections, db, graph, graphPost, graphPages, resolveConnectionPages, send, requireAdmin, upsert, redactSecrets, yesterdayUTC, todayUTC } from "../_lib.mjs";
 
 const pageMetricNames = () => (process.env.META_PAGE_METRICS || "page_post_engagements,page_follows,monetization_approximate_earnings,content_monetization_earnings").split(",").map(x => x.trim()).filter(Boolean);
 const postMetricNames = () => (process.env.META_POST_METRICS || "").split(",").map(x => x.trim()).filter(Boolean);
@@ -25,6 +25,9 @@ function resultValues(result, metric) {
 }
 
 function errorText(error) { return error?.message || String(error); }
+const orchestratorEnabled = () => String(process.env.ENABLE_SYNC_ORCHESTRATOR || "false").toLowerCase() === "true";
+const dispatchBatchSize = () => Math.min(Math.max(Number.parseInt(process.env.SYNC_DISPATCH_BATCH || "1", 10) || 1, 1), 100);
+const workerId = () => process.env.VERCEL_REGION ? `vercel:${process.env.VERCEL_REGION}:${process.env.VERCEL_FUNCTION_NAME || "sync"}` : `local:${process.pid}`;
 
 async function requestMetric(id, token, metric, period, attempt) {
   const isEarnings = metric === "monetization_approximate_earnings" || metric === "content_monetization_earnings";
@@ -200,6 +203,145 @@ export async function runSync({ since = daysAgoUTC(364), until = todayUTC(), for
   return report;
 }
 
+async function enqueueSyncJobs({ since, until, period = "day", slotKey = "manual" } = {}) {
+  const now = new Date().toISOString();
+  const jobs = [];
+  const warnings = [];
+  for (const connection of await connections()) {
+    let resolved;
+    try {
+      resolved = await resolveConnectionPages(connection);
+    } catch (error) {
+      warnings.push(`${connection.label}: ${errorText(error)}`);
+      continue;
+    }
+    warnings.push(...(resolved?.warnings || []).map(item => `${connection.label}: ${item}`));
+    try {
+      const registryRows = (resolved?.pages || []).map(page => ({
+        id: String(page.id),
+        name: page.name || String(page.id),
+        category: page.category || null,
+        meta_connection: connection.label,
+        updated_at: now
+      }));
+      if (registryRows.length) await upsert("pages", registryRows, "id");
+    } catch (error) {
+      warnings.push(`${connection.label}: cập nhật registry trước khi xếp hàng thất bại: ${errorText(error)}`);
+    }
+    for (const page of resolved?.pages || []) {
+      const connectionKey = connection.id || connection.label;
+      jobs.push({
+        connection_id: connection.id || null,
+        page_id: String(page.id),
+        slot_key: slotKey,
+        job_type: "page_sync",
+        period,
+        since_date: since,
+        until_date: until,
+        status: "pending",
+        available_at: now,
+        idempotency_key: `${slotKey}:${connectionKey}:${page.id}:${period}:${since}:${until}`,
+        updated_at: now
+      });
+    }
+  }
+  try {
+    if (jobs.length) await db("sync_jobs?on_conflict=idempotency_key", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify(jobs)
+    });
+  } catch (error) {
+    warnings.push(`Xếp hàng đồng bộ thất bại: ${errorText(error)}`);
+  }
+  return { queued: jobs.length, warnings };
+}
+
+async function claimSyncJobs(worker, limit) {
+  return db("rpc/claim_sync_jobs", {
+    method: "POST",
+    body: JSON.stringify({ p_worker: worker, p_limit: limit })
+  });
+}
+
+async function recordAttempt(job, status, details = {}) {
+  const attemptNo = Number(job.attempt_count || 1);
+  const startedAt = details.started_at || new Date().toISOString();
+  const completedAt = new Date().toISOString();
+  await db("sync_attempts?on_conflict=job_id,attempt_no", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      job_id: job.id,
+      attempt_no: attemptNo,
+      status,
+      request_kind: "page_sync",
+      error_message: details.error_message || null,
+      rows_written: Number(details.rows_written || 0),
+      metadata: redactSecrets(details.metadata || {}),
+      started_at: startedAt,
+      completed_at: completedAt
+    })
+  });
+}
+
+async function finishJob(job, status, details = {}) {
+  const retryable = status === "failed" && Number(job.attempt_count || 0) < 3;
+  const nextStatus = retryable ? "pending" : status;
+  const patch = {
+    status: nextStatus,
+    completed_at: nextStatus === "pending" ? null : new Date().toISOString(),
+    available_at: retryable ? new Date(Date.now() + Number(job.attempt_count || 1) * 60000).toISOString() : new Date().toISOString(),
+    locked_at: null,
+    locked_by: null,
+    last_error: redactSecrets(details.error || {}),
+    updated_at: new Date().toISOString()
+  };
+  await db(`sync_jobs?id=eq.${encodeURIComponent(job.id)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(patch)
+  });
+  return nextStatus;
+}
+
+export async function runOrchestratedSync({ since = yesterdayUTC(), until = todayUTC(), period = "day", slotKey = "manual", limit = dispatchBatchSize() } = {}) {
+  const queued = await enqueueSyncJobs({ since, until, period, slotKey });
+  let jobs = [];
+  try {
+    jobs = await claimSyncJobs(workerId(), limit);
+  } catch (error) {
+    return { mode: "orchestrator", queued: queued.queued, claimed: 0, completed: 0, failed: 0, warnings: [...queued.warnings, `Nhận việc đồng bộ thất bại: ${errorText(error)}`] };
+  }
+  const results = [];
+  for (const job of Array.isArray(jobs) ? jobs : []) {
+    const startedAt = new Date().toISOString();
+    try {
+      const report = await runSync({ since: job.since_date, until: job.until_date, force: true, pageIds: [String(job.page_id)] });
+      const failed = Number(report.failed_requests || 0) > 0;
+      await recordAttempt(job, failed ? "failed" : (report.metric_rows || report.posts ? "succeeded" : "empty"), {
+        started_at: startedAt,
+        rows_written: Number(report.metric_rows || 0) + Number(report.posts || 0),
+        error_message: failed ? (report.warnings || []).slice(-1).join("; ") : null,
+        metadata: { page_id: job.page_id, report }
+      });
+      const finalStatus = await finishJob(job, failed ? "failed" : "succeeded", { error: failed ? { warnings: report.warnings } : {} });
+      results.push({ job_id: job.id, page_id: job.page_id, status: finalStatus, report });
+    } catch (error) {
+      await recordAttempt(job, "failed", { started_at: startedAt, error_message: errorText(error), metadata: { page_id: job.page_id } }).catch(() => {});
+      const finalStatus = await finishJob(job, "failed", { error: { message: errorText(error) } }).catch(() => "failed");
+      results.push({ job_id: job.id, page_id: job.page_id, status: finalStatus, error: errorText(error) });
+    }
+  }
+  return {
+    mode: "orchestrator",
+    queued: queued.queued,
+    claimed: Array.isArray(jobs) ? jobs.length : 0,
+    completed: results.filter(item => ["succeeded", "empty"].includes(item.status)).length,
+    failed: results.filter(item => item.status === "failed").length,
+    warnings: queued.warnings,
+    results
+  };
+}
+
 export default async function handler(request, response) {
   try {
     requireAdmin(request, true);
@@ -207,6 +349,12 @@ export default async function handler(request, response) {
     const since = url.searchParams.get("since") || yesterdayUTC();
     const until = url.searchParams.get("until") || todayUTC();
     const force = url.searchParams.get("force") === "1" || request.headers["x-admin-key"] === process.env.DASHBOARD_ADMIN_KEY;
+    if (orchestratorEnabled()) {
+      const period = url.searchParams.get("period") || "day";
+      const slotKey = url.searchParams.get("slot") || "manual";
+      const limit = Number.parseInt(url.searchParams.get("limit") || String(dispatchBatchSize()), 10);
+      return send(response, 200, await runOrchestratedSync({ since, until, period, slotKey, limit }));
+    }
     return send(response, 200, await runSync({ since, until, force }));
   } catch (error) {
     const status = error.message === "Unauthorized" ? 401 : 500;

@@ -17,6 +17,8 @@ Các biến production tối thiểu:
 - `PLATFORM_ADMIN_EMAIL`
 - `CRON_SECRET`
 - `DASHBOARD_ADMIN_KEY`
+- `ENABLE_SYNC_ORCHESTRATOR` (mặc định `false`)
+- `SYNC_DISPATCH_BATCH` (mặc định `1`)
 - `META_CONNECTIONS_JSON` hoặc connection lưu trong Database
 - `META_PAGE_METRICS`
 - `META_POST_METRICS`
@@ -61,5 +63,6 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 - Migration: `20261101090000_sync_orchestration_foundation.sql`
 - Trạng thái: đã apply Supabase production và xác minh 5 bảng/RLS.
 - Code commit: `08cc446a47c544e9b5ed2fe2ae663c86245fcf8c`
-- Worker/dispatcher: chưa bật production; chỉ mới triển khai control-plane.
+- Migration RPC: `20261101100000_sync_job_claim_rpc.sql`.
+- Worker/dispatcher: đã có code nhưng chưa bật production; chỉ bật sau pilot.
 

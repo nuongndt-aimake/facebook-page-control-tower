@@ -70,7 +70,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 
 1. Thêm/chuẩn hóa `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`.
 2. Thêm `admin_audit_logs` và daily snapshot nếu cần lưu lịch sử bất biến.
-3. Migration control-plane đã apply production và verify SQL/RLS; worker vẫn phải bật sau khi hoàn tất rollback test.
+3. Migration control-plane và RPC claim đã có; worker/dispatcher chỉ chạy sau feature flag và pilot rollback.
 4. Mã hóa hoặc chuyển Meta token sang secret store.
 5. Rà soát RLS, grant và service-role boundary.
 

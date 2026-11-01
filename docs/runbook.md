@@ -4,7 +4,7 @@
 
 1. Xem slot nào đang active.
 2. Kiểm tra `sync_runs` mới nhất.
-3. Kiểm tra job failed/retry/dead-letter.
+3. Nếu dispatcher đang bật, kiểm tra thêm `sync_jobs` ở trạng thái `failed/dead_letter` và `sync_attempts`; có thể tắt nhanh bằng `ENABLE_SYNC_ORCHESTRATOR=false` rồi redeploy.
 4. Kiểm tra token sắp hết hạn.
 5. Đối chiếu số Page và số metric.
 6. Kiểm tra độ mới của snapshot.
