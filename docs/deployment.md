@@ -1,0 +1,50 @@
+# Triển khai Vercel và Supabase
+
+## Supabase
+
+1. Tạo project Supabase.
+2. Chạy các migration trong `supabase/migrations/` theo thứ tự timestamp.
+3. Kiểm tra Auth Google, redirect URL và RLS.
+4. Lưu URL và service-role key chỉ trong Vercel Environment Variables.
+
+## Vercel
+
+Các biến production tối thiểu:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `PLATFORM_ADMIN_EMAIL`
+- `CRON_SECRET`
+- `DASHBOARD_ADMIN_KEY`
+- `META_CONNECTIONS_JSON` hoặc connection lưu trong Database
+- `META_PAGE_METRICS`
+- `META_POST_METRICS`
+
+Deploy production:
+
+```powershell
+vercel deploy --prod -y --no-wait
+vercel inspect <deployment-url>
+```
+
+## OAuth allowlist
+
+Các URL production cần được cấu hình trong Supabase Auth và Google OAuth:
+
+- `https://money.aiecom.vn`
+- `https://money.aiecom.vn/analytics`
+- `https://money.aiecom.vn/auth/callback` nếu dùng callback riêng
+
+Không dùng URL preview làm callback production lâu dài.
+
+## Quy trình phát hành
+
+1. Kiểm tra diff và secret scan.
+2. Chạy syntax check/smoke test.
+3. Deploy preview.
+4. Kiểm tra Auth, API và responsive.
+5. Deploy production.
+6. Kiểm tra trạng thái Ready và alias production.
+7. Ghi deployment ID vào release note.
+

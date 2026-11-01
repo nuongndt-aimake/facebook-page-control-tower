@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access" }
+  ],
+  "crons": [
+    { "path": "/api/cron/sync", "schedule": "0 1 * * *" }
+  ]
+}
