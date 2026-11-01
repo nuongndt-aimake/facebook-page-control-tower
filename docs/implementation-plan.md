@@ -88,7 +88,8 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | Tuyến quản lý một-nhiều `/team` | Đang dùng | Pilot nhiều tầng và xác minh quyền kế thừa |
 | Bulk selector và bulk reporting-line API | Đang dùng | Bổ sung audit log/metric vận hành nếu cần |
 | Post metric snapshots/refresh có chủ đích | Roadmap/Thử nghiệm | Migration, worker và pilot riêng |
-| Ba slot đồng bộ 06:00/14:00/22:00 | Roadmap/Thử nghiệm | Kiểm tra plan Vercel, dispatcher, quota và rollback |
+| Cấu hình ba slot đồng bộ 06:00/14:00/22:00 | Đang dùng (cấu hình an toàn) | Kiểm tra plan Vercel, dispatcher, quota và rollback trước khi bật |
+| Dispatcher chạy hàng loạt theo slot | Roadmap/Thử nghiệm | Chỉ bật sau pilot và xác minh quota/lock |
 | Meta token secret store | Roadmap | Migration an toàn, không làm gián đoạn connection hiện tại |
 | Admin preview nhiều tầng | Thử nghiệm | Pilot với membership thực tế và kiểm thử read-only |
 

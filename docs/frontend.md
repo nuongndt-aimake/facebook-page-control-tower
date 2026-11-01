@@ -16,6 +16,7 @@ Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vậ
 | `/commissions` | `commissions.html` | Chia sẻ hoa hồng |
 | `/groups` | `groups.html` | Danh mục cấp 1/cấp 2 và gán Page |
 | `/users` | `users.html` | Nhân sự, role, tuyến quản lý |
+| `/connect-meta` | `connect-meta.html` | OAuth Meta và cấu hình slot đồng bộ an toàn |
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/connect-meta` | `connect-meta.html` | OAuth Meta và connection |
 | `/account` | `account.html` | Tài khoản và session |

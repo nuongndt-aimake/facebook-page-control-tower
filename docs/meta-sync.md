@@ -21,6 +21,8 @@ Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi 
 
 **Hiện trạng:** `vercel.json` hiện chỉ khai báo cron `0 1 * * *` (một lần/ngày theo UTC). Bảng slot, idempotency, queue/lock và RPC claim đã có; dispatcher vẫn tắt mặc định để tránh bật hàng loạt ngoài pilot.
 
+Màn hình `/connect-meta` đã có bảng cấu hình slot cho quản trị viên: xem trạng thái, giờ Asia/Ho_Chi_Minh, kỳ dữ liệu, concurrency và bật/tắt từng slot. Thao tác dùng `update_sync_slot`, được kiểm tra server-side và ghi `admin_audit_logs`; việc bật slot không tự bật `ENABLE_SYNC_ORCHESTRATOR` và không thay thế bước pilot.
+
 ## Retry và lỗi
 
 - Lỗi quyền: đánh dấu `permission_error`, không retry vô hạn.

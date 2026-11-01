@@ -26,7 +26,7 @@ export default async function handler(request, response) {
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (!isAdmin) throw new Error("Forbidden");
-      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers] = await Promise.all([
+      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers, scheduleSlots] = await Promise.all([
         db("pages?select=id,registry_id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,current_status,group_name,topic,first_connected_at,last_seen_at,last_synced_at,updated_at&order=name.asc&limit=5000").catch(() => db("pages?select=id,name,category,meta_connection,custodian_business_id,updated_at&order=name.asc&limit=5000")),
         db("businesses?select=id,name,meta_connection,managed,last_synced_at&order=name.asc&limit=1000").catch(() => []),
         db("profiles?select=id,email,display_name,role,status,suspended_at,deleted_at,last_seen_at,admin_note&order=email.asc&limit=5000"),
@@ -42,16 +42,33 @@ export default async function handler(request, response) {
         db("payment_profile_access?select=*&status=eq.active&limit=20000").catch(() => []),
         db("page_commissions?select=*&status=eq.active&limit=20000").catch(() => []),
         db("page_payment_profiles?select=page_id,payment_profile_id,relation_type,last_seen_at&limit=20000").catch(() => []),
-        db("payment_profile_managers?select=*&status=eq.active&limit=20000").catch(() => [])
+        db("payment_profile_managers?select=*&status=eq.active&limit=20000").catch(() => []),
+        db("sync_schedule_slots?select=slot_key,label,timezone,local_time,active,periods,max_concurrency,updated_at&order=local_time.asc&limit=20").catch(() => [])
       ]);
       // Empty is a valid state. Do not silently create categories or groups while a
       // read request is running: creation belongs to the explicit Groups workflow.
-      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, reporting_lines: reportingLines, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers });
+      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, reporting_lines: reportingLines, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers, schedule_slots: scheduleSlots });
     }
     if (request.method === "POST") {
       if (context.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");
       const body = await readBody(request);
       if (!isAdmin && body.action !== "sync_page") throw new Error("Forbidden");
+      if (body.action === "update_sync_slot") {
+        if (!isAdmin) throw new Error("Forbidden");
+        const slotKey = String(body.slot_key || "");
+        if (!slotKey) return send(response, 400, { error: "slot_key là bắt buộc" });
+        const active = body.active === true;
+        const periods = Array.isArray(body.periods) ? body.periods.filter(period => ["day", "7d", "28d", "60d", "90d", "365d", "this_month", "last_month"].includes(period)) : ["day"];
+        const localTime = String(body.local_time || "");
+        if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(localTime)) return send(response, 400, { error: "local_time phải có dạng HH:MM" });
+        const maxConcurrency = Math.min(100, Math.max(1, Number(body.max_concurrency || 1)));
+        const rows = await db(`sync_schedule_slots?slot_key=eq.${encodeURIComponent(slotKey)}&limit=1`);
+        if (!rows[0]) return send(response, 404, { error: "Không tìm thấy slot đồng bộ" });
+        const updatedAt = new Date().toISOString();
+        await db(`sync_schedule_slots?slot_key=eq.${encodeURIComponent(slotKey)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ active, local_time: localTime, periods, max_concurrency: maxConcurrency, updated_at: updatedAt }) });
+        await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "update_sync_slot", target_type: "sync_schedule_slot", target_id: slotKey, details: { active, local_time: localTime, periods, max_concurrency: maxConcurrency } }) });
+        return send(response, 200, { ok: true, slot_key: slotKey, active, local_time: localTime, periods, max_concurrency: maxConcurrency });
+      }
       if (body.action === "sync") {
         const today = new Date().toISOString().slice(0, 10);
         const period = body.period || "all";

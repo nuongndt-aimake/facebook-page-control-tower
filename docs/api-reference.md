@@ -62,6 +62,7 @@ Authorization: Bearer <CRON_SECRET>
 - `create_group`, `update_group`, `delete_group`, `assign_group`, `unassign_group`.
 - `assign_page_access`, `assign_team`, `set_user_role`, `suspend_user`, `delete_user`.
 - `set_commission`.
+- `update_sync_slot`: cập nhật active/inactive, giờ địa phương, kỳ đồng bộ và concurrency cho một slot lịch; chỉ `platform_admin`/`super_admin`, có audit log.
 
 Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. `handover_user` cho việc chuyển assignment nhân sự vẫn là hạng mục cần hoàn thiện, chưa phải API hiện hữu.
 
