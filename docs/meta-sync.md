@@ -53,6 +53,8 @@ Cảnh báo Meta hiện được lưu trong `sync_runs.summary.warnings`, `page_
 
 Content discovery và metric refresh phải là hai luồng khác nhau. Discovery hằng ngày chỉ upsert bài mới vào `posts`; làm mới tương tác phải có `post_sync_request` rõ bài, metric và kỳ. Tương tác chuẩn cần tách tối thiểu comments, reactions, shares, views/reach và engagement; thiếu field hoặc thiếu quyền phải mang trạng thái `not_available`/`permission_error`, không ghi 0. Bài đăng cộng đồng đi qua `post_publications` từ Meta, tiện ích mở rộng hoặc nhập thủ công; extension không được giữ token. Migration, API request/provenance và worker claim đã có; post worker xử lý request cụ thể khi `ENABLE_POST_SYNC_WORKER=true`, chưa chạy tự động hàng loạt.
 
+Khi Page sync chạy, discovery vẫn lấy lại `comments`, `reactions`, `shares` và cập nhật `posts.raw_json/synced_at`; đây là cập nhật nhẹ cho bài trong cửa sổ đã chọn. Làm mới sâu hàng loạt bài vẫn phải đi qua worker riêng (`post_sync_requests` → `post_sync_attempts` → `post_metric_snapshots`) để tránh kéo quá nhiều dữ liệu trong một lần đồng bộ Page.
+
 **Kiểm tra bài cộng đồng mẫu:** Post ID `2488016458602946` thuộc group `483081615763117` hiện chưa có trong database. Graph API trả `OAuthException #10` yêu cầu App Review, vì vậy không thể xác minh metadata/tương tác qua connection hiện tại. Hệ thống đã hỗ trợ lưu identity cộng đồng độc lập với `page_id=null` và trạng thái `permission_error/not_available`; không ghi số 0 thay thế.
 
 Nếu một Page không có token hợp lệ, trạng thái phải là lỗi quyền/token; không gán nhãn "chưa kiếm tiền" chỉ vì request thất bại.

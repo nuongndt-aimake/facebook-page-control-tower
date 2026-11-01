@@ -184,7 +184,7 @@ export async function runSync({ since = daysAgoUTC(364), until = todayUTC(), for
         let posts = [];
         try {
           posts = await graphPages(`${page.id}/posts`, page.access_token, {
-            fields: "id,message,created_time,permalink_url,attachments{media_type},comments.limit(0).summary(true),shares", since, until, limit: "100"
+            fields: "id,message,created_time,permalink_url,attachments{media_type},comments.limit(0).summary(true),reactions.limit(0).summary(true),shares", since, until, limit: "100"
           });
           await upsert("posts", posts.map(post => ({ id: post.id, page_id: page.id, created_time: post.created_time || null,
             message: post.message || null, permalink_url: post.permalink_url || null,
@@ -455,6 +455,10 @@ async function processPostRequest(request) {
   const comments = raw.comments?.summary?.total_count;
   const reactions = raw.reactions?.summary?.total_count;
   const shares = raw.shares?.count;
+  await db(`posts?id=eq.${encodeURIComponent(request.post_id)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ raw_json: raw, synced_at: new Date().toISOString() })
+  });
   const names = postRequestMetricNames(request);
   const metricResult = names.length ? await saveInsights("post", request.post_id, token, names, "day", request.window_start, request.window_end, new Date().toISOString()) : { rows: 0, warnings: [], outcomes: [] };
   const status = metricResult.outcomes.some(item => item.status === "error") ? "failed" : (comments === undefined && reactions === undefined && shares === undefined && !metricResult.rows ? "empty" : "succeeded");

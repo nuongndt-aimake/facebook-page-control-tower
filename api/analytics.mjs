@@ -149,8 +149,8 @@ export default async function handler(request, response) {
     const pageFilter = pageId ? `&page_id=eq.${encodeURIComponent(pageId)}` : "";
     const [pages, posts, metricRows, revenue, syncRuns, pageSnapshots, paymentLinks, paymentProfiles, pageGroups, contentGroups] = await Promise.all([
       db(`pages?select=id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,last_synced_at,updated_at${pageId ? `&id=eq.${encodeURIComponent(pageId)}` : accessFilter}&order=name.asc&limit=5000`).catch(() => db(`pages?select=id,name,category,meta_connection,custodian_business_id,updated_at${pageId ? `&id=eq.${encodeURIComponent(pageId)}` : accessFilter}&order=name.asc&limit=5000`)),
-      db(`posts?select=id,page_id,created_time,message,permalink_url,media_type,raw_json&created_time=gte.${encodeURIComponent(postStart)}&created_time=lt.${encodeURIComponent(postEnd)}${pageFilter}&order=created_time.desc&limit=20000`),
-      db(`metrics?select=entity_type,entity_id,metric,period,end_time,value_json&end_time=gte.${encodeURIComponent(`${range.start}T00:00:00+00:00`)}&end_time=lte.${encodeURIComponent(`${shift(range.end, 1)}T23:59:59+00:00`)}&limit=100000`),
+      db(`posts?select=id,page_id,created_time,message,permalink_url,media_type,raw_json,synced_at&created_time=gte.${encodeURIComponent(postStart)}&created_time=lt.${encodeURIComponent(postEnd)}${pageFilter}&order=created_time.desc&limit=20000`),
+      db(`metrics?select=entity_type,entity_id,metric,period,end_time,value_json,synced_at&end_time=gte.${encodeURIComponent(`${range.start}T00:00:00+00:00`)}&end_time=lte.${encodeURIComponent(`${shift(range.end, 1)}T23:59:59+00:00`)}&limit=100000`),
       db(`revenue_entries?select=page_id,payment_profile_id,period_start,period_end,gross_amount,currency,source,note&period_start=lte.${range.end}&period_end=gte.${range.start}${pageFilter}${allowed ? `&page_id=in.(${allowed.map(encodeURIComponent).join(",")})` : ""}&order=period_start.desc&limit=5000`),
       db("sync_runs?select=ran_at,since_date,until_date,status,summary&order=ran_at.desc&limit=1").catch(() => []),
       db(`page_daily_snapshots?select=page_id,snapshot_date,window_start,window_end,status,posts_count,metrics_json,observed_at&snapshot_date=gte.${encodeURIComponent(range.start)}&snapshot_date=lte.${encodeURIComponent(range.end)}${pageId ? `&page_id=eq.${encodeURIComponent(pageId)}` : (allowed ? `&page_id=in.(${allowed.map(encodeURIComponent).join(",")})` : "")}&order=observed_at.desc&limit=50000`).catch(() => []),
@@ -227,7 +227,7 @@ export default async function handler(request, response) {
       const interactions = interactionBreakdown.total;
       const pageMetricRows = metricRows.filter(row => row.entity_type === "page" && row.entity_id === page.id);
       const metricNames = [...new Set(pageMetricRows.map(row => row.metric))];
-      const lastMetricAt = pageMetricRows.map(row => row.end_time).filter(Boolean).sort().at(-1) || null;
+      const lastMetricAt = pageMetricRows.map(row => row.synced_at || row.end_time).filter(Boolean).sort().at(-1) || null;
       const snapshot = latestPageSnapshots.get(String(page.id)) || null;
       const snapshotWarnings = Array.isArray(snapshot?.metrics_json?.outcomes)
         ? snapshot.metrics_json.outcomes.filter(item => item.status === "error").map(item => `${item.metric}: ${(item.errors || []).at(-1) || "request thất bại"}`)

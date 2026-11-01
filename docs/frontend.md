@@ -33,6 +33,8 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 - Khu vực thao tác và khu vực dữ liệu/báo cáo phải tách rõ.
 - Nhãn kỹ thuật chỉ hiện trong tooltip/help hoặc trang vận hành, không rải trong màn hình báo cáo.
 - Kỳ dữ liệu luôn hiển thị cạnh bảng/biểu đồ.
+- Trạng thái đồng bộ phải có nhãn màu: thành công, thất bại/cảnh báo, rỗng hoặc chưa khả dụng. Biểu tượng cảnh báo phải mở được nội dung lỗi cụ thể, không chỉ có tooltip rỗng.
+- Cột cập nhật metric và cập nhật tương tác dùng `synced_at`, không dùng thời điểm dữ liệu Meta (`end_time`) để tránh hiển thị snapshot cũ như mới.
 - Button, input, label dùng token kích thước chung trong `system.css`.
 - Chart phải có container có chiều cao tối thiểu, legend không chồng dữ liệu.
 - Mobile dùng card, accordion và bottom/overlay menu; không dùng bảng cố định gây tràn ngang.

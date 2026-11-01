@@ -56,6 +56,10 @@ async function processRequest(request) {
   const comments = raw.comments?.summary?.total_count;
   const reactions = raw.reactions?.summary?.total_count;
   const shares = raw.shares?.count;
+  await db(`posts?id=eq.${encodeURIComponent(request.post_id)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ raw_json: raw, synced_at: new Date().toISOString() })
+  });
   const names = metricNames(request);
   const metricResult = names.length ? await saveInsights("post", request.post_id, token, names, "day", request.window_start, request.window_end, new Date().toISOString()) : { rows: 0, warnings: [], outcomes: [] };
   const status = metricResult.outcomes.some(item => item.status === "error") ? "failed" : (comments === undefined && reactions === undefined && shares === undefined && !metricResult.rows ? "empty" : "succeeded");
