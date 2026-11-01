@@ -40,4 +40,5 @@ Các route HTML hiện vẫn nằm ở root để giữ URL production tương t
 - `frontend.md`: UI/UX và route.
 - `testing.md`: QA, quyền và responsive.
 - `release-checklist.md`: reviewer/release manager.
+- `installation.md`: triển khai môi trường mới và kết nối dịch vụ.
 

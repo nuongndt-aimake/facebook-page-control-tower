@@ -16,6 +16,7 @@
 12. `frontend.md` — route, navigator, responsive và quy ước UI.
 13. `testing.md` — smoke test, ma trận quyền và responsive QA.
 14. `release-checklist.md` — checklist merge, preview và production.
+15. `installation.md` — cài đặt, cấu hình, DNS, domain và kết nối hệ thống.
 
 ## Quy tắc quan trọng
 
