@@ -58,6 +58,13 @@ Repository chuẩn: [nuongndt-aimake/facebook-page-control-tower](https://github
 
 Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ công, phải ghi lại commit SHA tương ứng trong release note.
 
+### Kiểm chứng phát hành
+
+- Chỉ coi thay đổi là đã lên production khi deployment có trạng thái `READY` và alias production (đặc biệt `money.aiecom.vn`) trỏ đúng deployment đó.
+- Deployment ở trạng thái `ERROR`, dù CLI trả về URL tạm thời, không được thông báo là đã phát hành.
+- Nếu deploy thủ công lỗi ở bước `Deploying outputs`, chạy `vercel pull --yes --environment production`, `vercel build --yes --environment production`, sau đó deploy lại bằng output đã build; nếu vẫn lỗi, kết nối GitHub và phát hành từ commit `main`.
+- Mọi route mới phải có điểm neo trong navigator dùng chung hoặc nút hành động của màn hình liên quan; route chỉ tồn tại qua URL trực tiếp là chưa hoàn chỉnh.
+
 ## Release gần nhất
 
 - Migration: `20261101090000_sync_orchestration_foundation.sql`

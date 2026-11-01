@@ -27,6 +27,7 @@
 - [ ] Kiểm tra domain, SSL, redirect và privacy/terms.
 - [ ] Ghi deployment URL, commit SHA và thời điểm phát hành.
 - [ ] Có người chịu trách nhiệm rollback.
+- [ ] Với mọi route/tính năng mới: ghi rõ điểm neo (mục navigator hoặc nút hành động) và kiểm tra điểm neo xuất hiện trên desktop/mobile.
 
 ## Sau deploy
 
@@ -34,3 +35,4 @@
 - [ ] Kiểm tra `sync_runs` gần nhất.
 - [ ] Kiểm tra token health và cảnh báo quyền.
 - [ ] Theo dõi lỗi Vercel Function trong 15 phút đầu.
+- [ ] Xác minh alias production đang trỏ vào deployment READY chứa đúng commit SHA; deployment ERROR không được coi là đã phát hành.
