@@ -41,6 +41,8 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/admin/handover` | `POST` | Bàn giao tài sản/người phụ trách | Admin |
 | `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
+| `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |
+| `/api/posts/publication` | `POST` | Ghi nhận bài đăng ở Page/cộng đồng từ extension hoặc nhập thủ công | Supabase session + Page access |
 | `/api/public/application` | `GET` | Dữ liệu công khai cho landing/application | Công khai |
 
 ## Action chính của `/api/admin/access`

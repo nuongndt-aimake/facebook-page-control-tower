@@ -30,6 +30,8 @@
 
 `posts` hiện là registry nội dung, còn lịch sử số liệu bài viết và yêu cầu làm mới vẫn là **Roadmap**. Thiết kế mục tiêu gồm `post_publications`, `post_metric_snapshots` và `post_sync_requests`; không ghi đè snapshot cũ và không coi thiếu quyền là giá trị 0. Chi tiết và thứ tự triển khai xem [implementation-plan.md](implementation-plan.md).
 
+Migration `20261101110000_post_observation_foundation.sql` đã tạo ba bảng này với RLS bật. API tạo yêu cầu và ghi provenance đã có; worker xử lý `post_sync_requests` và ghi `post_metric_snapshots` vẫn là bước tiếp theo, chưa tự động chạy production.
+
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
 - `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.
