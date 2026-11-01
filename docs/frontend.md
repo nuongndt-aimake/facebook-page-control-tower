@@ -11,15 +11,20 @@
 | `/report-revenue` | `report-revenue.html` | Doanh thu |
 | `/payout` | `payout.html` | Hồ sơ payout và quyền tài chính |
 | `/team` | `team.html` | Gán một quản lý cho nhiều nhân viên; tìm kiếm, checkbox, chọn/bỏ chọn tất cả, lọc mục đã chọn, kết thúc hàng loạt; layout card trên mobile |
-
-Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 | `/commissions` | `commissions.html` | Chia sẻ hoa hồng |
 | `/groups` | `groups.html` | Danh mục cấp 1/cấp 2 và gán Page |
 | `/users` | `users.html` | Nhân sự, role, tuyến quản lý |
 | `/connect-meta` | `connect-meta.html` | OAuth Meta, cấu hình slot đồng bộ và theo dõi queue/run gần nhất; trạng thái đọc lại không dùng cache, bảng có STT |
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
-| `/connect-meta` | `connect-meta.html` | OAuth Meta và connection |
 | `/account` | `account.html` | Tài khoản và session |
+
+Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
+
+## Quy ước bảng dữ liệu
+
+`auth-nav.js` áp dụng paginator dùng chung cho các bảng HTML có `tbody`: tối đa 25 dòng mỗi trang, có điều hướng trang và tổng số dòng. Bảng được tự động bổ sung cột `STT` nếu chưa có cột đánh số; STT phản ánh thứ tự bản ghi trong tập dữ liệu trước khi phân trang. Màn hình đặc biệt có thể tắt cơ chế này bằng `data-no-pagination="true"` trên bảng.
+
+Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator riêng nếu không có yêu cầu đặc biệt, và phải kiểm thử cả desktop/mobile. Danh sách dạng card hoặc combobox không thuộc paginator bảng và phải có giới hạn/tìm kiếm riêng khi kích thước lớn.
 
 `auth-nav.js` là nguồn duy nhất cho navigator. Không tự thêm menu riêng ở từng HTML. Khi thêm route, cập nhật menu, mobile menu, active state và bảng route ở tài liệu này.
 
