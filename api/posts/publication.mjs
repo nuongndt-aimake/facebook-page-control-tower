@@ -10,10 +10,12 @@ export default async function handler(request, response) {
     const body = await readBody(request);
     const postId = String(body.post_id || "").trim();
     const pageId = body.page_id ? String(body.page_id).trim() : null;
+    const publisherPageId = body.publisher_page_id ? String(body.publisher_page_id).trim() : pageId;
     const destinationType = body.destination_type === "community" ? "community" : "page";
     if (!postId) return send(response, 400, { error: "post_id là bắt buộc" });
     const postRows = await db(`posts?select=id,page_id&id=eq.${encodeURIComponent(postId)}&limit=1`);
-    const effectivePageId = pageId || postRows[0]?.page_id || null;
+    const effectivePageId = publisherPageId || postRows[0]?.page_id || null;
+    if (destinationType === "community" && !publisherPageId) return send(response, 400, { error: "publisher_page_id là bắt buộc khi Page đăng vào cộng đồng" });
     if (effectivePageId && !new Set(["platform_admin", "super_admin"].includes(context.profile.role) ? [effectivePageId] : context.pageIds).has(String(effectivePageId))) throw new Error("Forbidden");
     if (!postRows[0]) {
       if (destinationType !== "community" || !body.community_id) return send(response, 404, { error: "Bài viết chưa có trong registry; bài cộng đồng mới cần community_id" });
@@ -26,7 +28,8 @@ export default async function handler(request, response) {
     }
     const publicationKey = String(body.publication_key || randomUUID());
     await db("post_publications?on_conflict=publication_key", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({
-      post_id: postId, page_id: effectivePageId, destination_type: destinationType,
+      post_id: postId, page_id: effectivePageId, publisher_page_id: publisherPageId, publisher_page_name: body.publisher_page_name || null,
+      editor_user_id: context.user.id, published_as: body.published_as === "profile" ? "profile" : "page", destination_type: destinationType,
       community_id: body.community_id || null, community_name: body.community_name || null, community_url: body.community_url || null,
       published_at: body.published_at || null, external_url: body.external_url || null,
       discovered_source: body.discovered_source === "meta" ? "meta" : (body.discovered_source === "manual" ? "manual" : "extension"),

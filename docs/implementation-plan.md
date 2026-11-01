@@ -121,6 +121,8 @@ Tiện ích chỉ gửi URL/Meta Post ID, nơi đăng, thời điểm, Page liê
 4. UI danh sách bài theo Page/kỳ, hiển thị kỳ quan sát, lọc stale/pending và action làm mới (song song).
 5. Extension ingest cộng đồng và pilot 5–20 bài (sau khi API/RLS ổn định).
 
+Đối với bài do biên tập viên đăng từ Page vào cộng đồng, provenance bắt buộc gồm `editor_user_id`, `publisher_page_id` và `community_id`; thiếu Page phát hành thì không đánh dấu bài là “đăng từ Page”.
+
 ### Tiêu chí nghiệm thu
 
 - Nội dung bài cũ vẫn xem được dù không gọi Meta lại.

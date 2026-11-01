@@ -36,6 +36,8 @@ Migration `20261101120000_post_sync_worker.sql` bổ sung `post_sync_attempts` v
 
 Migration `20261101130000_community_post_identity.sql` cho phép `posts.page_id` rỗng đối với bài chỉ tồn tại trong cộng đồng, đồng thời lưu `origin_type`, group nguồn, URL ngoài và nguồn ingest. Bản ghi cộng đồng không được suy diễn là bài của Page.
 
+Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher_page_id`, `publisher_page_name`, `editor_user_id` và `published_as`. Quan hệ chuẩn là: tài khoản biên tập viên → Page phát hành → cộng đồng đích → bài viết.
+
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
 - `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.

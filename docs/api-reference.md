@@ -68,6 +68,8 @@ Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `pe
 
 API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) chưa triển khai; đang giữ trạng thái Roadmap, không được coi là đã có trong production.
 
+Với bài đăng cộng đồng, request phải phân biệt: `publisher_page_id` là Page đăng bài, `community_id`/`community_url` là nơi nhận bài, còn `editor_user_id` được lấy từ Supabase session của tài khoản biên tập viên. Không dùng `page_id` đơn độc để suy đoán cộng đồng đích.
+
 ## Ví dụ gọi sync
 
 ```bash
