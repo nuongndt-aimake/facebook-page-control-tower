@@ -8,6 +8,8 @@ Hiển thị Page, BM, nguồn tài sản, token health, lần đồng bộ, bà
 
 Mỗi bài phải có `page_id`, `page_name`, kỳ dữ liệu, chỉ số tương tác và permalink. Hỗ trợ nhóm theo Page, tìm kiếm, lọc, phân trang và mở rộng/thu gọn. Bộ lọc bài viết chỉ tác động lên danh sách bài; không được làm thay đổi lưới/biểu đồ doanh thu theo Page. Tương tác ưu tiên snapshot `post_metric_snapshots` mới nhất trong kỳ, sau đó mới fallback về `posts.raw_json`.
 
+Màn hình phải phân biệt rõ `discovery_synced_at` (lần đọc/ghi nhận bài viết) và `interaction_synced_at` (lần cập nhật chỉ số tương tác). `sync_state` lấy từ `post_sync_requests`: `pending/running`, `succeeded`, `failed/permission_error`; nếu chỉ có bản ghi bài mà chưa có yêu cầu metric thì hiển thị `discovered` — bài đã được đọc nhưng chưa được cập nhật tương tác. Không được dùng một mốc `synced_at` chung để khiến người vận hành tưởng dữ liệu tương tác đã mới.
+
 ## Doanh thu
 
 Tách rõ:
