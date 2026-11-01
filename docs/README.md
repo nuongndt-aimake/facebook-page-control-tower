@@ -19,6 +19,7 @@
 15. `installation.md` — cài đặt, cấu hình, DNS, domain và kết nối hệ thống.
 16. `meta-bm-operations.md` — cấu hình Meta App, BM/Page discovery và vận hành đồng bộ.
 17. `documentation-audit.md` — kết quả audit chéo tài liệu, code, database và tích hợp.
+18. `change-governance.md` — quy ước bắt buộc cho mọi thay đổi sau này.
 
 ## Quy tắc quan trọng
 
