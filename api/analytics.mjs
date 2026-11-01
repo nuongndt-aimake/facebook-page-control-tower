@@ -1,4 +1,5 @@
-import { db, requireViewer, send } from "./_lib.mjs";
+import { randomUUID } from "node:crypto";
+import { accessContext, assertMutableContext, db, requireViewer, readBody, send } from "./_lib.mjs";
 
 const TZ = "Asia/Ho_Chi_Minh";
 const dateInVietnam = () => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
@@ -40,12 +41,90 @@ const interactionStats = post => {
   const reactions = Number(raw.reactions?.summary?.total_count ?? 0) || 0;
   return { comments, shares, reactions, total: comments + shares + reactions };
 };
+const adminRoles = new Set(["platform_admin", "super_admin"]);
+const isoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? String(value) : null;
+
+async function handlePublication(request, response, context) {
+  assertMutableContext(context);
+  if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  const body = await readBody(request);
+  const postId = String(body.post_id || "").trim();
+  const pageId = body.page_id ? String(body.page_id).trim() : null;
+  const publisherPageId = body.publisher_page_id ? String(body.publisher_page_id).trim() : pageId;
+  const destinationType = body.destination_type === "community" ? "community" : "page";
+  if (!postId) return send(response, 400, { error: "post_id là bắt buộc" });
+  const postRows = await db(`posts?select=id,page_id&id=eq.${encodeURIComponent(postId)}&limit=1`);
+  const effectivePageId = publisherPageId || postRows[0]?.page_id || null;
+  if (destinationType === "community" && !publisherPageId) return send(response, 400, { error: "publisher_page_id là bắt buộc khi Page đăng vào cộng đồng" });
+  if (effectivePageId && !adminRoles.has(context.profile.role) && !context.pageIds.includes(String(effectivePageId))) throw new Error("Forbidden");
+  if (!postRows[0]) {
+    if (destinationType !== "community" || !body.community_id) return send(response, 404, { error: "Bài viết chưa có trong registry; bài cộng đồng mới cần community_id" });
+    await db("posts?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({
+      id: postId, page_id: null, created_time: body.published_at || null, message: body.message || null,
+      permalink_url: body.external_url || null, media_type: body.media_type || null, raw_json: body.metadata || {},
+      synced_at: new Date().toISOString(), origin_type: "community", source_group_id: String(body.community_id), source_group_name: body.community_name || null,
+      external_url: body.external_url || null, ingested_source: body.discovered_source === "meta" ? "meta" : (body.discovered_source === "manual" ? "manual" : "extension"), discovered_by: context.user.id
+    }) });
+  }
+  const publicationKey = String(body.publication_key || randomUUID());
+  await db("post_publications?on_conflict=publication_key", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({
+    post_id: postId, page_id: effectivePageId, publisher_page_id: publisherPageId, publisher_page_name: body.publisher_page_name || null,
+    editor_user_id: context.user.id, published_as: body.published_as === "profile" ? "profile" : "page", destination_type: destinationType,
+    community_id: body.community_id || null, community_name: body.community_name || null, community_url: body.community_url || null,
+    published_at: body.published_at || null, external_url: body.external_url || null,
+    discovered_source: body.discovered_source === "meta" ? "meta" : (body.discovered_source === "manual" ? "manual" : "extension"),
+    discovered_by: context.user.id, verification_status: "pending", metadata: body.metadata || {}, publication_key: publicationKey, updated_at: new Date().toISOString()
+  }) });
+  return send(response, 202, { ok: true, publication_key: publicationKey, post_id: postId, page_id: effectivePageId, destination_type: destinationType });
+}
+
+async function handlePostSyncRequest(request, response, context) {
+  if (request.method === "POST") assertMutableContext(context);
+  const admin = adminRoles.has(context.profile.role);
+  if (request.method === "POST") {
+    const body = await readBody(request);
+    const postIds = [...new Set((Array.isArray(body.post_ids) ? body.post_ids : [body.post_id]).map(value => String(value || "").trim()).filter(Boolean))].slice(0, 100);
+    if (!postIds.length) return send(response, 400, { error: "post_ids là bắt buộc" });
+    const today = new Date().toISOString().slice(0, 10);
+    const windowStart = isoDate(body.window_start) || today;
+    const windowEnd = isoDate(body.window_end) || today;
+    if (windowStart > windowEnd) return send(response, 400, { error: "window_start không được sau window_end" });
+    const requestedMetrics = Array.isArray(body.metric_names) ? body.metric_names.map(value => String(value).trim()).filter(Boolean).slice(0, 30) : [];
+    const posts = await db(`posts?select=id,page_id&id=in.(${postIds.map(encodeURIComponent).join(",")})&limit=100`);
+    const visible = admin ? posts : posts.filter(post => context.pageIds.includes(String(post.page_id)));
+    if (!visible.length) throw new Error("Forbidden");
+    const requests = visible.map(post => ({
+      post_id: String(post.id), requested_by: context.user.id, window_start: windowStart, window_end: windowEnd,
+      metric_names: requestedMetrics, status: "pending", idempotency_key: String(body.idempotency_key || randomUUID()) + `:${post.id}`
+    }));
+    await db("post_sync_requests?on_conflict=idempotency_key", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify(requests) });
+    return send(response, 202, { ok: true, requested: requests.length, post_ids: visible.map(post => post.id), window_start: windowStart, window_end: windowEnd });
+  }
+  if (request.method === "GET") {
+    const postId = new URL(request.url, `https://${request.headers.host}`).searchParams.get("post_id");
+    if (!postId) return send(response, 400, { error: "post_id là bắt buộc" });
+    const posts = await db(`posts?select=id,page_id&id=eq.${encodeURIComponent(postId)}&limit=1`);
+    if (!posts[0]) return send(response, 404, { error: "Không tìm thấy bài viết" });
+    if (!admin && !context.pageIds.includes(String(posts[0].page_id))) throw new Error("Forbidden");
+    const [requests, snapshots] = await Promise.all([
+      db(`post_sync_requests?select=*&post_id=eq.${encodeURIComponent(postId)}&order=created_at.desc&limit=100`),
+      db(`post_metric_snapshots?select=*&post_id=eq.${encodeURIComponent(postId)}&order=observed_at.desc&limit=100`)
+    ]);
+    return send(response, 200, { post_id: postId, requests, snapshots });
+  }
+  return send(response, 405, { error: "Method not allowed" });
+}
 
 export default async function handler(request, response) {
   try {
     response.setHeader("Cache-Control", "no-store, max-age=0");
-    const context = await requireViewer(request);
     const url = new URL(request.url, `https://${request.headers.host}`);
+    const action = url.searchParams.get("action");
+    if (action === "publication" || action === "sync-request") {
+      const context = await accessContext(request);
+      return action === "publication" ? handlePublication(request, response, context) : handlePostSyncRequest(request, response, context);
+    }
+    const context = await requireViewer(request);
     const key = url.searchParams.get("period") || "7d";
     const range = ranges()[key];
     if (!range) return send(response, 400, { error: "period must be day, 7d, 28d, 60d, 90d, 365d, this_month or last_month" });

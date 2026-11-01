@@ -45,7 +45,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
 | `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |
 | `/api/posts/publication` | `POST` | Ghi nhận bài đăng ở Page/cộng đồng từ extension hoặc nhập thủ công | Supabase session + Page access |
-| `/api/cron/post-sync` | `GET/POST` | Xử lý các yêu cầu làm mới chỉ số bài viết đã được tạo | `CRON_SECRET` hoặc admin, feature flag |
+| `/api/cron/post-sync` | `GET/POST` | Xử lý các yêu cầu làm mới chỉ số bài viết; rewrite vào module sync chung | `CRON_SECRET` hoặc admin, feature flag |
 | `/api/public/application` | `GET` | Dữ liệu công khai cho landing/application | Công khai |
 
 ## Action chính của `/api/admin/access`
@@ -68,7 +68,7 @@ Mọi action mới phải được thêm vào bảng này, kiểm tra role ở s
 
 Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100; luồng cũ vẫn là mặc định khi cờ tắt.
 
-API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) chưa triển khai; đang giữ trạng thái Roadmap, không được coi là đã có trong production.
+API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) đã tích hợp vào `/api/analytics` qua rewrite/action; worker `/api/cron/post-sync` tích hợp vào `/api/cron/sync?worker=post`. Cả hai vẫn có feature flag và mặc định không tự chạy hàng loạt.
 
 Với bài đăng cộng đồng, request phải phân biệt: `publisher_page_id` là Page đăng bài, `community_id`/`community_url` là nơi nhận bài, còn `editor_user_id` được lấy từ Supabase session của tài khoản biên tập viên. Không dùng `page_id` đơn độc để suy đoán cộng đồng đích.
 

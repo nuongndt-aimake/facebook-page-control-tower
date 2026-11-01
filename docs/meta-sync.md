@@ -37,9 +37,9 @@ Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi 
 5. Upsert `metrics` với khóa chống trùng, đồng thời ghi `page_daily_snapshots` và `post_daily_snapshots` theo ngày quan sát.
 6. Ghi `sync_runs` với `failed_requests`, `empty_requests`, warnings và trạng thái từng Page.
 
-## Bài viết và tương tác (Roadmap)
+## Bài viết và tương tác (đã tích hợp, worker có cờ bật/tắt)
 
-Content discovery và metric refresh phải là hai luồng khác nhau. Discovery hằng ngày chỉ upsert bài mới vào `posts`; làm mới tương tác phải có `post_sync_request` rõ bài, metric và kỳ. Tương tác chuẩn cần tách tối thiểu comments, reactions, shares, views/reach và engagement; thiếu field hoặc thiếu quyền phải mang trạng thái `not_available`/`permission_error`, không ghi 0. Bài đăng cộng đồng đi qua `post_publications` từ Meta, tiện ích mở rộng hoặc nhập thủ công; extension không được giữ token. Migration, API request/provenance và worker claim đã có; post worker chỉ xử lý request cụ thể khi `ENABLE_POST_SYNC_WORKER=true`, chưa chạy tự động hàng loạt.
+Content discovery và metric refresh phải là hai luồng khác nhau. Discovery hằng ngày chỉ upsert bài mới vào `posts`; làm mới tương tác phải có `post_sync_request` rõ bài, metric và kỳ. Tương tác chuẩn cần tách tối thiểu comments, reactions, shares, views/reach và engagement; thiếu field hoặc thiếu quyền phải mang trạng thái `not_available`/`permission_error`, không ghi 0. Bài đăng cộng đồng đi qua `post_publications` từ Meta, tiện ích mở rộng hoặc nhập thủ công; extension không được giữ token. Migration, API request/provenance và worker claim đã có; post worker xử lý request cụ thể khi `ENABLE_POST_SYNC_WORKER=true`, chưa chạy tự động hàng loạt.
 
 **Kiểm tra bài cộng đồng mẫu:** Post ID `2488016458602946` thuộc group `483081615763117` hiện chưa có trong database. Graph API trả `OAuthException #10` yêu cầu App Review, vì vậy không thể xác minh metadata/tương tác qua connection hiện tại. Hệ thống đã hỗ trợ lưu identity cộng đồng độc lập với `page_id=null` và trạng thái `permission_error/not_available`; không ghi số 0 thay thế.
 
