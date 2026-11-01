@@ -49,10 +49,14 @@ async function profileForUser(user) {
 async function accessContextForUser(user, profile, preview = null) {
   if (profile.status === "suspended" || profile.status === "deleted") throw new Error("Forbidden");
   if (profile.role === "platform_admin" || profile.role === "super_admin") return { user, profile, pageIds: [], paymentProfileIds: [], assignments: [], visibleUserIds: [user.id], managedUserIds: [], directPageIds: [], inheritedPageIds: [], pageSources: {}, preview };
-  const memberships = await db("team_memberships?select=user_id,parent_user_id,group_id,role&status=eq.active&limit=10000").catch(() => []);
+  const [memberships, reportingLines] = await Promise.all([
+    db("team_memberships?select=user_id,parent_user_id,group_id,role&status=eq.active&limit=10000").catch(() => []),
+    db("user_reporting_lines?select=employee_user_id,manager_user_id,status&status=eq.active&limit=10000").catch(() => [])
+  ]);
+  const hierarchy = [...memberships.map(row => ({ user_id: row.user_id, parent_user_id: row.parent_user_id })), ...reportingLines.map(row => ({ user_id: row.employee_user_id, parent_user_id: row.manager_user_id }))];
   const visibleUserIds = new Set([user.id]);
   let changed = true;
-  while (changed) { changed = false; for (const row of memberships) if (row.parent_user_id && visibleUserIds.has(row.parent_user_id) && !visibleUserIds.has(row.user_id)) { visibleUserIds.add(row.user_id); changed = true; } }
+  while (changed) { changed = false; for (const row of hierarchy) if (row.parent_user_id && visibleUserIds.has(row.parent_user_id) && !visibleUserIds.has(row.user_id)) { visibleUserIds.add(row.user_id); changed = true; } }
   const ids = [...visibleUserIds].map(encodeURIComponent).join(",");
   const [accessRows, assignmentRows, paymentRows] = await Promise.all([
     db(`page_access?select=page_id,user_id&user_id=in.(${ids})&status=eq.active`),

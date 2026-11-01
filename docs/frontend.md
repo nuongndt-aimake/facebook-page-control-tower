@@ -10,6 +10,7 @@
 | `/report-content` | `report-content.html` | Bài đăng và metric nội dung |
 | `/report-revenue` | `report-revenue.html` | Doanh thu |
 | `/payout` | `payout.html` | Hồ sơ payout và quyền tài chính |
+| `/team` | `team.html` | Gán, tìm kiếm và kết thúc tuyến quản lý–nhân viên |
 | `/commissions` | `commissions.html` | Chia sẻ hoa hồng |
 | `/groups` | `groups.html` | Danh mục cấp 1/cấp 2 và gán Page |
 | `/users` | `users.html` | Nhân sự, role, tuyến quản lý |

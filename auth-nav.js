@@ -4,7 +4,7 @@
   if(!window.supabase)return;
   const client=window.__authNavClient||supabase.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr');window.__authNavClient=client;
   const nav=document.querySelector('#quick-nav,.quick-nav');if(!nav)return;nav.id='quick-nav';nav.classList.add('quick-nav');const wrap=nav.querySelector(':scope>div');if(!wrap)return;
-  const canonical=[['/analytics','Báo cáo'],['/access','Tài sản'],['/groups','Nhóm nội dung'],['/payout','Payout'],['/users','Nhân sự'],['/connect-meta','Kết nối Meta'],['/report-pages','Page'],['/report-content','Nội dung'],['/report-revenue','Doanh thu'],['/commissions','Hoa hồng'],['/account','Tài khoản']];
+  const canonical=[['/analytics','Báo cáo'],['/access','Tài sản'],['/groups','Nhóm nội dung'],['/payout','Payout'],['/users','Nhân sự'],['/team','Tuyến quản lý'],['/connect-meta','Kết nối Meta'],['/report-pages','Page'],['/report-content','Nội dung'],['/report-revenue','Doanh thu'],['/commissions','Hoa hồng'],['/account','Tài khoản']];
   const session=(await client.auth.getSession()).data.session;
   const brand=wrap.querySelector('.brand')||Object.assign(document.createElement('a'),{className:'brand',href:'/'});if(!brand.textContent.trim())brand.innerHTML='AI<span>/</span>FB MONEY';
   const links=document.createElement('div');links.className='quick-menu-links';const path=location.pathname.replace(/\.html$/,'')||'/';

@@ -7,7 +7,7 @@ export default async function handler(request, response) {
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (!isAdmin) throw new Error("Forbidden");
-      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers] = await Promise.all([
+      const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers] = await Promise.all([
         db("pages?select=id,registry_id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,current_status,group_name,topic,first_connected_at,last_seen_at,last_synced_at,updated_at&order=name.asc&limit=5000").catch(() => db("pages?select=id,name,category,meta_connection,custodian_business_id,updated_at&order=name.asc&limit=5000")),
         db("businesses?select=id,name,meta_connection,managed,last_synced_at&order=name.asc&limit=1000").catch(() => []),
         db("profiles?select=id,email,display_name,role,status,suspended_at,deleted_at,last_seen_at,admin_note&order=email.asc&limit=5000"),
@@ -18,6 +18,7 @@ export default async function handler(request, response) {
         db("content_groups?select=*&status=eq.active&order=name.asc&limit=5000").catch(() => []),
         db("content_categories?select=*&status=eq.active&order=name.asc&limit=2000").catch(() => []),
         db("team_memberships?select=*&status=eq.active&limit=10000").catch(() => []),
+        db("user_reporting_lines?select=*&status=eq.active&limit=10000").catch(() => []),
         db("page_group_assignments?select=*&status=eq.active&limit=20000").catch(() => []),
         db("payment_profile_access?select=*&status=eq.active&limit=20000").catch(() => []),
         db("page_commissions?select=*&status=eq.active&limit=20000").catch(() => []),
@@ -26,7 +27,7 @@ export default async function handler(request, response) {
       ]);
       // Empty is a valid state. Do not silently create categories or groups while a
       // read request is running: creation belongs to the explicit Groups workflow.
-      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers });
+      return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, reporting_lines: reportingLines, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers });
     }
     if (request.method === "POST") {
       if (context.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");
@@ -127,6 +128,23 @@ export default async function handler(request, response) {
       if (body.action === "set_team_member") {
         if (!body.user_id || !body.group_id) return send(response, 400, { error: "user_id và group_id là bắt buộc" });
         await db("team_memberships?on_conflict=user_id,group_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: body.user_id, parent_user_id: body.parent_user_id || null, group_id: body.group_id, role: body.role || "operator", status: body.status || "active", note: body.note || null }) });
+        return send(response, 200, { ok: true });
+      }
+      if (body.action === "set_reporting_line") {
+        const employeeId = String(body.employee_user_id || "");
+        const managerId = String(body.manager_user_id || "");
+        if (!employeeId || !managerId || employeeId === managerId) return send(response, 400, { error: "Nhân viên và quản lý phải là hai tài khoản khác nhau" });
+        const lines = await db("user_reporting_lines?select=employee_user_id,manager_user_id&status=eq.active&limit=10000").catch(() => []);
+        const parentByEmployee = new Map(lines.filter(row => row.employee_user_id !== employeeId).map(row => [String(row.employee_user_id), String(row.manager_user_id)]));
+        let cursor = managerId;
+        for (let i = 0; i < 100 && cursor; i++) { if (cursor === employeeId) return send(response, 409, { error: "Không thể tạo vòng lặp tuyến quản lý" }); cursor = parentByEmployee.get(cursor); }
+        await db("user_reporting_lines?on_conflict=employee_user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ employee_user_id: employeeId, manager_user_id: managerId, status: "active", effective_from: body.effective_from || new Date().toISOString().slice(0, 10), ended_at: null, created_by: context.user.id, note: body.note || null, updated_at: new Date().toISOString() }) });
+        return send(response, 200, { ok: true, employee_user_id: employeeId, manager_user_id: managerId });
+      }
+      if (body.action === "end_reporting_line") {
+        const employeeId = String(body.employee_user_id || "");
+        if (!employeeId) return send(response, 400, { error: "employee_user_id là bắt buộc" });
+        await db(`user_reporting_lines?employee_user_id=eq.${encodeURIComponent(employeeId)}&status=eq.active`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true });
       }
       if (body.action === "set_user_status") {

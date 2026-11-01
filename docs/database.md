@@ -14,6 +14,7 @@
 - `deals`, `access_requests`, `handover_audit` phục vụ bán/chuyển giao Page.
 - `payment_profile_managers` phục vụ người Facebook đang quản lý hồ sơ payout.
 - `team_memberships` phục vụ tuyến trên/tuyến dưới và nhóm vận hành.
+- `user_reporting_lines` là quan hệ quản lý–nhân viên độc lập với nhóm nội dung; mỗi nhân viên có tối đa một quản lý active.
 - `content_categories` là cấp 1; `content_groups` là nhóm cấp 2, có thể gắn `category_id`.
 
 ## Định danh và quan hệ quan trọng
