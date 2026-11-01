@@ -26,6 +26,7 @@ export default async function handler(request, response) {
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (!isAdmin) throw new Error("Forbidden");
+      response.setHeader("Cache-Control", "private, no-store, max-age=0");
       const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers, scheduleSlots, syncJobs, syncRuns, syncJobStatuses] = await Promise.all([
         db("pages?select=id,registry_id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,current_status,group_name,topic,first_connected_at,last_seen_at,last_synced_at,updated_at&order=name.asc&limit=5000").catch(() => db("pages?select=id,name,category,meta_connection,custodian_business_id,updated_at&order=name.asc&limit=5000")),
         db("businesses?select=id,name,meta_connection,managed,last_synced_at&order=name.asc&limit=1000").catch(() => []),
