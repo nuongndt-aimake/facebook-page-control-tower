@@ -38,6 +38,7 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 - Bảng Page chỉ hiển thị cột vận hành chính; `Tương tác`, `Metric API` và `Trạng thái kiếm tiền` nằm trong hộp chi tiết mở bằng nút `Xem thêm`. Nút `Đồng bộ danh sách đang lọc` chạy tuần tự trên toàn bộ tập kết quả sau bộ lọc, không chỉ trang hiện tại. Trạng thái `Chưa đồng bộ trong kỳ` nghĩa là chưa có snapshot thành công cho chu kỳ đang xem, không đồng nghĩa Page không có dữ liệu.
 - Nút `ĐỒNG BỘ LẠI` ở đầu báo cáo cũng phải chạy tuần tự tất cả Page đang hiển thị theo chu kỳ đã chọn; không được chỉ claim một job của orchestrator rồi báo hoàn tất khi phần lớn Page chưa được đọc.
 - Vùng `Bài đăng trong kỳ` luôn hiển thị chu kỳ và số bài sau bộ lọc. Khi không có kết quả, dùng empty state giải thích rõ `0 bài phù hợp bộ lọc` và hướng xử lý (đổi Page/bộ lọc hoặc đồng bộ lại đúng chu kỳ); bộ lọc bài đăng không làm thay đổi lưới hay biểu đồ doanh thu.
+- Vùng bài đăng có nút `Đồng bộ bài viết trong kỳ` riêng. Nút này hiển thị tiến độ Page/bài và dùng để phân biệt việc đọc lại bài viết với đồng bộ doanh thu/metric.
 - Button, input, label dùng token kích thước chung trong `system.css`.
 - Chart phải có container có chiều cao tối thiểu, legend không chồng dữ liệu.
 - Mobile dùng card, accordion và bottom/overlay menu; không dùng bảng cố định gây tràn ngang.
