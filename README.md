@@ -26,6 +26,7 @@ Hệ thống quản lý Page Facebook, đồng bộ nội dung/metric, báo cáo
 - [Kiểm thử](docs/testing.md)
 - [Checklist phát hành](docs/release-checklist.md)
 - [Hướng dẫn cài đặt và kết nối](docs/installation.md)
+- [Cấu hình và vận hành Meta/BM](docs/meta-bm-operations.md)
 - [Hướng dẫn đóng góp](CONTRIBUTING.md)
 
 ## Nguyên tắc an toàn
