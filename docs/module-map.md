@@ -37,6 +37,19 @@ Auth/OAuth
 
 Không cho UI gọi Meta trực tiếp. UI chỉ đọc read model hoặc tạo command có quyền; worker mới gọi Meta và ghi snapshot.
 
+## Module điều hướng quản trị
+
+Menu quản trị là một phần hạ tầng dùng chung, không phải cấu hình riêng của từng màn hình:
+
+- `auth-nav.js` là nguồn cấu hình chuẩn cho toàn bộ màn hình đã xác thực.
+- Thứ tự chuẩn: Tổng quan, Page, Nội dung, Doanh thu, Payout, Hoa hồng, Tài sản, Nhóm nội dung, Nhân sự, Tuyến quản lý, Kết nối Meta, Tài khoản.
+- Mỗi mục chỉ có một URL chuẩn; màn hình cũ có thể giữ route tương thích nhưng không được tạo thêm mục menu trùng lặp.
+- Menu desktop dùng thanh điều hướng cố định; menu mobile dùng cùng danh sách liên kết trong panel có `z-index` riêng, đóng khi chọn liên kết, bấm ngoài hoặc nhấn Escape.
+- Các trang marketing công khai không dùng menu quản trị; chúng có luồng điều hướng công khai và nút đăng nhập riêng.
+- Khi thêm route mới, phải bổ sung vào cấu hình menu, kiểm tra quyền RBAC, điểm neo từ một màn hình hiện có và test ở desktop/mobile trước khi phát hành.
+
+Phiên bản cache-bust hiện tại của tài nguyên menu là `20261101-7`. Khi thay đổi hành vi menu, cập nhật phiên bản này trên các HTML admin và ghi lại trong changelog; không xóa các route cũ khỏi tài liệu, chỉ đánh dấu hết hiệu lực nếu đã được thay thế.
+
 ## Quy tắc Function boundary
 
 - Không thêm Function mới chỉ vì tạo màn hình mới.
