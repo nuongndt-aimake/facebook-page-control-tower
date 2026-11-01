@@ -18,7 +18,7 @@ Quyền cần tách theo domain:
 
 ## Kế thừa tuyến quản lý
 
-Manager/lead xem được người tuyến dưới đang active và tài sản được gán cho họ. Page kế thừa phải được đánh dấu `inherited` trong access context/báo cáo; Page gán trực tiếp là `direct`, nếu có cả hai nguồn là `direct_and_inherited`. Tuyến dưới không được tự động nhận quyền ngược lên tuyến trên. Khi membership kết thúc, lần dựng access context kế tiếp loại người đó và tài sản đó khỏi phạm vi kế thừa.
+Manager/lead xem được người tuyến dưới đang active và tài sản được gán cho họ. Page kế thừa phải được đánh dấu `inherited` trong access context/báo cáo; Page gán trực tiếp là `direct`, nếu có cả hai nguồn là `direct_and_inherited`. Hồ sơ tuyến hiển thị cả người quản lý trực tiếp, vai trò hiện tại, số Page/Payout và số tuyến dưới. Khi bàn giao, Page/Payout và các tuyến quản lý liên quan phải chuyển sang successor; tuyến dưới không được tự động nhận quyền ngược lên tuyến trên.
 - đồng bộ;
 - sửa nhóm;
 - quản lý nhân sự;
