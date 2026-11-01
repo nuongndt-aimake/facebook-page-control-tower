@@ -6,7 +6,7 @@ Hiển thị Page, BM, nguồn tài sản, token health, lần đồng bộ, bà
 
 ## Nội dung
 
-Mỗi bài phải có `page_id`, `page_name`, kỳ dữ liệu, chỉ số tương tác và permalink. Hỗ trợ nhóm theo Page, tìm kiếm, lọc, phân trang và mở rộng/thu gọn.
+Mỗi bài phải có `page_id`, `page_name`, kỳ dữ liệu, chỉ số tương tác và permalink. Hỗ trợ nhóm theo Page, tìm kiếm, lọc, phân trang và mở rộng/thu gọn. Bộ lọc bài viết chỉ tác động lên danh sách bài; không được làm thay đổi lưới/biểu đồ doanh thu theo Page. Tương tác ưu tiên snapshot `post_metric_snapshots` mới nhất trong kỳ, sau đó mới fallback về `posts.raw_json`.
 
 ## Doanh thu
 

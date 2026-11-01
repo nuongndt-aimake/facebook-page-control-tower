@@ -147,13 +147,14 @@ export default async function handler(request, response) {
       : "";
     const postStart = `${range.start}T00:00:00+07:00`, postEnd = `${shift(range.end, 1)}T00:00:00+07:00`;
     const pageFilter = pageId ? `&page_id=eq.${encodeURIComponent(pageId)}` : "";
-    const [pages, posts, metricRows, revenue, syncRuns, pageSnapshots, paymentLinks, paymentProfiles, pageGroups, contentGroups] = await Promise.all([
+    const [pages, posts, metricRows, revenue, syncRuns, pageSnapshots, postSnapshots, paymentLinks, paymentProfiles, pageGroups, contentGroups] = await Promise.all([
       db(`pages?select=id,name,category,meta_connection,managed_by_connection,asset_scope,custodian_business_id,custodian_business_name,last_synced_at,updated_at${pageId ? `&id=eq.${encodeURIComponent(pageId)}` : accessFilter}&order=name.asc&limit=5000`).catch(() => db(`pages?select=id,name,category,meta_connection,custodian_business_id,updated_at${pageId ? `&id=eq.${encodeURIComponent(pageId)}` : accessFilter}&order=name.asc&limit=5000`)),
       db(`posts?select=id,page_id,created_time,message,permalink_url,media_type,raw_json,synced_at&created_time=gte.${encodeURIComponent(postStart)}&created_time=lt.${encodeURIComponent(postEnd)}${pageFilter}&order=created_time.desc&limit=20000`),
       db(`metrics?select=entity_type,entity_id,metric,period,end_time,value_json,synced_at&end_time=gte.${encodeURIComponent(`${range.start}T00:00:00+00:00`)}&end_time=lte.${encodeURIComponent(`${shift(range.end, 1)}T23:59:59+00:00`)}&limit=100000`),
       db(`revenue_entries?select=page_id,payment_profile_id,period_start,period_end,gross_amount,currency,source,note&period_start=lte.${range.end}&period_end=gte.${range.start}${pageFilter}${allowed ? `&page_id=in.(${allowed.map(encodeURIComponent).join(",")})` : ""}&order=period_start.desc&limit=5000`),
       db("sync_runs?select=ran_at,since_date,until_date,status,summary&order=ran_at.desc&limit=1").catch(() => []),
       db(`page_daily_snapshots?select=page_id,snapshot_date,window_start,window_end,status,posts_count,metrics_json,observed_at&snapshot_date=gte.${encodeURIComponent(range.start)}&snapshot_date=lte.${encodeURIComponent(range.end)}${pageId ? `&page_id=eq.${encodeURIComponent(pageId)}` : (allowed ? `&page_id=in.(${allowed.map(encodeURIComponent).join(",")})` : "")}&order=observed_at.desc&limit=50000`).catch(() => []),
+      db(`post_metric_snapshots?select=post_id,status,comments_count,reactions_count,shares_count,window_start,window_end,observed_at&window_end=gte.${encodeURIComponent(range.start)}&window_start=lte.${encodeURIComponent(range.end)}&order=observed_at.desc&limit=50000`).catch(() => []),
       db("page_payment_profiles?select=page_id,payment_profile_id,relation_type&limit=20000").catch(() => []),
       db("payment_profiles?select=id,external_id,profile_name,recipient_name,recipient_account,receiving_account_name,status,business_id&limit=5000").catch(() => [])
       ,db("page_group_assignments?select=page_id,group_id,status&status=eq.active&limit=20000").catch(() => [])
@@ -175,6 +176,17 @@ export default async function handler(request, response) {
     const pageNames = new Map(filteredPages.map(page => [page.id, page.name]));
     const scopedPosts = (allowed ? posts.filter(post => pageIds.has(post.page_id)) : posts.filter(post => pageIds.has(post.page_id)));
     const postIds = new Set(scopedPosts.map(post => post.id));
+    const latestPostSnapshots = new Map();
+    for (const snapshot of (Array.isArray(postSnapshots) ? postSnapshots : [])) {
+      const key = String(snapshot.post_id);
+      if (postIds.has(key) && !latestPostSnapshots.has(key)) latestPostSnapshots.set(key, snapshot);
+    }
+    const postStats = post => {
+      const snapshot = latestPostSnapshots.get(String(post.id));
+      if (!snapshot) return interactionStats(post);
+      const comments = Number(snapshot.comments_count || 0), reactions = Number(snapshot.reactions_count || 0), shares = Number(snapshot.shares_count || 0);
+      return { comments, shares, reactions, total: comments + shares + reactions, observed_at: snapshot.observed_at, status: snapshot.status };
+    };
     const totals = {}, perEntity = new Map();
     for (const row of metricRows) {
       if ((row.entity_type === "page" && !pageIds.has(row.entity_id)) || (row.entity_type === "post" && !postIds.has(row.entity_id))) continue;
@@ -220,7 +232,7 @@ export default async function handler(request, response) {
     const pageReportsAll = filteredPages.map(page => {
       const pagePosts = scopedPosts.filter(post => post.page_id === page.id);
       const interactionBreakdown = pagePosts.reduce((acc, post) => {
-        const stats = interactionStats(post);
+        const stats = postStats(post);
         acc.comments += stats.comments; acc.shares += stats.shares; acc.reactions += stats.reactions; acc.total += stats.total;
         return acc;
       }, { comments: 0, shares: 0, reactions: 0, total: 0 });
@@ -279,12 +291,12 @@ export default async function handler(request, response) {
       return { date: day, views, revenue: dayRevenue, posts: dayPosts };
     });
     const pageEngagements = pageMetricTotals.page_post_engagements || 0;
-    const postInteractionBreakdown = scopedPosts.reduce((acc, post) => { const stats = interactionStats(post); acc.comments += stats.comments; acc.shares += stats.shares; acc.reactions += stats.reactions; acc.total += stats.total; return acc; }, { comments: 0, shares: 0, reactions: 0, total: 0 });
+    const postInteractionBreakdown = scopedPosts.reduce((acc, post) => { const stats = postStats(post); acc.comments += stats.comments; acc.shares += stats.shares; acc.reactions += stats.reactions; acc.total += stats.total; return acc; }, { comments: 0, shares: 0, reactions: 0, total: 0 });
     return send(response, 200, { range, page_id: pageId, summary: { posts: scopedPosts.length, earnings, earnings_source: earningsSource, currency, views: pageViewMetric ? pageMetricTotals[pageViewMetric] || 0 : null, views_metric: pageViewMetric, engagements: pageEngagements, interactions: pageEngagements || postInteractionBreakdown.total, interaction_breakdown: postInteractionBreakdown, metrics: totals, monetization_groups: Object.fromEntries(Object.entries(monetizationGroups).map(([key, ids]) => [key, ids.length])) },
       sync: latestSync ? { ran_at: latestSync.ran_at, since_date: latestSync.since_date, until_date: latestSync.until_date, status: latestSync.status,
         pages: restricted ? visiblePageStatuses.length : (latestSync.summary?.pages || 0), metric_rows: restricted ? metricRows.filter(row => pageIds.has(String(row.entity_id))).length : (latestSync.summary?.metric_rows || 0),
         failed_requests: restricted ? visiblePageStatuses.filter(item => item.status === "warning").length : (latestSync.summary?.failed_requests || 0), empty_requests: restricted ? visiblePageStatuses.filter(item => item.status === "empty").length : (latestSync.summary?.empty_requests || 0),
         warnings: latestSyncWarnings } : null,
-      pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => ({ ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: interactionStats(post), metrics: perEntity.get(post.id) || {} })), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed, visible_user_ids: context.visibleUserIds || [], managed_user_ids: context.managedUserIds || [], direct_page_ids: context.directPageIds || [], inherited_page_ids: context.inheritedPageIds || [] }});
+      pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => { const snapshot = latestPostSnapshots.get(String(post.id)); return { ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: postStats(post), synced_at: snapshot?.observed_at || post.synced_at, interaction_snapshot: snapshot || null, metrics: perEntity.get(post.id) || {} }; }), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed, visible_user_ids: context.visibleUserIds || [], managed_user_ids: context.managedUserIds || [], direct_page_ids: context.directPageIds || [], inherited_page_ids: context.inheritedPageIds || [] }});
   } catch (error) { response.setHeader("Cache-Control", "no-store, max-age=0"); return send(response, error.message === "Unauthorized" ? 401 : error.message === "Forbidden" ? 403 : 500, { error: error.message }); }
 }
