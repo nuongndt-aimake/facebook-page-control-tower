@@ -168,7 +168,7 @@ Dừng mở rộng pilot nếu có một trong các điều kiện:
 
 Sau khi MVP ổn định, tiếp tục theo các mốc 1–2 ngày/lần: queue/lock → snapshot → payout/commission → admin preview → tăng pilot 20/50 Page. Mỗi mốc phải có nghiệm thu riêng, không gộp tất cả vào một lần deploy.
 
-## Lộ trình mở rộng 10 ngày — sau emergency sprint (không thuộc cam kết 2 ngày)
+## Lộ trình mở rộng 10 ngày — sau emergency sprint (không thuộc cam kết 48 giờ)
 
 | Ngày | Việc chính | Có thể chạy song song | Mốc nghiệm thu |
 | --- | --- | --- | --- |
