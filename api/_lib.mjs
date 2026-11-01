@@ -178,6 +178,13 @@ export async function upsert(table, records, conflict = "id") {
 export const todayUTC = () => new Date().toISOString().slice(0, 10);
 export const yesterdayUTC = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 export function send(response, status, payload) { return response.status(status).json(payload); }
+export function redactSecrets(value) {
+  if (value == null) return value;
+  if (typeof value === "string") return value.replace(/(access_token|user_access_token|page_access_token|app_secret|client_secret|authorization)\s*[:=]\s*[^,\s}&]+/gi, "$1=[REDACTED]");
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => (/token|secret|authorization/i.test(key) ? [key, "[REDACTED]"] : [key, redactSecrets(item)])));
+  return value;
+}
 export async function readBody(request) {
   if (request.body && typeof request.body === "object") return request.body;
   if (typeof request.body === "string") return JSON.parse(request.body || "{}");

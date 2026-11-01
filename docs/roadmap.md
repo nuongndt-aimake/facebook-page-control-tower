@@ -18,7 +18,7 @@ Kế hoạch thực thi có dependency và workstream song song được chuẩn
 - Queue, lock, retry, dead-letter.
 - Snapshot Page, nội dung và doanh thu.
 - Health check và audit log.
-- Bảng `sync_schedule_slots`, queue/lock/attempt/dead-letter và snapshot daily.
+- Worker sử dụng `sync_schedule_slots`, queue/lock/attempt/dead-letter và snapshot daily; control-plane migration đã có nhưng worker chưa bật.
 
 ## P2 — Báo cáo
 

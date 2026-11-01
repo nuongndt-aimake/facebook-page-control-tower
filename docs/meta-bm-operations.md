@@ -95,7 +95,7 @@ Phân loại kết quả: `ok`, `empty_success`, `permission_error`, `transient_
 
 ## 7. Lịch và giới hạn Vercel
 
-Thiết kế mục tiêu có ba slot 06:00, 14:00, 22:00 giờ Việt Nam, mỗi slot có `active/inactive`. Tuy nhiên `vercel.json` hiện chỉ có cron một lần/ngày theo UTC. Trước khi bật ba slot thật cần bảng `sync_schedule_slots`, idempotency, queue/lock, retry/dead-letter, concurrency limit và theo dõi quota Graph API. Khi Vercel chưa nâng cấp, chỉ bật slot phù hợp và ưu tiên sync Page được yêu cầu.
+Thiết kế mục tiêu có ba slot 06:00, 14:00, 22:00 giờ Việt Nam, mỗi slot có `active/inactive`. Migration control-plane đã tạo các bảng `sync_schedule_slots`, `sync_jobs`, `sync_attempts` và `sync_locks`, nhưng `vercel.json` hiện chỉ có cron một lần/ngày theo UTC. Dispatcher/worker chưa được bật production; cần kiểm tra migration, idempotency, retry/dead-letter, concurrency limit và quota Graph API trước khi bật. Khi Vercel chưa nâng cấp, chỉ bật slot phù hợp và ưu tiên sync Page được yêu cầu.
 
 ## 8. Retry và chẩn đoán
 

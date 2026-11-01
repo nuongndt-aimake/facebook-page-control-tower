@@ -26,18 +26,17 @@
 - `page_payment_profiles`: quan hệ nhiều-nhiều Page ↔ hồ sơ thanh toán.
 - `page_commissions`: lịch sử tỷ lệ chia sẻ theo người và thời gian hiệu lực.
 
-## Bảng cần bổ sung theo roadmap
+## Bảng cần bổ sung theo roadmap/worker
 
-- `sync_schedule_slots`
-- `sync_jobs`
-- `sync_attempts`
-- `sync_locks`
+- `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa sử dụng production.
 - `page_daily_snapshots`
 - `post_daily_snapshots`
 - `revenue_daily_snapshots`
-- `admin_audit_logs`
+- `admin_audit_logs` đã có migration; các endpoint quản trị cần bổ sung ghi audit đầy đủ.
 
 Các bảng snapshot/queue/audit trong mục này là phần cần bổ sung để đáp ứng lịch đồng bộ ba slot và truy vết từng request; không được coi là đã tồn tại chỉ vì đã có trong roadmap.
+
+Migration `20261101090000_sync_orchestration_foundation.sql` đã tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`. Worker/dispatcher vẫn phải bật theo feature flag sau khi kiểm tra SQL, RLS và rollback.
 
 ## Quy tắc migration
 

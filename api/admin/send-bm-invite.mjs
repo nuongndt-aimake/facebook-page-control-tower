@@ -1,4 +1,4 @@
-import { connections, db, graphPost, readBody, requireAdmin, send } from "../_lib.mjs";
+import { connections, db, graphPost, readBody, redactSecrets, requireAdmin, send } from "../_lib.mjs";
 
 // An explicit, admin-authenticated action only. Never call this from the public
 // registration endpoint: an email form alone must not grant business access.
@@ -26,7 +26,7 @@ export default async function handler(request, response) {
     });
     await db(`access_requests?id=eq.${encodeURIComponent(access.id)}`, { method: "PATCH", body: JSON.stringify({ status: "bm_invited", updated_at: new Date().toISOString() }) });
     await db("handover_audit", { method: "POST", body: JSON.stringify({ page_id: page.id, deal_id: deal.id,
-      action: "bm_invite_sent", actor: "admin", detail: { request_id: access.id, email: access.applicant_email, business_id: businessId, meta } }) });
+      action: "bm_invite_sent", actor: "admin", detail: { request_id: access.id, email: access.applicant_email, business_id: businessId, meta: redactSecrets(meta) } }) });
     return send(response, 200, { ok: true, status: "bm_invited" });
   } catch (error) { return send(response, error.message === "Unauthorized" ? 401 : 500, { error: error.message }); }
 }

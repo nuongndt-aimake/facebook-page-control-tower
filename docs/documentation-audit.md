@@ -13,7 +13,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 1. **Đã chạy:** HTML/JS, Vercel Functions, Supabase REST, Meta OAuth, registry Page/BM, access context và sync hiện tại.
 2. **Tương thích/legacy:** `/api/report` dùng `DASHBOARD_ADMIN_KEY`, `META_USER_ACCESS_TOKEN` trong `.env.meta.example`.
-3. **Roadmap:** queue/lock/snapshot daily, ba slot active, admin preview đầy đủ, `admin_audit_logs`, mã hóa token.
+3. **Roadmap:** worker queue/lock/snapshot daily, ba slot active, admin preview đầy đủ, mã hóa token. Control-plane tables và `admin_audit_logs` đã có migration nhưng chưa được dùng đầy đủ.
 
 ## Phát hiện và xử lý
 
@@ -22,7 +22,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 | Cao | Tên biến callback tài liệu không khớp code (`META_REDIRECT_URI` vs `META_OAUTH_REDIRECT_URI`) | Đã sửa trong `configuration.md` và `installation.md` |
 | Cao | `/api/report` không dùng Supabase session | Đã sửa API reference thành `DASHBOARD_ADMIN_KEY` |
 | Cao | `handover_user` từng được mô tả như API có sẵn | Đã đánh dấu roadmap; bàn giao deal hiện dùng `/api/admin/handover` |
-| Cao | Admin preview và `admin_audit_logs` chưa có implementation | Đã sửa security/runbook/roadmap để không overclaim |
+| Cao | Admin preview chưa có implementation; `admin_audit_logs` mới có control-plane migration | Đã sửa security/runbook/roadmap để không overclaim |
 | Cao | Token Meta còn được lưu ở `meta_connections.user_access_token` | Đã ghi rõ rủi ro và đưa encryption/secret store vào P0 |
 | Trung bình | Ba slot 06:00/14:00/22:00 chưa tương thích cron Hobby và `vercel.json` hiện chỉ có một cron/ngày | Đã ghi rõ hiện trạng và điều kiện triển khai |
 | Trung bình | Daily snapshot/queue/attempt/lock chưa có bảng | Đã phân loại là roadmap, không mô tả là schema hiện hữu |
@@ -42,9 +42,9 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 `pages`, `posts`, `metrics`, `sync_runs`, `businesses`, `meta_connections`, `page_connection_history`, `profiles`, `page_access`, `page_assignments`, `content_categories`, `content_groups`, `page_group_assignments`, `team_memberships`, `payment_profiles`, `page_payment_profiles`, `payment_profile_access`, `payment_profile_managers`, `revenue_entries`, `page_commissions`, `deals`, `access_requests`, `handover_audit`.
 
-### Bảng chưa có
+### Bảng chưa hoàn thiện chức năng
 
-`sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`, `admin_audit_logs`.
+`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`; các bảng `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` đã có migration nhưng chưa có worker/audit integration đầy đủ.
 
 ## Kiểm thử đã thực hiện
 
