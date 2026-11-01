@@ -28,6 +28,11 @@ function errorText(error) { return error?.message || String(error); }
 const orchestratorEnabled = () => String(process.env.ENABLE_SYNC_ORCHESTRATOR || "false").toLowerCase() === "true";
 const dispatchBatchSize = () => Math.min(Math.max(Number.parseInt(process.env.SYNC_DISPATCH_BATCH || "1", 10) || 1, 1), 100);
 const workerId = () => process.env.VERCEL_REGION ? `vercel:${process.env.VERCEL_REGION}:${process.env.VERCEL_FUNCTION_NAME || "sync"}` : `local:${process.pid}`;
+const isSlotActive = async slotKey => {
+  if (!slotKey || slotKey === "manual" || String(slotKey).startsWith("pilot")) return true;
+  const rows = await db(`sync_schedule_slots?select=active&slot_key=eq.${encodeURIComponent(slotKey)}&limit=1`);
+  return rows?.[0]?.active === true;
+};
 
 async function requestMetric(id, token, metric, period, attempt) {
   const isEarnings = metric === "monetization_approximate_earnings" || metric === "content_monetization_earnings";
@@ -91,7 +96,33 @@ export async function saveInsights(kind, id, token, names, period, since, until,
     warnings.push(`Lưu metrics thất bại: ${errorText(error)}`);
     for (const outcome of outcomes.filter(item => item.status === "ok")) outcome.persist_status = "error";
   }
-  return { rows: rows.length, warnings, outcomes };
+  return { rows: rows.length, records: rows, warnings, outcomes };
+}
+
+async function saveDailySnapshots(page, posts, pageResult, since, until, observedAt) {
+  const snapshotDate = todayUTC();
+  try {
+    await upsert("page_daily_snapshots", [{
+      page_id: String(page.id), snapshot_date: snapshotDate, window_start: since, window_end: until,
+      status: pageResult.outcomes.some(item => item.status === "error") ? "warning" : (pageResult.rows ? "ok" : "empty"),
+      posts_count: posts.length,
+      metrics_json: { outcomes: pageResult.outcomes, records: pageResult.records || [] }, observed_at: observedAt
+    }], "page_id,snapshot_date");
+    const postRows = posts.map(post => {
+      const raw = post.raw_json || post;
+      const comments = raw.comments?.summary?.total_count;
+      const reactions = raw.reactions?.summary?.total_count;
+      const shares = raw.shares?.count;
+      return { post_id: String(post.id), page_id: String(page.id), snapshot_date: snapshotDate, window_start: since, window_end: until,
+        status: comments === undefined && reactions === undefined && shares === undefined ? "not_available" : "ok",
+        comments_count: comments ?? null, reactions_count: reactions ?? null, shares_count: shares ?? null,
+        metrics_json: { source: "page_posts", observed_at: observedAt }, observed_at: observedAt };
+    });
+    if (postRows.length) await upsert("post_daily_snapshots", postRows, "post_id,snapshot_date");
+  } catch (error) {
+    return errorText(error);
+  }
+  return null;
 }
 
 async function alreadySynced(since, until) {
@@ -174,6 +205,8 @@ export async function runSync({ since = daysAgoUTC(364), until = todayUTC(), for
           report.failed_requests += pageResult.outcomes.filter(x => x.status === "error").length;
           report.empty_requests += pageResult.outcomes.filter(x => x.status === "empty").length;
           if (pageResult.outcomes.some(x => x.status === "error")) pageStatus.status = "warning";
+          const snapshotError = await saveDailySnapshots(page, posts, pageResult, since, until, now);
+          if (snapshotError) report.warnings.push(`${page.name}: daily snapshot: ${snapshotError}`);
         } catch (error) {
           pageStatus.status = "warning";
           report.failed_requests++;
@@ -356,6 +389,7 @@ export default async function handler(request, response) {
       const slotKey = url.searchParams.get("slot") || "manual";
       const pageId = url.searchParams.get("page_id") || null;
       const limit = Number.parseInt(url.searchParams.get("limit") || String(dispatchBatchSize()), 10);
+      if (!(await isSlotActive(slotKey))) return send(response, 200, { mode: "orchestrator", skipped: true, skipped_reason: "slot_inactive", slot: slotKey });
       return send(response, 200, await runOrchestratedSync({ since, until, period, slotKey, limit, pageId }));
     }
     return send(response, 200, await runSync({ since, until, force }));

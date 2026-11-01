@@ -46,7 +46,9 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 - `revenue_daily_snapshots`
 - `admin_audit_logs` đã có migration; các endpoint quản trị cần bổ sung ghi audit đầy đủ.
 
-Các bảng snapshot vẫn là phần cần bổ sung. Queue/audit đã tồn tại ở mức control-plane nhưng phần tích hợp snapshot/audit nghiệp vụ vẫn còn trong roadmap.
+Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.
+
+Phần worker/dispatcher và cấu hình active slot vẫn là phần cần mở có kiểm soát trong roadmap.
 
 Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply production và tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`; migration `20261101100000_sync_job_claim_rpc.sql` bổ sung RPC nhận job nguyên tử. Cả 5 bảng đã được xác minh bật RLS. Worker/dispatcher vẫn mặc định tắt theo feature flag sau khi kiểm tra rollback.
 

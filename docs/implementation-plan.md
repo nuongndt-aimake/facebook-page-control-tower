@@ -76,7 +76,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 
 **Không triển khai sync hàng loạt trước khi giai đoạn này đạt.**
 
-**Trạng thái thực thi hiện tại:** control-plane, RPC claim, queue/attempt/retry code và tài liệu đã hoàn tất. Pilot 5 Page đã đạt: 5/5 job `succeeded`, mỗi job 1 attempt và 4 metric rows, 0 failed/empty request. Giai đoạn 2 đạt pilot 5 Page; chưa bật đồng bộ hàng loạt.
+**Trạng thái thực thi hiện tại:** control-plane, RPC claim, queue/attempt/retry code, daily snapshot migration và tài liệu đã hoàn tất. Pilot 5 Page đã đạt: 5/5 job `succeeded`, mỗi job 1 attempt và 4 metric rows, 0 failed/empty request; Page `1217277164808495` đã được kiểm tra ghi snapshot vào DB. Giai đoạn 2 đạt pilot; chưa bật đồng bộ hàng loạt và ba slot lịch vẫn inactive.
 
 ## Bổ sung kế hoạch: bài viết, tương tác và bài đăng cộng đồng (Roadmap)
 

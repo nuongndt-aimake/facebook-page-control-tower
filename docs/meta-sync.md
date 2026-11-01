@@ -34,7 +34,7 @@ Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi 
 2. Upsert BM/Page và ghi `page_connection_history`.
 3. Lấy Page token trong memory của serverless run; không trả về client.
 4. Lấy bài đăng, Page insights và post insights theo `since/until`.
-5. Upsert `metrics` với khóa chống trùng; daily snapshot riêng vẫn là roadmap.
+5. Upsert `metrics` với khóa chống trùng, đồng thời ghi `page_daily_snapshots` và `post_daily_snapshots` theo ngày quan sát.
 6. Ghi `sync_runs` với `failed_requests`, `empty_requests`, warnings và trạng thái từng Page.
 
 ## Bài viết và tương tác (Roadmap)
