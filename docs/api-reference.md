@@ -63,6 +63,8 @@ Mọi action mới phải được thêm vào bảng này, kiểm tra role ở s
 
 Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100; luồng cũ vẫn là mặc định khi cờ tắt.
 
+API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) chưa triển khai; đang giữ trạng thái Roadmap, không được coi là đã có trong production.
+
 ## Ví dụ gọi sync
 
 ```bash

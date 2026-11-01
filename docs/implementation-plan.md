@@ -78,6 +78,58 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 
 **Trạng thái thực thi hiện tại:** control-plane, RPC claim, queue/attempt/retry code và tài liệu đã hoàn tất. Pilot 5 Page đã đạt: 5/5 job `succeeded`, mỗi job 1 attempt và 4 metric rows, 0 failed/empty request. Giai đoạn 2 đạt pilot 5 Page; chưa bật đồng bộ hàng loạt.
 
+## Bổ sung kế hoạch: bài viết, tương tác và bài đăng cộng đồng (Roadmap)
+
+### Đối chiếu hiện trạng
+
+| Hạng mục | Hiện trạng | Kết luận |
+| --- | --- | --- |
+| Định danh/nội dung bài viết | Lưu trong `posts` theo Meta Post ID, có Page, thời điểm, permalink, media và `raw_json` | Đã có nền tảng lưu lại để tái sử dụng |
+| Tương tác trong lần lấy bài | Đang lấy `comments.summary(true)` và `shares` trong request bài viết | Chỉ là số quan sát gần nhất; chưa có lịch sử snapshot riêng |
+| Reactions | Chưa yêu cầu field `reactions` trong request hiện tại | Không được coi giá trị thiếu là 0 |
+| Post insights | `metrics` hỗ trợ `entity_type=post`, nhưng `META_POST_METRICS` mặc định rỗng | Chưa có đồng bộ chỉ số bài viết mặc định |
+| Cập nhật lại chỉ số | Luồng Page sync hiện xử lý các bài trong khoảng kỳ đồng bộ | Không phù hợp khi phải làm mới hàng loạt bài cũ |
+| Bài đăng cộng đồng | Chưa có nguồn/quan hệ xuất bản cộng đồng | Cần ingest từ tiện ích hoặc nhập thủ công, không suy đoán từ Page posts |
+
+### Mô hình dữ liệu đề xuất
+
+Không thay thế `posts`. Bổ sung theo migration mới, giữ các migration cũ nguyên trạng:
+
+1. `post_publications`: quan hệ bài viết với nơi đăng (`page`, `community`), Page/group ID, tên/URL cộng đồng, thời điểm xuất bản, nguồn phát hiện (`meta`, `extension`, `manual`), trạng thái xác minh.
+2. `post_metric_snapshots`: một bản ghi cho mỗi lần quan sát; gồm `post_id`, `observed_at`, `window_start`, `window_end`, các trường chuẩn hóa comments/reactions/shares/views/reach/engagement và `raw_json`.
+3. `post_sync_requests`: yêu cầu làm mới có chủ đích; người yêu cầu, danh sách metric, trạng thái queue, attempt, lỗi, thời điểm hoàn tất và idempotency key.
+
+`posts` là bản ghi nội dung/định danh; `post_metric_snapshots` là lịch sử số liệu; `metrics` tiếp tục giữ insight theo metric Meta. Không ghi đè snapshot cũ.
+
+### Luồng vận hành
+
+1. Đồng bộ hằng ngày chỉ phát hiện/upsert bài mới và lưu nội dung; không tự động gọi lại metric cho toàn bộ bài cũ.
+2. Mỗi bài hiển thị `last_content_sync_at`, `last_metric_observed_at`, kỳ số liệu và trạng thái `fresh`, `stale`, `pending`, `permission_error`, `not_available`.
+3. Người dùng có quyền chọn một bài hoặc nhiều bài rồi tạo `post_sync_request`; worker xử lý theo queue, giới hạn concurrency và ghi attempt.
+4. Khi xem báo cáo, hệ thống đọc snapshot phù hợp với kỳ đã chọn; nếu chưa có snapshot thì hiển thị “chưa có dữ liệu”, không hiển thị 0 giả.
+5. Nút làm mới một bài phải truyền chính xác `post_id`, metric cần lấy và khoảng thời gian; không chạy lại toàn bộ Page.
+
+### Tiện ích mở rộng cho bài đăng cộng đồng
+
+Tiện ích chỉ gửi URL/Meta Post ID, nơi đăng, thời điểm, Page liên quan và metadata provenance về endpoint server. Tiện ích không giữ Page token/Meta secret. Server xác thực người dùng, kiểm tra Page/group assignment, chuẩn hóa `post_publications`, rồi mới tạo `post_sync_request`. Nếu Graph API không cho đọc bài/group hoặc insight, lưu trạng thái `not_available`/`permission_error` và metadata đã nhập; không biến thành số 0.
+
+### Thứ tự triển khai
+
+1. Chốt metric contract và migration snapshot/request (tuần tự, phụ thuộc schema/RLS).
+2. Tách content discovery khỏi metric refresh trong worker (tuần tự sau bước 1).
+3. API làm mới một bài/nhiều bài, access context và audit (có thể song song với UI).
+4. UI danh sách bài theo Page/kỳ, hiển thị kỳ quan sát, lọc stale/pending và action làm mới (song song).
+5. Extension ingest cộng đồng và pilot 5–20 bài (sau khi API/RLS ổn định).
+
+### Tiêu chí nghiệm thu
+
+- Nội dung bài cũ vẫn xem được dù không gọi Meta lại.
+- Mỗi số tương tác truy được thời điểm và khoảng thời gian quan sát.
+- Làm mới một bài không tạo request cho bài khác.
+- Không có quyền/không khả dụng được phân biệt với giá trị bằng 0.
+- Bài Page và bài cộng đồng được phân nhóm rõ, có provenance.
+- RBAC áp dụng cho cả xem snapshot và tạo yêu cầu làm mới.
+
 ### Giai đoạn 2 — Sync engine và registry
 
 1. Tách discovery BM/Page khỏi tải metric.

@@ -37,5 +37,9 @@ Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi 
 5. Upsert `metrics` với khóa chống trùng; daily snapshot riêng vẫn là roadmap.
 6. Ghi `sync_runs` với `failed_requests`, `empty_requests`, warnings và trạng thái từng Page.
 
+## Bài viết và tương tác (Roadmap)
+
+Content discovery và metric refresh phải là hai luồng khác nhau. Discovery hằng ngày chỉ upsert bài mới vào `posts`; làm mới tương tác phải có `post_sync_request` rõ bài, metric và kỳ. Tương tác chuẩn cần tách tối thiểu comments, reactions, shares, views/reach và engagement; thiếu field hoặc thiếu quyền phải mang trạng thái `not_available`/`permission_error`, không ghi 0. Bài đăng cộng đồng đi qua `post_publications` từ Meta, tiện ích mở rộng hoặc nhập thủ công; extension không được giữ token.
+
 Nếu một Page không có token hợp lệ, trạng thái phải là lỗi quyền/token; không gán nhãn "chưa kiếm tiền" chỉ vì request thất bại.
 

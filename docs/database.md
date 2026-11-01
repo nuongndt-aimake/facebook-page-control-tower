@@ -26,6 +26,10 @@
 - `page_payment_profiles`: quan hệ nhiều-nhiều Page ↔ hồ sơ thanh toán.
 - `page_commissions`: lịch sử tỷ lệ chia sẻ theo người và thời gian hiệu lực.
 
+## Kế hoạch dữ liệu bài viết và tương tác
+
+`posts` hiện là registry nội dung, còn lịch sử số liệu bài viết và yêu cầu làm mới vẫn là **Roadmap**. Thiết kế mục tiêu gồm `post_publications`, `post_metric_snapshots` và `post_sync_requests`; không ghi đè snapshot cũ và không coi thiếu quyền là giá trị 0. Chi tiết và thứ tự triển khai xem [implementation-plan.md](implementation-plan.md).
+
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
 - `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.
