@@ -29,6 +29,7 @@ Hệ thống quản lý Page Facebook, đồng bộ nội dung/metric, báo cáo
 - [Cấu hình và vận hành Meta/BM](docs/meta-bm-operations.md)
 - [Audit tài liệu và kiến trúc](docs/documentation-audit.md)
 - [Governance thay đổi dự án](docs/change-governance.md)
+- [Kế hoạch hành động triển khai](docs/implementation-plan.md)
 - [Hướng dẫn đóng góp](CONTRIBUTING.md)
 
 ## Nguyên tắc an toàn

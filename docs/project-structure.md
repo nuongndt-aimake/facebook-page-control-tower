@@ -42,4 +42,5 @@ Các route HTML hiện vẫn nằm ở root để giữ URL production tương t
 - `release-checklist.md`: reviewer/release manager.
 - `installation.md`: triển khai môi trường mới và kết nối dịch vụ.
 - `meta-bm-operations.md`: vận hành Meta App, BM/Page discovery và đồng bộ.
+- `implementation-plan.md`: đường găng, workstream song song và kế hoạch pilot.
 

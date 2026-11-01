@@ -1,5 +1,7 @@
 # Roadmap triển khai
 
+Kế hoạch thực thi có dependency và workstream song song được chuẩn hóa tại [implementation-plan.md](implementation-plan.md).
+
 ## P0 — Nền tảng và an toàn
 
 - Chuẩn hóa migration và backup.
