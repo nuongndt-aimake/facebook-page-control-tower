@@ -11,6 +11,11 @@
 7. `deployment.md` — biến môi trường, OAuth và phát hành.
 8. `runbook.md` — vận hành, chẩn đoán và rollback.
 9. `roadmap.md` — phần đã có, phần đang nâng cấp và tiêu chí nghiệm thu.
+10. `api-reference.md` — endpoint, action, header và mã lỗi.
+11. `configuration.md` — biến môi trường, OAuth allowlist và rủi ro secret.
+12. `frontend.md` — route, navigator, responsive và quy ước UI.
+13. `testing.md` — smoke test, ma trận quyền và responsive QA.
+14. `release-checklist.md` — checklist merge, preview và production.
 
 ## Quy tắc quan trọng
 
@@ -19,4 +24,5 @@
 - `sync_runs` chỉ là lịch sử phiên; dữ liệu báo cáo phải đọc từ snapshot/metric đã lưu.
 - Quyền tài chính không đồng nghĩa với quyền quản trị Page.
 - Admin preview chỉ đọc và phải được audit.
+- Phân biệt rõ hiện trạng đã chạy với hạng mục roadmap; không dùng tài liệu mục tiêu để kết luận tính năng đã có.
 

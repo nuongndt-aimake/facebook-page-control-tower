@@ -1,0 +1,79 @@
+# API reference
+
+API chạy dưới Vercel Functions trong thư mục `api/`. Các endpoint dùng JSON và trả lỗi theo dạng `{ "error": "..." }`.
+
+## Kiểu xác thực
+
+### Người dùng đã đăng nhập
+
+Các endpoint quản trị dữ liệu dùng access token Supabase trong header:
+
+```http
+Authorization: Bearer <supabase_access_token>
+```
+
+Token được kiểm tra qua `auth/v1/user`, sau đó server đọc `profiles`, `page_access`, `page_assignments`, `team_memberships` và `payment_profile_access` để dựng access context.
+
+### Tác vụ admin/cron
+
+Các endpoint legacy hoặc tác vụ nội bộ dùng một trong hai header:
+
+```http
+X-Admin-Key: <DASHBOARD_ADMIN_KEY>
+Authorization: Bearer <CRON_SECRET>
+```
+
+`CRON_SECRET` chỉ hợp lệ khi endpoint cho phép cron. Không đưa hai giá trị này vào JavaScript phía trình duyệt.
+
+## Danh mục endpoint
+
+| Endpoint | Phương thức | Mục đích | Quyền chính |
+| --- | --- | --- | --- |
+| `/api/auth/profile` | `GET` | Hồ sơ và access context của tài khoản | Supabase session |
+| `/api/analytics` | `GET` | Snapshot báo cáo đã lưu | Supabase session hoặc cấu hình tương thích hiện hữu |
+| `/api/report` | `GET` | Registry Page, bài đăng và lần sync mới nhất | Supabase session |
+| `/api/meta/start` | `GET` | Tạo URL Meta OAuth | Supabase session |
+| `/api/meta/callback` | `GET` | Đổi OAuth code, lưu connection và redirect | OAuth state |
+| `/api/admin/access` | `GET` | Đọc Page/BM/user/assignment/group/payout/commission | `platform_admin`/`super_admin` |
+| `/api/admin/access` | `POST` | Sync, gán Page, nhóm, nhân sự, payout, hoa hồng | Theo action và role |
+| `/api/admin/revenue` | `GET/POST` | Đọc/ghi khoản doanh thu manual | Admin |
+| `/api/admin/deals` | `GET/POST` | Quản lý deal và yêu cầu truy cập | Admin |
+| `/api/admin/handover` | `POST` | Bàn giao tài sản/người phụ trách | Admin |
+| `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
+| `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
+| `/api/public/application` | `GET` | Dữ liệu công khai cho landing/application | Công khai |
+
+## Action chính của `/api/admin/access`
+
+`POST` nhận JSON có `action`. Các action đang có trong code:
+
+- `sync`: đồng bộ theo `period`: `day`, `7d`, `28d`, `60d`, `90d`, `365d`, `this_month`, `last_month`, hoặc `all`.
+- `sync_page`: đồng bộ chủ động một Page với `page_id`.
+- `refresh_assets`: làm mới registry Page/BM và snapshot ngày hiện tại.
+- `assign_page`: gán Page cho user/nhóm/chủ đề.
+- `upsert_profile`, `link_page`, `unlink_page`, `set_manager`: quản lý payout profile.
+- `create_category`, `update_category`, `delete_category`.
+- `create_group`, `update_group`, `delete_group`, `assign_group`, `unassign_group`.
+- `assign_page_access`, `assign_team`, `set_user_role`, `suspend_user`, `delete_user`, `handover_user`.
+- `set_commission`.
+
+Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
+
+## Ví dụ gọi sync
+
+```bash
+curl -X POST https://money.aiecom.vn/api/admin/access \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync","period":"7d"}'
+```
+
+Kết quả phải cho biết `since`, `until`, số Page, số bài, số metric, số request lỗi, cảnh báo và trạng thái từng Page. Không coi mảng rỗng là lỗi nếu request Meta thành công nhưng không có dữ liệu; phân biệt bằng `failed_requests`, `empty_requests` và `warnings`.
+
+## Quy tắc API
+
+1. Không trả access token Meta/Page token về browser.
+2. Không gọi Graph API trực tiếp từ HTML/JS.
+3. Dùng `encodeURIComponent` khi tạo PostgREST filter.
+4. Các thao tác lặp phải idempotent bằng conflict key hoặc run/job key.
+5. Lỗi quyền trả `401/403`; lỗi dữ liệu đầu vào trả `400`; lỗi upstream/database trả `500` kèm log server.

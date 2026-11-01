@@ -6,6 +6,7 @@
 - Bảo mật token/secret.
 - Hoàn thiện Auth, RBAC, RLS.
 - Registry Page/BM/connection bất biến.
+- Mã hóa hoặc chuyển token Meta sang secret store; loại bỏ lưu plaintext trong `meta_connections`.
 
 ## P1 — Đồng bộ ổn định
 
@@ -13,6 +14,7 @@
 - Queue, lock, retry, dead-letter.
 - Snapshot Page, nội dung và doanh thu.
 - Health check và audit log.
+- Bảng `sync_schedule_slots`, queue/lock/attempt/dead-letter và snapshot daily.
 
 ## P2 — Báo cáo
 
@@ -41,4 +43,5 @@
 - Báo cáo không gọi Meta trực tiếp.
 - Người dùng chỉ thấy dữ liệu được cấp.
 - Có thể truy vết và retry từng request.
+- Tài liệu API, cấu hình, route, test và release checklist khớp với code.
 

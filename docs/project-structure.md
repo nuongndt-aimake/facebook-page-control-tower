@@ -31,4 +31,13 @@ Các route HTML hiện vẫn nằm ở root để giữ URL production tương t
 - Logic dùng chung đưa vào `api/_lib.mjs`, không copy giữa endpoint.
 - UI dùng chung đưa vào `auth-nav.js`/`system.css`.
 - Báo cáo mới phải có nguồn dữ liệu, kỳ dữ liệu và quyền truy cập rõ ràng.
+- Thay đổi cross-cutting phải cập nhật code, API docs và checklist kiểm thử.
+
+## Tài liệu theo vai trò
+
+- `api-reference.md`: backend/frontend integration.
+- `configuration.md`: DevOps và secret/OAuth.
+- `frontend.md`: UI/UX và route.
+- `testing.md`: QA, quyền và responsive.
+- `release-checklist.md`: reviewer/release manager.
 

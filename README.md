@@ -20,6 +20,11 @@ Hệ thống quản lý Page Facebook, đồng bộ nội dung/metric, báo cáo
 - [Báo cáo Page, nội dung, doanh thu và payout](docs/reporting.md)
 - [Lộ trình triển khai](docs/roadmap.md)
 - [Runbook vận hành](docs/runbook.md)
+- [API reference](docs/api-reference.md)
+- [Cấu hình môi trường](docs/configuration.md)
+- [Frontend và UX](docs/frontend.md)
+- [Kiểm thử](docs/testing.md)
+- [Checklist phát hành](docs/release-checklist.md)
 - [Hướng dẫn đóng góp](CONTRIBUTING.md)
 
 ## Nguyên tắc an toàn

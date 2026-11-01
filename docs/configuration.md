@@ -1,0 +1,45 @@
+# Cấu hình môi trường
+
+## Biến bắt buộc
+
+| Biến | Dùng ở đâu | Ghi chú |
+| --- | --- | --- |
+| `SUPABASE_URL` | API server | URL project Supabase |
+| `SUPABASE_PUBLISHABLE_KEY` hoặc `SUPABASE_ANON_KEY` | Kiểm tra Supabase Auth | Chỉ dùng để xác thực session; có thể xuất hiện ở client nếu cần |
+| `SUPABASE_SERVICE_ROLE_KEY` | PostgREST server-side | Tuyệt đối không đưa xuống browser |
+| `PLATFORM_ADMIN_EMAIL` | Bootstrap profile đầu tiên | Chuẩn hóa lowercase |
+| `DASHBOARD_ADMIN_KEY` | Admin key tương thích/legacy | Luân phiên định kỳ |
+| `CRON_SECRET` | Vercel cron | Không dùng làm user token |
+| `META_APP_ID` | Meta OAuth | App ID |
+| `META_APP_SECRET` | Meta OAuth callback | Chỉ server-side |
+| `META_REDIRECT_URI` | Meta OAuth | Phải khớp tuyệt đối với Meta App |
+| `META_CONNECTIONS_JSON` | Fallback connection | Không dùng nếu connection đã lưu trong DB |
+| `META_PAGE_METRICS` | Page insight metrics | Danh sách metric phân tách bằng dấu phẩy |
+| `META_POST_METRICS` | Post insight metrics | Danh sách metric phân tách bằng dấu phẩy |
+
+## Tệp cục bộ
+
+- `.env.meta.example`: mẫu biến Meta, được phép commit.
+- `.env.local`, `.env.meta-temp`: chỉ máy local, không commit.
+- Vercel Environment Variables phải tách theo `Development`, `Preview`, `Production`.
+
+## Kiểm tra trước khi chạy
+
+```powershell
+if (-not $env:SUPABASE_URL) { throw 'Thiếu SUPABASE_URL' }
+if (-not $env:SUPABASE_SERVICE_ROLE_KEY) { throw 'Thiếu SUPABASE_SERVICE_ROLE_KEY' }
+```
+
+## Lưu ý bảo mật hiện trạng
+
+Migration hiện tại có cột `meta_connections.user_access_token`. Đây là dữ liệu nhạy cảm và **chưa được mã hóa/vault hóa trong schema hiện có**. Không sao chép giá trị này vào issue, log, snapshot hoặc response. Hạng mục hardening cần chuyển sang secret store/encryption at rest trước khi mở rộng nhiều admin.
+
+## OAuth allowlist
+
+Production hiện dùng:
+
+- `https://money.aiecom.vn`
+- `https://money.aiecom.vn/api/meta/callback`
+- `https://money.aiecom.vn/auth/callback` nếu Supabase Auth dùng callback riêng
+
+Mọi thay đổi domain phải cập nhật đồng thời Vercel, Meta App, Supabase Auth và Google OAuth.

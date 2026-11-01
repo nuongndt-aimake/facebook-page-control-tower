@@ -21,6 +21,8 @@ Các biến production tối thiểu:
 - `META_PAGE_METRICS`
 - `META_POST_METRICS`
 
+Danh sách đầy đủ và phân loại secret/non-secret xem tại [configuration.md](configuration.md).
+
 Deploy production:
 
 ```powershell
@@ -47,4 +49,10 @@ Không dùng URL preview làm callback production lâu dài.
 5. Deploy production.
 6. Kiểm tra trạng thái Ready và alias production.
 7. Ghi deployment ID vào release note.
+
+## Trạng thái đồng bộ với GitHub
+
+Repository chuẩn: [nuongndt-aimake/facebook-page-control-tower](https://github.com/nuongndt-aimake/facebook-page-control-tower), nhánh `main`.
+
+Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ công, phải ghi lại commit SHA tương ứng trong release note.
 

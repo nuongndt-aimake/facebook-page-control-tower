@@ -15,10 +15,23 @@ Một connection gồm nhãn, User Access Token, BM IDs, Page IDs và thời h�
 
 Có tối đa ba slot mặc định 06:00, 14:00 và 22:00 giờ Việt Nam. Slot có thể active/inactive và đổi giờ. Chỉ slot active mới tạo `sync_run`.
 
+**Hiện trạng:** `vercel.json` hiện chỉ khai báo cron `0 1 * * *` (một lần/ngày theo UTC). Ba slot active là thiết kế mục tiêu; muốn chạy thật cần bổ sung bảng cấu hình slot, idempotency, queue/lock và cơ chế kích hoạt phù hợp plan Vercel.
+
 ## Retry và lỗi
 
 - Lỗi quyền: đánh dấu `permission_error`, không retry vô hạn.
 - Lỗi tạm thời/429: retry theo backoff.
 - Lỗi một Page: không làm hỏng các Page khác.
 - Sau số lần thử tối đa: chuyển dead-letter và hiển thị trong màn hình vận hành.
+
+## Phạm vi một phiên
+
+1. Resolve `/me/accounts`, BM `owned_pages` và Page ID cấu hình.
+2. Upsert BM/Page và ghi `page_connection_history`.
+3. Lấy Page token trong memory của serverless run; không trả về client.
+4. Lấy bài đăng, Page insights và post insights theo `since/until`.
+5. Upsert metric với khóa chống trùng.
+6. Ghi `sync_runs` với `failed_requests`, `empty_requests`, warnings và trạng thái từng Page.
+
+Nếu một Page không có token hợp lệ, trạng thái phải là lỗi quyền/token; không gán nhãn "chưa kiếm tiền" chỉ vì request thất bại.
 
