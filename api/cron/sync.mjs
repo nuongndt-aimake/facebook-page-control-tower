@@ -47,7 +47,7 @@ async function requestMetric(id, token, metric, period, attempt) {
   }
 }
 
-async function saveInsights(kind, id, token, names, period, since, until, now) {
+export async function saveInsights(kind, id, token, names, period, since, until, now) {
   const rows = [], warnings = [], outcomes = [];
   for (const metric of names) {
     let metricRows = [];

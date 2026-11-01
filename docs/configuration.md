@@ -12,6 +12,8 @@
 | `CRON_SECRET` | Vercel cron | Không dùng làm user token |
 | `ENABLE_SYNC_ORCHESTRATOR` | Queue dispatcher | `false` mặc định; chỉ bật sau pilot một Page |
 | `SYNC_DISPATCH_BATCH` | Queue dispatcher | Số job tối đa mỗi invocation, giới hạn 1–100; mặc định `1` |
+| `ENABLE_POST_SYNC_WORKER` | Post metric worker | `false` mặc định; chỉ bật sau khi có request cụ thể và pilot |
+| `POST_SYNC_BATCH` | Post metric worker | Số yêu cầu bài viết tối đa mỗi invocation; mặc định `1` |
 | `META_APP_ID` | Meta OAuth | App ID |
 | `META_APP_SECRET` | Meta OAuth callback | Chỉ server-side |
 | `META_OAUTH_REDIRECT_URI` | Meta OAuth | Phải khớp tuyệt đối với Meta App; mặc định là `https://money.aiecom.vn/api/meta/callback` |

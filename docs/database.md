@@ -32,6 +32,8 @@
 
 Migration `20261101110000_post_observation_foundation.sql` đã tạo ba bảng này với RLS bật. API tạo yêu cầu và ghi provenance đã có; worker xử lý `post_sync_requests` và ghi `post_metric_snapshots` vẫn là bước tiếp theo, chưa tự động chạy production.
 
+Migration `20261101120000_post_sync_worker.sql` bổ sung `post_sync_attempts` và RPC `claim_post_sync_requests`; worker vẫn tắt mặc định bằng `ENABLE_POST_SYNC_WORKER`.
+
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
 - `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.

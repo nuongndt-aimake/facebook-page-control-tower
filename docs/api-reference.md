@@ -43,6 +43,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
 | `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |
 | `/api/posts/publication` | `POST` | Ghi nhận bài đăng ở Page/cộng đồng từ extension hoặc nhập thủ công | Supabase session + Page access |
+| `/api/cron/post-sync` | `GET/POST` | Xử lý các yêu cầu làm mới chỉ số bài viết đã được tạo | `CRON_SECRET` hoặc admin, feature flag |
 | `/api/public/application` | `GET` | Dữ liệu công khai cho landing/application | Công khai |
 
 ## Action chính của `/api/admin/access`
