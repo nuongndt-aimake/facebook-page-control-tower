@@ -33,6 +33,7 @@ Trước khi merge/deploy, người thực hiện phải trả lời:
 ## Checklist chức năng hoặc màn hình mới
 
 - [ ] Có route và navigator thống nhất.
+- [ ] Mọi route/tính năng mới phải có điểm neo rõ ràng trong navigator chung hoặc nút chức năng của màn hình liên quan; không để route chỉ có thể truy cập bằng cách tự nhớ URL.
 - [ ] Có access context/RBAC server-side.
 - [ ] Có RLS hoặc endpoint trung gian phù hợp.
 - [ ] Có trạng thái loading, empty, error và permission denied.
