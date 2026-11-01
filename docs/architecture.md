@@ -27,6 +27,8 @@ Vercel API ──► Meta Graph API
 - Supabase Database: registry, queue, snapshot, audit và phân quyền.
 - Meta: nguồn dữ liệu bên ngoài; không phải nguồn báo cáo trực tiếp sau khi snapshot.
 
+Chi tiết module và boundary triển khai xem [module-map.md](module-map.md). Không tạo Function riêng cho từng màn hình; màn hình mới phải gắn vào module nghiệp vụ và navigator hiện có.
+
 ## Luồng đồng bộ chuẩn
 
 1. Scheduler kiểm tra slot active.

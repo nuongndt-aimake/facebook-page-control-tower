@@ -21,6 +21,7 @@
 17. `documentation-audit.md` — kết quả audit chéo tài liệu, code, database và tích hợp.
 18. `change-governance.md` — quy ước bắt buộc cho mọi thay đổi sau này.
 19. `implementation-plan.md` — kế hoạch hành động, dependency, song song/tuần tự và pilot.
+20. `module-map.md` — bản đồ module nghiệp vụ, Function boundary và quy trình phát hành an toàn.
 
 ## Quy tắc quan trọng
 
