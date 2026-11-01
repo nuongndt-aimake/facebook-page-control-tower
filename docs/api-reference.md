@@ -35,7 +35,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/report` | `GET` | Registry Page, bài đăng và lần sync mới nhất | `DASHBOARD_ADMIN_KEY` |
 | `/api/meta/start` | `GET` | Tạo URL Meta OAuth | Supabase session |
 | `/api/meta/callback` | `GET` | Đổi OAuth code, lưu connection và redirect | OAuth state |
-| `/api/admin/access` | `GET` | Đọc Page/BM/user/assignment/group/payout/commission | `platform_admin`/`super_admin` |
+| `/api/admin/access` | `GET` | Đọc Page/BM/user/assignment/group/payout/commission và trạng thái sync gần nhất (`schedule_slots`, `sync_jobs`, `sync_runs`) | `platform_admin`/`super_admin` |
 | `/api/admin/access` | `POST` | Sync, gán Page, nhóm, nhân sự, payout, hoa hồng | Theo action và role |
 | `/api/admin/access` | `POST` `set_reporting_line` / `end_reporting_line` | Gán hoặc kết thúc một quan hệ quản lý–nhân viên độc lập với nhóm nội dung | `platform_admin`/`super_admin` |
 | `/api/admin/access` | `POST` `set_reporting_lines` / `end_reporting_lines` | Gán hoặc kết thúc nhiều nhân viên cho một quản lý trong một thao tác; mỗi nhân viên vẫn chỉ có một quản lý active | `platform_admin`/`super_admin` |
