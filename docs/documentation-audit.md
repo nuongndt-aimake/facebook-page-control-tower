@@ -13,7 +13,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 1. **Đã chạy:** HTML/JS, Vercel Functions, Supabase REST, Meta OAuth, registry Page/BM, access context và sync hiện tại.
 2. **Tương thích/legacy:** `/api/report` dùng `DASHBOARD_ADMIN_KEY`, `META_USER_ACCESS_TOKEN` trong `.env.meta.example`.
-3. **Roadmap:** worker queue/lock/snapshot daily, ba slot active, admin preview đầy đủ, mã hóa token. Control-plane tables và `admin_audit_logs` đã có migration nhưng chưa được dùng đầy đủ.
+3. **Roadmap:** worker queue/lock/snapshot daily, ba slot active, admin preview đầy đủ, mã hóa token. Control-plane tables và `admin_audit_logs` đã apply nhưng chưa được worker/audit integration dùng đầy đủ.
 
 ## Phát hiện và xử lý
 

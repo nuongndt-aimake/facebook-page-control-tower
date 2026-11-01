@@ -36,7 +36,7 @@
 
 Các bảng snapshot/queue/audit trong mục này là phần cần bổ sung để đáp ứng lịch đồng bộ ba slot và truy vết từng request; không được coi là đã tồn tại chỉ vì đã có trong roadmap.
 
-Migration `20261101090000_sync_orchestration_foundation.sql` đã tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`. Worker/dispatcher vẫn phải bật theo feature flag sau khi kiểm tra SQL, RLS và rollback.
+Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply production và tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`; cả 5 bảng đã được xác minh bật RLS. Worker/dispatcher vẫn phải bật theo feature flag sau khi kiểm tra rollback.
 
 ## Quy tắc migration
 

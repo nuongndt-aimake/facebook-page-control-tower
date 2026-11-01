@@ -56,3 +56,10 @@ Repository chuẩn: [nuongndt-aimake/facebook-page-control-tower](https://github
 
 Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ công, phải ghi lại commit SHA tương ứng trong release note.
 
+## Release gần nhất
+
+- Migration: `20261101090000_sync_orchestration_foundation.sql`
+- Trạng thái: đã apply Supabase production và xác minh 5 bảng/RLS.
+- Code commit: `08cc446a47c544e9b5ed2fe2ae663c86245fcf8c`
+- Worker/dispatcher: chưa bật production; chỉ mới triển khai control-plane.
+
