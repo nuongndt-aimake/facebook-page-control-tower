@@ -1,9 +1,28 @@
-import { accessContext, db, readBody, send } from "../_lib.mjs";
+import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync } from "../cron/sync.mjs";
+
+async function startPreview(request, response, actor) {
+  if (!(actor.profile.role === "platform_admin" || actor.profile.role === "super_admin") || actor.preview) throw new Error("Forbidden");
+  if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  const body = await readBody(request);
+  const targetId = String(body.user_id || "");
+  const targetEmail = String(body.user_email || "").trim().toLowerCase();
+  if ((!targetId && !targetEmail) || targetId === String(actor.user.id)) return send(response, 400, { error: "Chọn một tài khoản khác để xem trước" });
+  const rows = await db(`profiles?select=id,email,display_name,role,status&${targetId ? `id=eq.${encodeURIComponent(targetId)}` : `email=ilike.${encodeURIComponent(targetEmail)}`}&limit=1`);
+  const target = rows[0];
+  if (!target) return send(response, 404, { error: "Không tìm thấy tài khoản" });
+  if (["suspended", "deleted"].includes(target.status)) return send(response, 400, { error: "Không thể xem trước tài khoản đã đình chỉ hoặc xóa" });
+  const token = createAdminPreviewToken(actor.user.id, target.id);
+  await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: actor.user.id, action: "admin_preview_start", target_type: "profile", target_id: target.id, details: { read_only: true, target_role: target.role } }) });
+  response.setHeader("Set-Cookie", `adminPreviewToken=${token}; Max-Age=900; Path=/; SameSite=Lax`);
+  return send(response, 200, { ok: true, token, expires_in: 900, target: { id: target.id, email: target.email, display_name: target.display_name, role: target.role } });
+}
 
 export default async function handler(request, response) {
   try {
     const context = await accessContext(request);
+    const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
+    if (endpoint === "preview") return await startPreview(request, response, context);
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (!isAdmin) throw new Error("Forbidden");

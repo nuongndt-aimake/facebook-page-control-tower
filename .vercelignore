@@ -1,0 +1,3 @@
+api/posts/*.mjs
+api/cron/post-sync.mjs
+api/admin/preview.mjs

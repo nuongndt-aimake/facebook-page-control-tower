@@ -4,7 +4,8 @@
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access" }
+    { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access" },
+    { "source": "/api/admin/preview", "destination": "/api/admin/access?endpoint=preview" }
   ],
   "crons": [
     { "path": "/api/cron/sync", "schedule": "0 1 * * *" }

@@ -64,6 +64,7 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 - Deployment ở trạng thái `ERROR`, dù CLI trả về URL tạm thời, không được thông báo là đã phát hành.
 - Nếu deploy thủ công lỗi ở bước `Deploying outputs`, chạy `vercel pull --yes --environment production`, `vercel build --yes --environment production`, sau đó deploy lại bằng output đã build; nếu vẫn lỗi, kết nối GitHub và phát hành từ commit `main`.
 - Mọi route mới phải có điểm neo trong navigator dùng chung hoặc nút hành động của màn hình liên quan; route chỉ tồn tại qua URL trực tiếp là chưa hoàn chỉnh.
+- Gói Vercel hiện tại giữ tối đa 12 Functions production: preview được hợp nhất vào `/api/admin/access`; các worker bài viết vẫn giữ trong mã nguồn/tài liệu ở trạng thái Roadmap và chỉ đưa vào deployment khi có quota/worker phù hợp.
 
 ## Release gần nhất
 
