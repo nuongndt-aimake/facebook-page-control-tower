@@ -1,8 +1,8 @@
 # Kế hoạch hành động tăng tốc triển khai
 
-## Mục tiêu
+## Mục tiêu 2 ngày
 
-Đưa hệ thống từ trạng thái hiện tại lên phiên bản vận hành ổn định cho 50 Page, có thể mở rộng, trong khi giảm thời gian chờ giữa các nhóm công việc.
+Đưa hệ thống lên bản **MVP vận hành có kiểm soát** cho pilot nhỏ, ưu tiên không mất dữ liệu, không lộ quyền và có báo cáo đọc được. Không cam kết hoàn thành toàn bộ queue, payout, admin preview và ba slot tự động trong 2 ngày; các phần đó giữ trạng thái `Roadmap`.
 
 ## Nguyên tắc tăng tốc
 
@@ -92,7 +92,69 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 3. Theo dõi runtime, timeout, quota Meta và queue backlog.
 4. Chỉ bật 06:00/14:00/22:00 sau pilot và khi concurrency/lock ổn định.
 
-## Kế hoạch 10 ngày làm việc
+## Kế hoạch 2 ngày làm việc — emergency sprint
+
+### Ngày 1 — khóa nền tảng và đường găng
+
+| Khung | Lane A — backend/data | Lane B — UI/report | Lane C — QA/docs/deploy |
+| --- | --- | --- | --- |
+| 08:00–10:00 | Chốt schema hiện tại, backup, kiểm tra RLS và env | Chốt navigator, period/filter contract | Tạo baseline, fixture 5 Page, ghi blocker |
+| 10:00–13:00 | Sửa lỗi auth/access context và token leak | Sửa overlap/menu/mobile trên màn hình chính | Syntax check, secret scan, deploy Preview |
+| 14:00–17:00 | Ổn định `refresh_assets`, `sync_page`, phân loại lỗi | Hoàn thiện Page/content/revenue report | Smoke test quyền, callback Meta, logs |
+| 17:00–19:00 | Sync thử 1 Page và kiểm tra metrics | Kiểm tra desktop/mobile 390px | Cập nhật tài liệu và quyết định go/no-go ngày 2 |
+
+**Kết quả bắt buộc cuối ngày 1:** đăng nhập được, Meta callback đúng, refresh asset được, sync một Page được, báo cáo không gọi Meta trực tiếp, mobile menu hoạt động.
+
+### Ngày 2 — pilot và khóa phát hành
+
+| Khung | Lane A — backend/data | Lane B — UI/report | Lane C — QA/docs/deploy |
+| --- | --- | --- | --- |
+| 08:00–10:00 | Chạy pilot 5 Page, sửa lỗi token/permission | Tách nguồn BM/cá nhân và trạng thái dữ liệu | Đối chiếu `sync_runs`, log và dữ liệu thiếu |
+| 10:00–13:00 | Retry riêng Page lỗi, kiểm tra idempotency hiện có | Hoàn thiện bộ lọc, phân trang, card mobile | Regression auth/RBAC và payout visibility |
+| 14:00–16:00 | Chốt snapshot/metric hiện có, không mở rộng schema rủi ro | Visual QA toàn bộ màn hình chính | Deploy Production candidate |
+| 16:00–18:00 | Kiểm tra rollback và backup | Kiểm tra navigator mọi route | Nghiệm thu, ghi release note, cập nhật roadmap |
+
+**Kết quả bắt buộc cuối ngày 2:** pilot 5 Page đạt, dữ liệu lỗi được phân biệt với số 0, không có lỗi quyền nghiêm trọng, giao diện desktop/mobile không blocker, có rollback.
+
+## Phạm vi phải làm trong 2 ngày
+
+- Auth Google/Supabase và access context hiện có.
+- Meta OAuth callback production.
+- Asset registry BM/Page và phân biệt BM/cá nhân.
+- Manual `refresh_assets`, `sync_page`, sync period đang có.
+- Báo cáo Page, nội dung, doanh thu đọc từ dữ liệu đã lưu.
+- Navigator, mobile menu, responsive cho màn hình chính.
+- Kiểm tra quyền payout và role hiện có.
+- Tài liệu, smoke test, release note và rollback.
+
+## Phạm vi hoãn sau sprint 2 ngày
+
+- Ba slot 06:00/14:00/22:00 chạy tự động đầy đủ.
+- Queue/lock/dead-letter hoàn chỉnh nếu chưa đủ thời gian kiểm thử.
+- Daily snapshots toàn bộ metric.
+- Admin preview read-only có audit.
+- Handover nhân sự tự động.
+- Encryption/secret store migration lớn nếu có nguy cơ làm gián đoạn production.
+- Pilot 20/50 Page.
+
+Các mục hoãn phải giữ trong roadmap với trạng thái `Roadmap`, không xóa khỏi tài liệu.
+
+## Tiêu chí dừng triển khai
+
+Dừng mở rộng pilot nếu có một trong các điều kiện:
+
+- Token/secret xuất hiện trong response hoặc log.
+- User không được cấp quyền xem được Page/payout.
+- Meta callback hoặc Google login lỗi trên production.
+- Sync lỗi một Page làm hỏng toàn bộ run.
+- Báo cáo trộn sai kỳ dữ liệu hoặc biến lỗi request thành doanh thu 0.
+- Mobile menu không thao tác được hoặc layout bị overlap.
+
+## Kế hoạch sau 2 ngày
+
+Sau khi MVP ổn định, tiếp tục theo các mốc 1–2 ngày/lần: queue/lock → snapshot → payout/commission → admin preview → tăng pilot 20/50 Page. Mỗi mốc phải có nghiệm thu riêng, không gộp tất cả vào một lần deploy.
+
+## Lộ trình mở rộng 10 ngày — sau emergency sprint (không thuộc cam kết 2 ngày)
 
 | Ngày | Việc chính | Có thể chạy song song | Mốc nghiệm thu |
 | --- | --- | --- | --- |
