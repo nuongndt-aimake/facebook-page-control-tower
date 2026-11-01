@@ -29,6 +29,7 @@ Kế hoạch thực thi có dependency và workstream song song được chuẩn
 ## P3 — Quản trị
 
 - Nhân sự, tuyến quản lý, bàn giao.
+- Báo cáo kế thừa theo tuyến: người quản lý thấy người tuyến dưới và toàn bộ Page/Payout được gán, có nhãn trực tiếp/kế thừa.
 - Payout access.
 - Admin preview chỉ đọc (chưa triển khai đầy đủ).
 

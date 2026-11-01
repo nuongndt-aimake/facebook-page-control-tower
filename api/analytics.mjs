@@ -153,7 +153,10 @@ export default async function handler(request, response) {
       const payoutVisible = !restricted || !hasAnyPayoutLink || (paymentByPage.get(page.id) || []).length > 0;
       const pageEarnings = payoutVisible ? (pageManualEarnings || pageApproximateEarnings) : 0;
       const syncStatus = latestPageStatuses.get(String(page.id)) || null;
+      const source = context.pageSources?.[String(page.id)];
+      const accessScope = !restricted ? "platform" : (source?.direct && source?.inherited ? "direct_and_inherited" : source?.inherited ? "inherited" : "direct");
       return { ...page, asset_scope: page.custodian_business_id ? "bm" : "personal_or_outside_bm", posts: pagePosts.length, interactions, comments: interactionBreakdown.comments, shares: interactionBreakdown.shares, reactions: interactionBreakdown.reactions, interaction_breakdown: interactionBreakdown, payment_profiles: paymentByPage.get(page.id) || [], content_groups: groupsByPage.get(page.id) || [], metrics: perEntity.get(page.id) || {}, metric_names: metricNames,
+        access_scope: accessScope, assigned_user_ids: source?.user_ids || [], inherited_from_team: accessScope === "inherited" || accessScope === "direct_and_inherited",
         metric_last_at: lastMetricAt, metric_rows: pageMetricRows.length,
         sync_warnings: pageWarnings,
         sync_status: syncStatus,
@@ -186,6 +189,6 @@ export default async function handler(request, response) {
         pages: latestSync.summary?.pages || 0, metric_rows: latestSync.summary?.metric_rows || 0,
         failed_requests: latestSync.summary?.failed_requests || 0, empty_requests: latestSync.summary?.empty_requests || 0,
         warnings: Array.isArray(latestSync.summary?.warnings) ? latestSync.summary.warnings : [] } : null,
-      pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => ({ ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: interactionStats(post), metrics: perEntity.get(post.id) || {} })), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed }});
+      pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => ({ ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: interactionStats(post), metrics: perEntity.get(post.id) || {} })), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed, visible_user_ids: context.visibleUserIds || [], managed_user_ids: context.managedUserIds || [], direct_page_ids: context.directPageIds || [], inherited_page_ids: context.inheritedPageIds || [] }});
   } catch (error) { response.setHeader("Cache-Control", "no-store, max-age=0"); return send(response, error.message === "Unauthorized" ? 401 : error.message === "Forbidden" ? 403 : 500, { error: error.message }); }
 }

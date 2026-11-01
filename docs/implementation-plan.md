@@ -152,6 +152,14 @@ Post `2488016458602946` trong group `483081615763117` chưa tồn tại trong `p
 4. Triển khai admin preview read-only có audit.
 5. Triển khai handover nhân sự với successor bắt buộc.
 
+#### Bổ sung: phạm vi quản lý theo tuyến
+
+1. `team_memberships.parent_user_id` là nguồn sự thật cho cây quản lý; chỉ membership `active` mới tạo quyền kế thừa.
+2. `accessContext` phải trả về cả người dùng trực tiếp và toàn bộ tuyến dưới, cùng các Page/Payout được gán cho từng người.
+3. Báo cáo phải gắn provenance `direct`, `inherited` hoặc `direct_and_inherited`; không loại Page của tuyến dưới khỏi tổng hợp của tuyến trên.
+4. Khi membership kết thúc hoặc tài khoản bị đình chỉ, quyền kế thừa bị loại ở lần dựng context tiếp theo; không cấp quyền ngược từ dưới lên trên.
+5. Kiểm thử bắt buộc: nhiều tầng quản lý, Page gán đồng thời trực tiếp/kế thừa, payout access kế thừa, bàn giao successor và user không có membership.
+
 ### Giai đoạn 4 — UI và báo cáo
 
 1. Hoàn thiện navigator dùng chung trên mọi route.

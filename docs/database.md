@@ -26,6 +26,8 @@
 - `page_payment_profiles`: quan hệ nhiều-nhiều Page ↔ hồ sơ thanh toán.
 - `page_commissions`: lịch sử tỷ lệ chia sẻ theo người và thời gian hiệu lực.
 
+Quy tắc kế thừa quản lý: `team_memberships.parent_user_id` xác định tuyến trên/tuyến dưới. Khi người dùng đăng nhập, hệ thống tính toàn bộ cây người dùng đang active; Page và hồ sơ payout được gán cho tuyến dưới được đưa vào phạm vi báo cáo của tuyến trên. API báo cáo giữ provenance `direct`, `inherited` hoặc `direct_and_inherited` để không trộn lẫn quyền gán trực tiếp với quyền kế thừa.
+
 ## Kế hoạch dữ liệu bài viết và tương tác
 
 `posts` hiện là registry nội dung, còn lịch sử số liệu bài viết và yêu cầu làm mới vẫn là **Roadmap**. Thiết kế mục tiêu gồm `post_publications`, `post_metric_snapshots` và `post_sync_requests`; không ghi đè snapshot cũ và không coi thiếu quyền là giá trị 0. Chi tiết và thứ tự triển khai xem [implementation-plan.md](implementation-plan.md).

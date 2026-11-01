@@ -29,20 +29,32 @@ export async function accessContext(request) {
   }
   const profile = rows[0];
   if (profile.status === "suspended" || profile.status === "deleted") throw new Error("Forbidden");
-  if (profile.role === "platform_admin" || profile.role === "super_admin") return { user, profile, pageIds: [], paymentProfileIds: [], assignments: [], visibleUserIds: [user.id] };
+  if (profile.role === "platform_admin" || profile.role === "super_admin") return { user, profile, pageIds: [], paymentProfileIds: [], assignments: [], visibleUserIds: [user.id], managedUserIds: [], directPageIds: [], inheritedPageIds: [], pageSources: {} };
   const memberships = await db("team_memberships?select=user_id,parent_user_id,group_id,role&status=eq.active&limit=10000").catch(() => []);
   const visibleUserIds = new Set([user.id]);
   let changed = true;
   while (changed) { changed = false; for (const row of memberships) if (row.parent_user_id && visibleUserIds.has(row.parent_user_id) && !visibleUserIds.has(row.user_id)) { visibleUserIds.add(row.user_id); changed = true; } }
   const ids = [...visibleUserIds].map(encodeURIComponent).join(",");
   const [accessRows, assignmentRows, paymentRows] = await Promise.all([
-    db(`page_access?select=page_id&user_id=in.(${ids})&status=eq.active`),
+    db(`page_access?select=page_id,user_id&user_id=in.(${ids})&status=eq.active`),
     db(`page_assignments?select=page_id,assignment_role,group_name,topic,user_id&user_id=in.(${ids})&status=eq.active`),
     db(`payment_profile_access?select=payment_profile_id&user_id=in.(${ids})&status=eq.active`).catch(() => [])
   ]);
   const pageIds = [...new Set([...accessRows.map(row => row.page_id), ...assignmentRows.map(row => row.page_id)])];
   const paymentProfileIds = [...new Set(paymentRows.map(row => row.payment_profile_id))];
-  return { user, profile, pageIds, paymentProfileIds, assignments: assignmentRows, visibleUserIds: [...visibleUserIds] };
+  const sourceMap = {};
+  const addSource = (pageId, ownerId, source) => {
+    const key = String(pageId);
+    const item = sourceMap[key] || { direct: false, inherited: false, user_ids: [] };
+    item[source] = true;
+    if (ownerId && !item.user_ids.includes(String(ownerId))) item.user_ids.push(String(ownerId));
+    sourceMap[key] = item;
+  };
+  for (const row of accessRows) addSource(row.page_id, row.user_id, String(row.user_id) === String(user.id) ? "direct" : "inherited");
+  for (const row of assignmentRows) addSource(row.page_id, row.user_id, String(row.user_id) === String(user.id) ? "direct" : "inherited");
+  const directPageIds = Object.entries(sourceMap).filter(([, item]) => item.direct).map(([id]) => id);
+  const inheritedPageIds = Object.entries(sourceMap).filter(([, item]) => item.inherited && !item.direct).map(([id]) => id);
+  return { user, profile, pageIds, paymentProfileIds, assignments: assignmentRows, visibleUserIds: [...visibleUserIds], managedUserIds: [...visibleUserIds].filter(id => String(id) !== String(user.id)), directPageIds, inheritedPageIds, pageSources: sourceMap };
 }
 
 export async function requireViewer(request) {
