@@ -126,9 +126,11 @@ DASHBOARD_ADMIN_KEY
 CRON_SECRET
 META_APP_ID
 META_APP_SECRET
-META_REDIRECT_URI=https://money.aiecom.vn/api/meta/callback
+META_OAUTH_REDIRECT_URI=https://money.aiecom.vn/api/meta/callback
+META_OAUTH_STATE_SECRET=<random-secret>
 META_PAGE_METRICS
 META_POST_METRICS
+META_REPORT_VIEW_METRICS
 ```
 
 Sau khi đổi secret, redeploy production để Function nhận giá trị mới.

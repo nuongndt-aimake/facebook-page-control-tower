@@ -31,7 +31,7 @@ Authorization: Bearer <CRON_SECRET>
 | --- | --- | --- | --- |
 | `/api/auth/profile` | `GET` | Hồ sơ và access context của tài khoản | Supabase session |
 | `/api/analytics` | `GET` | Snapshot báo cáo đã lưu | Supabase session hoặc cấu hình tương thích hiện hữu |
-| `/api/report` | `GET` | Registry Page, bài đăng và lần sync mới nhất | Supabase session |
+| `/api/report` | `GET` | Registry Page, bài đăng và lần sync mới nhất | `DASHBOARD_ADMIN_KEY` |
 | `/api/meta/start` | `GET` | Tạo URL Meta OAuth | Supabase session |
 | `/api/meta/callback` | `GET` | Đổi OAuth code, lưu connection và redirect | OAuth state |
 | `/api/admin/access` | `GET` | Đọc Page/BM/user/assignment/group/payout/commission | `platform_admin`/`super_admin` |
@@ -54,8 +54,10 @@ Authorization: Bearer <CRON_SECRET>
 - `upsert_profile`, `link_page`, `unlink_page`, `set_manager`: quản lý payout profile.
 - `create_category`, `update_category`, `delete_category`.
 - `create_group`, `update_group`, `delete_group`, `assign_group`, `unassign_group`.
-- `assign_page_access`, `assign_team`, `set_user_role`, `suspend_user`, `delete_user`, `handover_user`.
+- `assign_page_access`, `assign_team`, `set_user_role`, `suspend_user`, `delete_user`.
 - `set_commission`.
+
+Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. `handover_user` cho việc chuyển assignment nhân sự vẫn là hạng mục cần hoàn thiện, chưa phải API hiện hữu.
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
 

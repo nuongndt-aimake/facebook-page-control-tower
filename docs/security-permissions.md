@@ -22,7 +22,7 @@ Quyền cần tách theo domain:
 
 Tuyến trên chỉ thấy dữ liệu tuyến dưới khi có membership active và không tự động có quyền ghi.
 
-## Admin preview
+## Admin preview — roadmap
 
-Admin xem trước bằng server-side access context của người dùng được chọn. Chế độ này chỉ đọc, không dùng token của người dùng, không được đồng bộ/cấp quyền/xóa và phải ghi `admin_audit_logs`.
+Chế độ admin xem trước là yêu cầu roadmap. Code hiện tại chưa có endpoint hoàn chỉnh để chuyển access context sang người dùng được chọn và chưa có bảng `admin_audit_logs`. Khi triển khai, phải dùng server-side access context, chỉ đọc, không dùng token của người dùng, không được đồng bộ/cấp quyền/xóa và phải ghi audit.
 

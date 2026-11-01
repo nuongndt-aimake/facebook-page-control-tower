@@ -12,14 +12,18 @@
 | `CRON_SECRET` | Vercel cron | Không dùng làm user token |
 | `META_APP_ID` | Meta OAuth | App ID |
 | `META_APP_SECRET` | Meta OAuth callback | Chỉ server-side |
-| `META_REDIRECT_URI` | Meta OAuth | Phải khớp tuyệt đối với Meta App |
+| `META_OAUTH_REDIRECT_URI` | Meta OAuth | Phải khớp tuyệt đối với Meta App; mặc định là `https://money.aiecom.vn/api/meta/callback` |
+| `META_OAUTH_STATE_SECRET` | Ký OAuth state | Secret bắt buộc để chống CSRF/replay |
+| `META_LOGIN_CONFIG_ID` | Meta Login for Business | Tùy chọn; nếu có thì code dùng `config_id` thay cho danh sách scope |
 | `META_CONNECTIONS_JSON` | Fallback connection | Không dùng nếu connection đã lưu trong DB |
 | `META_PAGE_METRICS` | Page insight metrics | Danh sách metric phân tách bằng dấu phẩy |
 | `META_POST_METRICS` | Post insight metrics | Danh sách metric phân tách bằng dấu phẩy |
+| `META_REPORT_VIEW_METRICS` | Chọn metric view ưu tiên khi dựng báo cáo | Tùy chọn |
 
 ## Tệp cục bộ
 
 - `.env.meta.example`: mẫu biến Meta, được phép commit.
+- `META_USER_ACCESS_TOKEN` trong `.env.meta.example` là biến legacy cho công cụ cũ; code Vercel hiện ưu tiên `META_CONNECTIONS_JSON` hoặc bảng `meta_connections`.
 - `.env.local`, `.env.meta-temp`: chỉ máy local, không commit.
 - Vercel Environment Variables phải tách theo `Development`, `Preview`, `Production`.
 

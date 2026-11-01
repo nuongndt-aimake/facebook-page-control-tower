@@ -26,7 +26,7 @@
 
 - Nhân sự, tuyến quản lý, bàn giao.
 - Payout access.
-- Admin preview chỉ đọc.
+- Admin preview chỉ đọc (chưa triển khai đầy đủ).
 
 ## P4 — UX và mở rộng
 

@@ -35,5 +35,5 @@ Chỉ loại thứ hai và thứ ba mới có thể dùng để suy luận "khô
 
 ## Bàn giao người dùng/Page
 
-Trước khi suspend/delete user, admin phải chọn người tiếp quản, chạy `handover_user`, kiểm tra số assignment/page/payout đã chuyển, sau đó mới kết thúc assignment cũ. Mọi thao tác phải có audit record.
+Việc chọn người tiếp quản và chuyển assignment nhân sự là roadmap; hiện chưa có action `handover_user` hoàn chỉnh. Không xóa/suspend trước khi có quy trình bàn giao được triển khai và kiểm thử. Bàn giao deal/Page hiện dùng `/api/admin/handover` và phải kiểm tra audit sau thao tác.
 

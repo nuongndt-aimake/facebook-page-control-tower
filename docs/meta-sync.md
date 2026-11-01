@@ -30,7 +30,7 @@ Có tối đa ba slot mặc định 06:00, 14:00 và 22:00 giờ Việt Nam. Slo
 2. Upsert BM/Page và ghi `page_connection_history`.
 3. Lấy Page token trong memory của serverless run; không trả về client.
 4. Lấy bài đăng, Page insights và post insights theo `since/until`.
-5. Upsert metric với khóa chống trùng.
+5. Upsert `metrics` với khóa chống trùng; daily snapshot riêng vẫn là roadmap.
 6. Ghi `sync_runs` với `failed_requests`, `empty_requests`, warnings và trạng thái từng Page.
 
 Nếu một Page không có token hợp lệ, trạng thái phải là lỗi quyền/token; không gán nhãn "chưa kiếm tiền" chỉ vì request thất bại.
