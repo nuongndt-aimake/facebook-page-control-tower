@@ -1,8 +1,22 @@
 # Kế hoạch hành động tăng tốc triển khai
 
-## Mục tiêu 2 ngày
+## Mục tiêu tối đa 48 giờ
 
-Đưa hệ thống lên bản **MVP vận hành có kiểm soát** cho pilot nhỏ, ưu tiên không mất dữ liệu, không lộ quyền và có báo cáo đọc được. Không cam kết hoàn thành toàn bộ queue, payout, admin preview và ba slot tự động trong 2 ngày; các phần đó giữ trạng thái `Roadmap`.
+Đưa hệ thống lên bản **MVP vận hành có kiểm soát** cho pilot nhỏ trong tối đa 48 giờ liên tục kể từ lúc bắt đầu sprint, ưu tiên không mất dữ liệu, không lộ quyền và có báo cáo đọc được. Không cam kết hoàn thành toàn bộ queue, payout, admin preview và ba slot tự động trong 48 giờ; các phần đó giữ trạng thái `Roadmap`.
+
+## AI acceleration model
+
+AI có thể đẩy nhanh đáng kể các phần nội bộ của dự án bằng cách phân tích code/schema, tạo migration/API/UI, chạy kiểm tra lặp lại, đối chiếu tài liệu và chuẩn hóa dữ liệu. Vì vậy các lane A–H có thể được chuẩn bị gần như đồng thời thay vì chờ từng bước thủ công.
+
+AI **không thể loại bỏ** các giới hạn bên ngoài: người dùng phải authorize Meta/Google, Meta phải trả quyền và dữ liệu, Vercel/Supabase phải nhận deployment/migration, DNS/SSL cần thời gian propagate và quota/rate limit vẫn áp dụng. Các điểm này là blocker ngoài khả năng tăng tốc bằng code.
+
+Nguyên tắc dùng AI trong 48 giờ:
+
+- tạo một contract/fixture chuẩn rồi tái sử dụng cho mọi lane;
+- tự động hóa syntax, link, secret scan và smoke test sau mỗi batch;
+- để AI đề xuất patch nhưng vẫn kiểm tra diff, quyền và migration trước commit;
+- không để tốc độ sinh code vượt quá tốc độ nghiệm thu dữ liệu/quyền;
+- mọi thay đổi vẫn tuân thủ `AGENTS.md` và change governance.
 
 ## Nguyên tắc tăng tốc
 
@@ -92,9 +106,9 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 3. Theo dõi runtime, timeout, quota Meta và queue backlog.
 4. Chỉ bật 06:00/14:00/22:00 sau pilot và khi concurrency/lock ổn định.
 
-## Kế hoạch 2 ngày làm việc — emergency sprint
+## Kế hoạch 48 giờ — emergency sprint
 
-### Ngày 1 — khóa nền tảng và đường găng
+### 0–24 giờ — khóa nền tảng và đường găng
 
 | Khung | Lane A — backend/data | Lane B — UI/report | Lane C — QA/docs/deploy |
 | --- | --- | --- | --- |
@@ -103,9 +117,9 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | 14:00–17:00 | Ổn định `refresh_assets`, `sync_page`, phân loại lỗi | Hoàn thiện Page/content/revenue report | Smoke test quyền, callback Meta, logs |
 | 17:00–19:00 | Sync thử 1 Page và kiểm tra metrics | Kiểm tra desktop/mobile 390px | Cập nhật tài liệu và quyết định go/no-go ngày 2 |
 
-**Kết quả bắt buộc cuối ngày 1:** đăng nhập được, Meta callback đúng, refresh asset được, sync một Page được, báo cáo không gọi Meta trực tiếp, mobile menu hoạt động.
+**Kết quả bắt buộc ở giờ 24:** đăng nhập được, Meta callback đúng, refresh asset được, sync một Page được, báo cáo không gọi Meta trực tiếp, mobile menu hoạt động.
 
-### Ngày 2 — pilot và khóa phát hành
+### 24–48 giờ — pilot và khóa phát hành
 
 | Khung | Lane A — backend/data | Lane B — UI/report | Lane C — QA/docs/deploy |
 | --- | --- | --- | --- |
@@ -114,9 +128,9 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | 14:00–16:00 | Chốt snapshot/metric hiện có, không mở rộng schema rủi ro | Visual QA toàn bộ màn hình chính | Deploy Production candidate |
 | 16:00–18:00 | Kiểm tra rollback và backup | Kiểm tra navigator mọi route | Nghiệm thu, ghi release note, cập nhật roadmap |
 
-**Kết quả bắt buộc cuối ngày 2:** pilot 5 Page đạt, dữ liệu lỗi được phân biệt với số 0, không có lỗi quyền nghiêm trọng, giao diện desktop/mobile không blocker, có rollback.
+**Kết quả bắt buộc ở giờ 48:** pilot 5 Page đạt, dữ liệu lỗi được phân biệt với số 0, không có lỗi quyền nghiêm trọng, giao diện desktop/mobile không blocker, có rollback.
 
-## Phạm vi phải làm trong 2 ngày
+## Phạm vi phải làm trong 48 giờ
 
 - Auth Google/Supabase và access context hiện có.
 - Meta OAuth callback production.
@@ -127,7 +141,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 - Kiểm tra quyền payout và role hiện có.
 - Tài liệu, smoke test, release note và rollback.
 
-## Phạm vi hoãn sau sprint 2 ngày
+## Phạm vi hoãn sau sprint 48 giờ
 
 - Ba slot 06:00/14:00/22:00 chạy tự động đầy đủ.
 - Queue/lock/dead-letter hoàn chỉnh nếu chưa đủ thời gian kiểm thử.
@@ -150,7 +164,7 @@ Dừng mở rộng pilot nếu có một trong các điều kiện:
 - Báo cáo trộn sai kỳ dữ liệu hoặc biến lỗi request thành doanh thu 0.
 - Mobile menu không thao tác được hoặc layout bị overlap.
 
-## Kế hoạch sau 2 ngày
+## Kế hoạch sau 48 giờ
 
 Sau khi MVP ổn định, tiếp tục theo các mốc 1–2 ngày/lần: queue/lock → snapshot → payout/commission → admin preview → tăng pilot 20/50 Page. Mỗi mốc phải có nghiệm thu riêng, không gộp tất cả vào một lần deploy.
 

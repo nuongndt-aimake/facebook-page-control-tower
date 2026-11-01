@@ -2,7 +2,7 @@
 
 Kế hoạch thực thi có dependency và workstream song song được chuẩn hóa tại [implementation-plan.md](implementation-plan.md).
 
-Ưu tiên hiện tại là emergency sprint 2 ngày; các hạng mục chưa đủ điều kiện sẽ giữ trạng thái `Roadmap` và không được mô tả là đã hoàn thành.
+Ưu tiên hiện tại là emergency sprint tối đa 48 giờ; các hạng mục chưa đủ điều kiện sẽ giữ trạng thái `Roadmap` và không được mô tả là đã hoàn thành.
 
 ## P0 — Nền tảng và an toàn
 
