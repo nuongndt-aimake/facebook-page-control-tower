@@ -1,5 +1,31 @@
 import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
-import { runSync } from "../cron/sync.mjs";
+import { runSync, runOrchestratedSync } from "../cron/sync.mjs";
+
+const todayUTC = () => new Date().toISOString().slice(0, 10);
+function syncRange(period) {
+  const today = todayUTC();
+  const days = { "7d": 6, "28d": 27, "60d": 59, "90d": 89, "365d": 364 };
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const previousEnd = new Date(`${monthStart}T12:00:00Z`);
+  previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+  const previousEndDate = previousEnd.toISOString().slice(0, 10);
+  const previousStart = `${previousEndDate.slice(0, 7)}-01`;
+  const since = period === "day" ? today
+    : period === "this_month" ? monthStart
+      : period === "last_month" ? previousStart
+        : days[period] !== undefined ? new Date(Date.now() - days[period] * 86400000).toISOString().slice(0, 10)
+          : new Date(Date.now() - 364 * 86400000).toISOString().slice(0, 10);
+  return { since, until: period === "last_month" ? previousEndDate : today };
+}
+
+async function executeManualSync({ period = "all", pageId = null } = {}) {
+  const effectivePeriod = period === "all" ? "365d" : period;
+  const range = syncRange(effectivePeriod);
+  if (String(process.env.ENABLE_SYNC_ORCHESTRATOR || "false").toLowerCase() === "true") {
+    return runOrchestratedSync({ ...range, period: effectivePeriod, slotKey: "manual", pageId });
+  }
+  return runSync({ ...range, force: true, ...(pageId ? { pageIds: [pageId] } : {}) });
+}
 
 async function startPreview(request, response, actor) {
   if (!(actor.profile.role === "platform_admin" || actor.profile.role === "super_admin") || actor.preview) throw new Error("Forbidden");
@@ -75,24 +101,16 @@ export default async function handler(request, response) {
         return send(response, 200, { ok: true, slot_key: slotKey, active, local_time: localTime, periods, max_concurrency: maxConcurrency });
       }
       if (body.action === "sync") {
-        const today = new Date().toISOString().slice(0, 10);
         const period = body.period || "all";
-        const days = { "7d": 6, "28d": 27, "60d": 59, "90d": 89, "365d": 364 };
-        const monthStart = `${today.slice(0, 7)}-01`;
-        const previousEnd = new Date(`${monthStart}T12:00:00Z`); previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
-        const previousEndDate = previousEnd.toISOString().slice(0, 10);
-        const previousStart = `${previousEndDate.slice(0, 7)}-01`;
-        const start = period === "day" ? today : period === "this_month" ? monthStart : period === "last_month" ? previousStart : days[period] !== undefined ? new Date(Date.now() - days[period] * 86400000).toISOString().slice(0, 10) : null;
-        const until = period === "last_month" ? previousEndDate : today;
-        const sync = await runSync({ force: true, ...(start ? { since: start, until } : {}) });
-        return send(response, 200, { ok: true, ...sync });
+        const sync = await executeManualSync({ period });
+        return send(response, 200, { ok: true, selected_period: period, ...sync });
       }
       if (body.action === "sync_page") {
         const pageId = String(body.page_id || "");
         if (!pageId) return send(response, 400, { error: "page_id là bắt buộc" });
         if (!isAdmin && (context.profile.role !== "manager" || !context.pageIds.includes(pageId))) throw new Error("Forbidden");
-        const sync = await runSync({ force: true, pageIds: [pageId] });
-        return send(response, 200, { ok: true, ...sync });
+        const sync = await executeManualSync({ period: body.period || "day", pageId });
+        return send(response, 200, { ok: true, selected_period: body.period || "day", page_id: pageId, ...sync });
       }
       if (body.action === "refresh_assets") {
         const today = new Date().toISOString().slice(0, 10);

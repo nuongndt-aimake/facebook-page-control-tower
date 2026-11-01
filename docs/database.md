@@ -47,6 +47,8 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 - `page_daily_snapshots`
 - `post_daily_snapshots`
 - `revenue_daily_snapshots`
+
+`page_daily_snapshots` là nguồn trạng thái theo Page và theo ngày quan sát: lưu cửa sổ dữ liệu, `status`, số bài, metric outcomes và `observed_at`. `metrics` lưu các dòng metric có khóa chống trùng; `sync_runs` lưu kết quả cấp phiên; `sync_jobs`/`sync_attempts` lưu hàng đợi và từng lần thử. Báo cáo phải chọn snapshot mới nhất nằm trong đúng chu kỳ đang lọc, không lấy một phiên đồng bộ của chu kỳ khác để đại diện.
 - `admin_audit_logs` đã có migration; các endpoint quản trị cần bổ sung ghi audit đầy đủ.
 
 Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.

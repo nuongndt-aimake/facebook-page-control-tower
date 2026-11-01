@@ -27,6 +27,12 @@ Màn hình `/connect-meta` đã có bảng cấu hình slot cho quản trị vi�
 
 `/api/admin/access` trả thêm `sync_job_counts` (bộ đếm toàn bộ job theo trạng thái), `sync_jobs` (100 job gần nhất) và `sync_runs` (20 phiên gần nhất). UI dùng `sync_job_counts` để đếm và `sync_jobs` để hiển thị chi tiết, tránh nhầm danh sách 100 bản ghi với tổng hàng đợi.
 
+Trang báo cáo và trang vận hành dùng chung một luồng điều phối. Đồng bộ chủ động theo Page nhận `period` của chu kỳ đang xem; đồng bộ toàn cục có thể chọn `all` (phạm vi tương đương 365 ngày). Khi `ENABLE_SYNC_ORCHESTRATOR=true`, cả thao tác chủ động và slot tự động đều đi qua `sync_jobs`/`sync_attempts`; khi cờ tắt, hệ thống giữ worker tương thích cũ nhưng vẫn ghi `sync_runs`.
+
+Trạng thái hiển thị theo Page lấy từ `page_daily_snapshots` trong đúng phạm vi báo cáo, không dùng mù quáng `sync_runs` mới nhất của một chu kỳ khác. `ok` là đã ghi nhận dữ liệu, `empty` là Meta trả thành công nhưng không có dòng, `warning` là có request lỗi và `not_available` là thiếu quyền/metric. Bản ghi snapshot không bị coi là `0` khi request thất bại.
+
+Cảnh báo Meta hiện được lưu trong `sync_runs.summary.warnings`, `page_daily_snapshots.metrics_json.outcomes` và `pages.current_status`. Các cảnh báo Graph API/permission được hiển thị theo Page; trạng thái vi phạm chính sách chi tiết chỉ được bổ sung khi Meta cấp endpoint/quyền tương ứng, không tự suy diễn từ doanh thu hoặc dữ liệu rỗng.
+
 ## Retry và lỗi
 
 - Lỗi quyền: đánh dấu `permission_error`, không retry vô hạn.

@@ -54,7 +54,7 @@ Authorization: Bearer <CRON_SECRET>
 `POST` nhận JSON có `action`. Các action đang có trong code:
 
 - `sync`: đồng bộ theo `period`: `day`, `7d`, `28d`, `60d`, `90d`, `365d`, `this_month`, `last_month`, hoặc `all`.
-- `sync_page`: đồng bộ chủ động một Page với `page_id`.
+- `sync_page`: đồng bộ chủ động một Page với `page_id` và `period`; nếu không truyền, mặc định là chu kỳ `day`.
 - `refresh_assets`: làm mới registry Page/BM và snapshot ngày hiện tại.
 - `assign_page`: gán Page cho user/nhóm/chủ đề.
 - `upsert_profile`, `link_page`, `unlink_page`, `set_manager`: quản lý payout profile.
@@ -70,7 +70,7 @@ Mọi action mới phải được thêm vào bảng này, kiểm tra role ở s
 
 Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `concurrency`, `pacing`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100 nhưng còn bị chặn bởi `sync_schedule_slots.max_concurrency` (vận hành 1–10); luồng cũ vẫn là mặc định khi cờ tắt.
 
-`/api/admin/access` trả `sync_job_counts` là bộ đếm theo trạng thái trên toàn bộ job đọc được; `sync_jobs` chỉ là danh sách gần nhất để hiển thị chi tiết, không dùng làm nguồn đếm tổng.
+`/api/admin/access` trả `sync_job_counts` là bộ đếm theo trạng thái trên toàn bộ job đọc được; `sync_jobs` chỉ là danh sách gần nhất để hiển thị chi tiết, không dùng làm nguồn đếm tổng. Thao tác `sync` trả thêm `selected_period`; `all` dùng cửa sổ 365 ngày. Thao tác `sync_page` trả `page_id` và chu kỳ đã thực thi.
 
 API làm mới chỉ số bài viết (`post_sync_request`) và ingest bài đăng cộng đồng (`post_publications`) đã tích hợp vào `/api/analytics` qua rewrite/action; worker `/api/cron/post-sync` tích hợp vào `/api/cron/sync?worker=post`. Cả hai vẫn có feature flag và mặc định không tự chạy hàng loạt.
 
