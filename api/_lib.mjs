@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 const GRAPH_VERSION = "v26.0";
 const GRAPH = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
@@ -18,8 +20,23 @@ export async function authenticatedUser(request) {
   return { ...(await response.json()), access_token: bearer };
 }
 
-export async function accessContext(request) {
-  const user = await authenticatedUser(request);
+function previewSecret() { return process.env.DASHBOARD_ADMIN_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ""; }
+function encodePreview(value) { return Buffer.from(JSON.stringify(value)).toString("base64url"); }
+function signPreview(payload) { return crypto.createHmac("sha256", previewSecret()).update(payload).digest("base64url"); }
+export function createAdminPreviewToken(actorId, targetId, ttlSeconds = 900) {
+  const payload = encodePreview({ actor_id: String(actorId), target_id: String(targetId), exp: Math.floor(Date.now() / 1000) + ttlSeconds });
+  return `${payload}.${signPreview(payload)}`;
+}
+function readAdminPreviewToken(token, actorId) {
+  if (!token || !previewSecret()) throw new Error("Preview token không hợp lệ");
+  const [payload, signature] = String(token).split(".");
+  const expected = signPreview(payload);
+  if (!payload || !signature || signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) throw new Error("Preview token không hợp lệ");
+  const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+  if (String(data.actor_id) !== String(actorId) || Number(data.exp) < Math.floor(Date.now() / 1000)) throw new Error("Preview token đã hết hạn");
+  return data;
+}
+async function profileForUser(user) {
   let rows = await db(`profiles?select=id,email,display_name,role,status&id=eq.${encodeURIComponent(user.id)}&limit=1`);
   if (!rows.length) {
     const configured = (process.env.PLATFORM_ADMIN_EMAIL || "").trim().toLowerCase();
@@ -27,9 +44,11 @@ export async function accessContext(request) {
     await db("profiles?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: user.id, email: user.email || null, display_name: user.user_metadata?.full_name || user.email || null, role }) });
     rows = [{ id: user.id, email: user.email, display_name: user.user_metadata?.full_name || user.email, role, status: "active" }];
   }
-  const profile = rows[0];
+  return rows[0];
+}
+async function accessContextForUser(user, profile, preview = null) {
   if (profile.status === "suspended" || profile.status === "deleted") throw new Error("Forbidden");
-  if (profile.role === "platform_admin" || profile.role === "super_admin") return { user, profile, pageIds: [], paymentProfileIds: [], assignments: [], visibleUserIds: [user.id], managedUserIds: [], directPageIds: [], inheritedPageIds: [], pageSources: {} };
+  if (profile.role === "platform_admin" || profile.role === "super_admin") return { user, profile, pageIds: [], paymentProfileIds: [], assignments: [], visibleUserIds: [user.id], managedUserIds: [], directPageIds: [], inheritedPageIds: [], pageSources: {}, preview };
   const memberships = await db("team_memberships?select=user_id,parent_user_id,group_id,role&status=eq.active&limit=10000").catch(() => []);
   const visibleUserIds = new Set([user.id]);
   let changed = true;
@@ -54,7 +73,21 @@ export async function accessContext(request) {
   for (const row of assignmentRows) addSource(row.page_id, row.user_id, String(row.user_id) === String(user.id) ? "direct" : "inherited");
   const directPageIds = Object.entries(sourceMap).filter(([, item]) => item.direct).map(([id]) => id);
   const inheritedPageIds = Object.entries(sourceMap).filter(([, item]) => item.inherited && !item.direct).map(([id]) => id);
-  return { user, profile, pageIds, paymentProfileIds, assignments: assignmentRows, visibleUserIds: [...visibleUserIds], managedUserIds: [...visibleUserIds].filter(id => String(id) !== String(user.id)), directPageIds, inheritedPageIds, pageSources: sourceMap };
+  return { user, profile, pageIds, paymentProfileIds, assignments: assignmentRows, visibleUserIds: [...visibleUserIds], managedUserIds: [...visibleUserIds].filter(id => String(id) !== String(user.id)), directPageIds, inheritedPageIds, pageSources: sourceMap, preview };
+}
+export async function accessContext(request) {
+  const actor = await authenticatedUser(request);
+  const actorProfile = await profileForUser(actor);
+  const cookieToken = String(request.headers.cookie || "").split(';').map(item => item.trim()).find(item => item.startsWith('adminPreviewToken='))?.slice('adminPreviewToken='.length);
+  const previewHeader = request.headers["x-admin-preview-token"] || cookieToken;
+  if (previewHeader) {
+    if (!["platform_admin", "super_admin"].includes(actorProfile.role)) throw new Error("Forbidden");
+    const preview = readAdminPreviewToken(previewHeader, actor.id);
+    const targetRows = await db(`profiles?select=id,email,display_name,role,status&id=eq.${encodeURIComponent(preview.target_id)}&limit=1`);
+    if (!targetRows.length) throw new Error("Không tìm thấy tài khoản xem trước");
+    return accessContextForUser({ id: targetRows[0].id, email: targetRows[0].email, user_metadata: { full_name: targetRows[0].display_name } }, targetRows[0], { actor_user_id: actor.id, target_user_id: targetRows[0].id, read_only: true, expires_at: new Date(preview.exp * 1000).toISOString() });
+  }
+  return accessContextForUser(actor, actorProfile);
 }
 
 export async function requireViewer(request) {

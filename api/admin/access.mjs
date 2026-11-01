@@ -29,6 +29,7 @@ export default async function handler(request, response) {
       return send(response, 200, { pages, businesses, users, access, assignments, histories, payment_profiles: paymentProfiles, groups: loadedGroups, categories: loadedCategories, team, page_groups: pageGroups, payment_access: paymentAccess, commissions, links: pagePaymentProfiles, payment_profile_managers: paymentProfileManagers });
     }
     if (request.method === "POST") {
+      if (context.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");
       const body = await readBody(request);
       if (!isAdmin && body.action !== "sync_page") throw new Error("Forbidden");
       if (body.action === "sync") {

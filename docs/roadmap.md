@@ -31,7 +31,7 @@ Kế hoạch thực thi có dependency và workstream song song được chuẩn
 - Nhân sự, tuyến quản lý, bàn giao.
 - Báo cáo kế thừa theo tuyến: người quản lý thấy người tuyến dưới và toàn bộ Page/Payout được gán, có nhãn trực tiếp/kế thừa.
 - Payout access.
-- Admin preview chỉ đọc (chưa triển khai đầy đủ).
+- Admin preview chỉ đọc có token hết hạn, audit và nút trở về đã triển khai; cần tiếp tục kiểm thử nhiều tầng trên dữ liệu membership thực tế.
 
 ## P4 — UX và mở rộng
 

@@ -30,6 +30,7 @@ Authorization: Bearer <CRON_SECRET>
 | Endpoint | Phương thức | Mục đích | Quyền chính |
 | --- | --- | --- | --- |
 | `/api/auth/profile` | `GET` | Hồ sơ và access context của tài khoản | Supabase session |
+| `/api/admin/preview` | `POST` | Tạo phiên xem trước access context của user, read-only, hết hạn 15 phút | `platform_admin`/`super_admin` |
 | `/api/analytics` | `GET` | Snapshot báo cáo đã lưu | Supabase session hoặc cấu hình tương thích hiện hữu |
 | `/api/report` | `GET` | Registry Page, bài đăng và lần sync mới nhất | `DASHBOARD_ADMIN_KEY` |
 | `/api/meta/start` | `GET` | Tạo URL Meta OAuth | Supabase session |

@@ -26,7 +26,7 @@ Manager/lead xem được người tuyến dưới đang active và tài sản �
 
 Tuyến trên chỉ thấy dữ liệu tuyến dưới khi có membership active và không tự động có quyền ghi.
 
-## Admin preview — roadmap
+## Admin preview — đã triển khai có kiểm soát
 
-Chế độ admin xem trước là yêu cầu roadmap. Code hiện tại chưa có endpoint hoàn chỉnh để chuyển access context sang người dùng được chọn và chưa có bảng `admin_audit_logs`. Khi triển khai, phải dùng server-side access context, chỉ đọc, không dùng token của người dùng, không được đồng bộ/cấp quyền/xóa và phải ghi audit.
+`platform_admin`/`super_admin` có thể tạo phiên xem trước 15 phút qua `/api/admin/preview`. Mỗi request dùng session Supabase của quản trị viên kèm preview token ký server-side; server dựng access context của tài khoản đích, không dùng token của tài khoản đích. Chế độ này chỉ đọc, chặn các thao tác POST quản trị/đồng bộ, có banner và nút trở về góc nhìn quản trị viên. Mỗi lần bắt đầu được ghi vào `admin_audit_logs`.
 
