@@ -160,11 +160,34 @@ export default async function handler(request, response) {
         await db("user_reporting_lines?on_conflict=employee_user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ employee_user_id: employeeId, manager_user_id: managerId, status: "active", effective_from: body.effective_from || new Date().toISOString().slice(0, 10), ended_at: null, created_by: context.user.id, note: body.note || null, updated_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true, employee_user_id: employeeId, manager_user_id: managerId });
       }
+      if (body.action === "set_reporting_lines") {
+        const managerId = String(body.manager_user_id || "");
+        const employeeIds = [...new Set((Array.isArray(body.employee_user_ids) ? body.employee_user_ids : []).map(String).filter(Boolean))];
+        if (!managerId || !employeeIds.length) return send(response, 400, { error: "Quản lý và danh sách nhân viên là bắt buộc" });
+        if (employeeIds.includes(managerId)) return send(response, 400, { error: "Quản lý không thể đồng thời là nhân viên của chính mình" });
+        const lines = await db("user_reporting_lines?select=employee_user_id,manager_user_id&status=eq.active&limit=10000").catch(() => []);
+        const parentByEmployee = new Map(lines.map(row => [String(row.employee_user_id), String(row.manager_user_id)]));
+        const now = new Date().toISOString();
+        for (const employeeId of employeeIds) {
+          const parents = new Map(parentByEmployee);
+          parents.delete(employeeId);
+          let cursor = managerId;
+          for (let i = 0; i < 100 && cursor; i++) { if (cursor === employeeId) return send(response, 409, { error: `Không thể tạo vòng lặp tuyến cho nhân viên ${employeeId}` }); cursor = parents.get(cursor); }
+        }
+        await db("user_reporting_lines?on_conflict=employee_user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(employeeIds.map(employee_user_id => ({ employee_user_id, manager_user_id: managerId, status: "active", effective_from: body.effective_from || now.slice(0, 10), ended_at: null, created_by: context.user.id, note: body.note || null, updated_at: now }))) });
+        return send(response, 200, { ok: true, manager_user_id: managerId, employee_user_ids: employeeIds });
+      }
       if (body.action === "end_reporting_line") {
         const employeeId = String(body.employee_user_id || "");
         if (!employeeId) return send(response, 400, { error: "employee_user_id là bắt buộc" });
         await db(`user_reporting_lines?employee_user_id=eq.${encodeURIComponent(employeeId)}&status=eq.active`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true });
+      }
+      if (body.action === "end_reporting_lines") {
+        const employeeIds = [...new Set((Array.isArray(body.employee_user_ids) ? body.employee_user_ids : []).map(String).filter(Boolean))];
+        if (!employeeIds.length) return send(response, 400, { error: "Chưa chọn quan hệ để kết thúc" });
+        await db(`user_reporting_lines?employee_user_id=in.(${employeeIds.map(encodeURIComponent).join(",")})&status=eq.active`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }) });
+        return send(response, 200, { ok: true, employee_user_ids: employeeIds });
       }
       if (body.action === "set_user_status") {
         const userId = String(body.user_id || "");

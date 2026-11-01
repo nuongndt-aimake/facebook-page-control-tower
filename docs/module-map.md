@@ -42,11 +42,14 @@ Không cho UI gọi Meta trực tiếp. UI chỉ đọc read model hoặc tạo 
 Menu quản trị là một phần hạ tầng dùng chung, không phải cấu hình riêng của từng màn hình:
 
 - `auth-nav.js` là nguồn cấu hình chuẩn cho toàn bộ màn hình đã xác thực.
-- Thứ tự chuẩn: Tổng quan, Page, Nội dung, Doanh thu, Payout, Hoa hồng, Tài sản, Nhóm nội dung, Nhân sự, Tuyến quản lý, Kết nối Meta, Tài khoản.
+- Menu được chia hai lớp: lớp module lớn (`Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`) và lớp route con bên trong từng module.
+- Route chuẩn: Báo cáo gồm Page, Nội dung, Doanh thu, Payout, Hoa hồng; Vận hành gồm Tài sản, Nhóm nội dung, Nhân sự, Tuyến quản lý, Kết nối Meta.
 - Mỗi mục chỉ có một URL chuẩn; màn hình cũ có thể giữ route tương thích nhưng không được tạo thêm mục menu trùng lặp.
 - Menu desktop dùng thanh điều hướng cố định; menu mobile dùng cùng danh sách liên kết trong panel có `z-index` riêng, đóng khi chọn liên kết, bấm ngoài hoặc nhấn Escape.
 - Các trang marketing công khai không dùng menu quản trị; chúng có luồng điều hướng công khai và nút đăng nhập riêng.
 - Khi thêm route mới, phải bổ sung vào cấu hình menu, kiểm tra quyền RBAC, điểm neo từ một màn hình hiện có và test ở desktop/mobile trước khi phát hành.
+
+Quan hệ quản lý–nhân viên là quan hệ một-nhiều: một quản lý có thể có nhiều nhân viên, nhưng mỗi nhân viên chỉ có tối đa một `user_reporting_lines` đang active. Màn hình `/team` dùng bộ chọn chuẩn: tìm kiếm, checkbox từng dòng, chọn tất cả/bỏ chọn tất cả riêng cho từng danh sách, bộ đếm và lọc chỉ các mục đang chọn. Ghi nhiều quan hệ được gửi theo một thao tác lưu; kết thúc nhiều quan hệ cũng có thao tác hàng loạt và vẫn giữ lịch sử trong DB.
 
 Phiên bản cache-bust hiện tại của tài nguyên menu là `20261101-7`. Khi thay đổi hành vi menu, cập nhật phiên bản này trên các HTML admin và ghi lại trong changelog; không xóa các route cũ khỏi tài liệu, chỉ đánh dấu hết hiệu lực nếu đã được thay thế.
 

@@ -5,11 +5,11 @@
   if(!window.supabase)return;
   const client=window.__authNavClient||supabase.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr');window.__authNavClient=client;
   const nav=document.querySelector('#quick-nav,.quick-nav');if(!nav)return;nav.id='quick-nav';nav.classList.add('quick-nav');const wrap=nav.querySelector(':scope>div');if(!wrap)return;
-  const canonical=[['/analytics','Tổng quan'],['/report-pages','Page'],['/report-content','Nội dung'],['/report-revenue','Doanh thu'],['/payout','Payout'],['/commissions','Hoa hồng'],['/access','Tài sản'],['/groups','Nhóm nội dung'],['/users','Nhân sự'],['/team','Tuyến quản lý'],['/connect-meta','Kết nối Meta'],['/account','Tài khoản']];
+  const canonical=[['Tổng quan',[['/analytics','Tổng quan']]],['Báo cáo',[['/report-pages','Page'],['/report-content','Nội dung'],['/report-revenue','Doanh thu'],['/payout','Payout'],['/commissions','Hoa hồng']]],['Vận hành',[['/access','Tài sản'],['/groups','Nhóm nội dung'],['/users','Nhân sự'],['/team','Tuyến quản lý'],['/connect-meta','Kết nối Meta']]],['Tài khoản',[['/account','Tài khoản']]]];
   const session=(await client.auth.getSession()).data.session;
   const brand=wrap.querySelector('.brand')||Object.assign(document.createElement('a'),{className:'brand',href:'/'});if(!brand.textContent.trim())brand.innerHTML='AI<span>/</span>FB MONEY';
   const links=document.createElement('div');links.className='quick-menu-links';links.id='quick-menu-links';const path=location.pathname.replace(/\.html$/,'')||'/';
-  canonical.forEach(([href,label])=>{const a=document.createElement('a');a.href=href;a.textContent=label;if(path===href||path.startsWith(href+'/'))a.classList.add('active');links.appendChild(a)});
+  canonical.forEach(([group,items])=>{const section=document.createElement('div');section.className='quick-menu-group';const title=document.createElement('span');title.className='quick-menu-group-label';title.textContent=group;section.appendChild(title);items.forEach(([href,label])=>{const a=document.createElement('a');a.href=href;a.textContent=label;if(path===href||path.startsWith(href+'/'))a.classList.add('active');section.appendChild(a)});links.appendChild(section)});
   const account=document.createElement('span');account.className='quick-account';
   if(session){
     const meta=document.createElement('span');meta.className='quick-account-meta';meta.textContent=session.user?.email||'Đã đăng nhập';meta.title='Tài khoản đang đăng nhập';
