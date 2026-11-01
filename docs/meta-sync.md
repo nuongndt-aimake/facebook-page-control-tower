@@ -17,7 +17,7 @@ Có tối đa ba slot mặc định 06:00, 14:00 và 22:00 giờ Việt Nam. Slo
 
 ## Queue dispatcher có cờ bật/tắt
 
-Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi `ENABLE_SYNC_ORCHESTRATOR=false` (mặc định), `/api/cron/sync` giữ luồng cũ. Khi bật, endpoint sẽ xếp job theo Page/kết nối/kỳ, nhận việc bằng `FOR UPDATE SKIP LOCKED`, ghi attempt và retry lỗi tối đa 3 lần. `SYNC_DISPATCH_BATCH` giới hạn số job mỗi invocation để phù hợp quota Vercel/Meta. Pilot Page `1217277164808495` đã đạt `succeeded`, 1 attempt, 4 metric rows, không có request lỗi/empty; trước khi bật hàng loạt vẫn phải pilot 5 Page.
+Control-plane gồm `sync_jobs`, `sync_attempts` và RPC `claim_sync_jobs`. Khi `ENABLE_SYNC_ORCHESTRATOR=false` (mặc định), `/api/cron/sync` giữ luồng cũ. Khi bật, endpoint sẽ xếp job theo Page/kết nối/kỳ, nhận việc bằng `FOR UPDATE SKIP LOCKED`, ghi attempt và retry lỗi tối đa 3 lần. `SYNC_DISPATCH_BATCH` giới hạn số job mỗi invocation để phù hợp quota Vercel/Meta. Pilot 5 Page đã đạt 5/5 `succeeded`, mỗi job 1 attempt và 4 metric rows, không có request lỗi/empty; đồng bộ hàng loạt vẫn chưa bật.
 
 **Hiện trạng:** `vercel.json` hiện chỉ khai báo cron `0 1 * * *` (một lần/ngày theo UTC). Bảng slot, idempotency, queue/lock và RPC claim đã có; dispatcher vẫn tắt mặc định để tránh bật hàng loạt ngoài pilot.
 

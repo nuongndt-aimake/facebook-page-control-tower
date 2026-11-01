@@ -207,7 +207,8 @@ async function enqueueSyncJobs({ since, until, period = "day", slotKey = "manual
   const now = new Date().toISOString();
   const jobs = [];
   const warnings = [];
-  const persistedSlotKey = ["manual", "pilot"].includes(String(slotKey)) ? null : slotKey;
+  const slotValue = String(slotKey || "manual");
+  const persistedSlotKey = slotValue === "manual" || slotValue.startsWith("pilot") ? null : slotKey;
   for (const connection of await connections()) {
     let resolved;
     try {
