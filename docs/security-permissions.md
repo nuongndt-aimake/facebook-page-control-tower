@@ -30,3 +30,5 @@ Tuyến trên chỉ thấy dữ liệu tuyến dưới khi có membership active
 
 `platform_admin`/`super_admin` có thể tạo phiên xem trước 15 phút qua `/api/admin/preview`. Mỗi request dùng session Supabase của quản trị viên kèm preview token ký server-side; server dựng access context của tài khoản đích, không dùng token của tài khoản đích. Chế độ này chỉ đọc, chặn các thao tác POST quản trị/đồng bộ, có banner và nút trở về góc nhìn quản trị viên. Mỗi lần bắt đầu được ghi vào `admin_audit_logs`.
 
+Luồng khởi tạo phải đi từ nút **Xem trước** trên đúng dòng tài khoản ở `/users`. Nút gửi trực tiếp `user_id` và `user_email` tới endpoint (không suy diễn ID từ nội dung hiển thị), lưu token vào session storage và cookie 15 phút, rồi chuyển tới `/analytics?preview=1`. Nút không xuất hiện cho chính tài khoản quản trị viên đang đăng nhập; tài khoản `suspended`/`deleted` bị từ chối. Khi đang preview, banner cố định cho phép thoát và xóa cả token trong storage/cookie.
+
