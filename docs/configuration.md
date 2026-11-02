@@ -10,8 +10,9 @@
 | `PLATFORM_ADMIN_EMAIL` | Bootstrap profile đầu tiên | Chuẩn hóa lowercase |
 | `DASHBOARD_ADMIN_KEY` | Admin key tương thích/legacy | Luân phiên định kỳ |
 | `CRON_SECRET` | Vercel cron | Không dùng làm user token |
-| `ENABLE_SYNC_ORCHESTRATOR` | Queue dispatcher | `false` mặc định; chỉ bật sau pilot một Page |
-| `SYNC_DISPATCH_BATCH` | Queue dispatcher | Số job tối đa mỗi invocation, giới hạn 1–100; mặc định `1` |
+| `ENABLE_SYNC_ORCHESTRATOR` | Queue dispatcher | Cron có `slot=slot_06/slot_14/slot_22` sẽ dùng dispatcher theo slot; bật `true` để cả các invocation thủ công không chỉ định slot dùng cùng cơ chế |
+| `SYNC_DISPATCH_BATCH` | Queue dispatcher | Số job tối đa mỗi invocation, giới hạn 1–100; mặc định `1`, nên tăng thận trọng theo quota Meta/Vercel |
+| `ENABLE_POST_SYNC_WORKER` | Post metric worker | `true` để cron `/api/cron/post-sync` nhận các yêu cầu cập nhật tương tác bài viết |
 | `SYNC_JOB_DELAY_MS` | Queue pacing | Delay tối thiểu giữa job trong cùng batch; mặc định `900`, server giới hạn 250–10000 ms |
 | `SYNC_JOB_JITTER_MS` | Queue pacing | Jitter ngẫu nhiên để tránh nhịp gọi đều; mặc định `300`, server giới hạn 0–3000 ms |
 | `ENABLE_POST_SYNC_WORKER` | Post metric worker | `false` mặc định; chỉ bật sau khi có request cụ thể và pilot |

@@ -26,8 +26,8 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 | Cao | `handover_user` từng được mô tả như API có sẵn | Đã đánh dấu roadmap; bàn giao deal hiện dùng `/api/admin/handover` |
 | Cao | Admin preview cần kiểm thử nhiều tầng membership thực tế | Endpoint read-only, token hết hạn và audit đã có; tiếp tục pilot dữ liệu thật |
 | Cao | Token Meta còn được lưu ở `meta_connections.user_access_token` | Đã ghi rõ rủi ro và đưa encryption/secret store vào P0 |
-| Trung bình | Ba slot 06:00/14:00/22:00 chưa tương thích cron Hobby và `vercel.json` hiện chỉ có một cron/ngày | Đã ghi rõ hiện trạng và điều kiện triển khai |
-| Trung bình | Ba slot lịch vẫn inactive và dispatcher chưa mở hàng loạt | Snapshot/queue/attempt/lock đã có migration; chỉ bật từng slot sau pilot và kiểm tra quota |
+| Trung bình | Cron Hobby có độ trễ trong phạm vi một giờ | Đã cấu hình ba cron một lần/ngày theo UTC tương ứng 06:00/14:00/22:00 Việt Nam; mỗi slot vẫn tôn trọng `active` và `periods` |
+| Trung bình | Hàng chờ cần giới hạn theo concurrency/quota | Dispatcher đọc `max_concurrency`, claim nguyên tử và ghi attempt; cần theo dõi `sync_jobs`/`sync_attempts` sau khi bật slot thật |
 | Thấp | `META_USER_ACCESS_TOKEN` còn trong file mẫu legacy | Đã ghi chú để không dùng nhầm cho Vercel production |
 
 ## Đối chiếu cấu trúc
@@ -46,7 +46,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 ### Bảng đã có nhưng còn giới hạn vận hành
 
-`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`, `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` và RPC claim đã có migration. Dispatcher và cả ba slot lịch vẫn bị khóa mặc định.
+`page_daily_snapshots`, `post_daily_snapshots`, `revenue_daily_snapshots`, `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks`, `admin_audit_logs` và RPC claim đã có migration. Ba cron gọi dispatcher theo slot; slot nào inactive sẽ không tạo/claim job.
 
 ## Kiểm thử đã thực hiện
 

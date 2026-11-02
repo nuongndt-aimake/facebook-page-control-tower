@@ -11,6 +11,9 @@
     { "source": "/api/cron/post-sync", "destination": "/api/cron/sync?worker=post" }
   ],
   "crons": [
-    { "path": "/api/cron/sync", "schedule": "0 1 * * *" }
+    { "path": "/api/cron/sync?slot=slot_06", "schedule": "0 23 * * *" },
+    { "path": "/api/cron/sync?slot=slot_14", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/sync?slot=slot_22", "schedule": "0 15 * * *" },
+    { "path": "/api/cron/post-sync", "schedule": "30 16 * * *" }
   ]
 }

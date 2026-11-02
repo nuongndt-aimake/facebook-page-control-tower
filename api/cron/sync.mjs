@@ -340,11 +340,12 @@ async function finishJob(job, status, details = {}) {
 
 async function loadSlotConfig(slotKey) {
   if (!slotKey || slotKey === "manual" || String(slotKey).startsWith("pilot")) return { max_concurrency: 1, delay_ms: 900, jitter_ms: 300 };
-  const rows = await db(`sync_schedule_slots?select=max_concurrency&slot_key=eq.${encodeURIComponent(slotKey)}&limit=1`).catch(() => []);
+  const rows = await db(`sync_schedule_slots?select=active,periods,max_concurrency,local_time,timezone&slot_key=eq.${encodeURIComponent(slotKey)}&limit=1`).catch(() => []);
+  const periods = Array.isArray(rows?.[0]?.periods) ? rows[0].periods.filter(period => ["day", "7d", "28d", "60d", "90d", "365d", "this_month", "last_month"].includes(period)) : ["day"];
   const maxConcurrency = Math.min(Math.max(Number(rows?.[0]?.max_concurrency || 1), 1), 10);
   const delayMs = Math.min(Math.max(Number.parseInt(process.env.SYNC_JOB_DELAY_MS || "900", 10) || 900, 250), 10000);
   const jitterMs = Math.min(Math.max(Number.parseInt(process.env.SYNC_JOB_JITTER_MS || "300", 10) || 300, 0), 3000);
-  return { max_concurrency: maxConcurrency, delay_ms: delayMs, jitter_ms: jitterMs };
+  return { active: rows?.[0]?.active === true, periods: periods.length ? periods : ["day"], max_concurrency: maxConcurrency, delay_ms: delayMs, jitter_ms: jitterMs, local_time: rows?.[0]?.local_time || null, timezone: rows?.[0]?.timezone || "Asia/Ho_Chi_Minh" };
 }
 
 async function processSyncJob(job) {
@@ -495,13 +496,26 @@ export default async function handler(request, response) {
     const since = url.searchParams.get("since") || yesterdayUTC();
     const until = url.searchParams.get("until") || todayUTC();
     const force = url.searchParams.get("force") === "1" || request.headers["x-admin-key"] === process.env.DASHBOARD_ADMIN_KEY;
-    if (orchestratorEnabled()) {
-      const period = url.searchParams.get("period") || "day";
-      const slotKey = url.searchParams.get("slot") || "manual";
+    const requestedSlot = url.searchParams.get("slot") || "manual";
+    if (orchestratorEnabled() || requestedSlot !== "manual") {
+      const slotKey = requestedSlot;
       const pageId = url.searchParams.get("page_id") || null;
       const limit = Number.parseInt(url.searchParams.get("limit") || String(dispatchBatchSize()), 10);
       if (!(await isSlotActive(slotKey))) return send(response, 200, { mode: "orchestrator", skipped: true, skipped_reason: "slot_inactive", slot: slotKey });
-      return send(response, 200, await runOrchestratedSync({ since, until, period, slotKey, limit, pageId }));
+      const slot = await loadSlotConfig(slotKey);
+      const selectedPeriods = url.searchParams.get("period") ? [url.searchParams.get("period")] : slot.periods;
+      const runs = [];
+      for (const period of selectedPeriods) {
+        runs.push(await runOrchestratedSync({ since, until, period, slotKey, limit, pageId }));
+      }
+      return send(response, 200, {
+        mode: "orchestrator", slot: slotKey, periods: selectedPeriods,
+        queued: runs.reduce((sum, item) => sum + Number(item.queued || 0), 0),
+        claimed: runs.reduce((sum, item) => sum + Number(item.claimed || 0), 0),
+        completed: runs.reduce((sum, item) => sum + Number(item.completed || 0), 0),
+        failed: runs.reduce((sum, item) => sum + Number(item.failed || 0), 0),
+        warnings: runs.flatMap(item => item.warnings || []), runs
+      });
     }
     return send(response, 200, await runSync({ since, until, force }));
   } catch (error) {
