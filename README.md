@@ -1,4 +1,4 @@
-# AI/FB MONEY
+# FACEBOOK MONEY MASTER
 
 Hệ thống quản lý Page Facebook, đồng bộ nội dung/metric, báo cáo doanh thu, payout, hoa hồng và phân quyền người dùng.
 
