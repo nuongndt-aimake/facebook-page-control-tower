@@ -4,7 +4,7 @@
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access" },
+    { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access?endpoint=payout" },
     { "source": "/api/admin/preview", "destination": "/api/admin/access?endpoint=preview" },
     { "source": "/api/posts/publication", "destination": "/api/analytics?action=publication" },
     { "source": "/api/posts/sync-request", "destination": "/api/analytics?action=sync-request" },

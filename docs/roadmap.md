@@ -42,7 +42,7 @@ Không còn commit tính năng đã nằm trên `main` nhưng chưa được ph�
 - Nhân sự, tuyến quản lý, bàn giao.
 - Báo cáo kế thừa theo tuyến: người quản lý thấy người tuyến dưới và toàn bộ Page/Payout được gán, có nhãn trực tiếp/kế thừa.
 - Màn hình `/team`, bảng `user_reporting_lines`, bulk selector, bulk API và bàn giao successor đã ở production; cần pilot với cặp người dùng thực tế và kiểm tra audit sau thao tác.
-- Payout access.
+- Payout access: nhánh đọc theo access context đã triển khai; thao tác ghi vẫn giới hạn admin, cần pilot với tài khoản manager có/không có quyền Payout.
 - Admin preview chỉ đọc có token hết hạn, audit và nút trở về đã triển khai; cần tiếp tục kiểm thử nhiều tầng trên dữ liệu membership thực tế.
 
 ## P4 — UX và mở rộng

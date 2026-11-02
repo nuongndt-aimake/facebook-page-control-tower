@@ -55,6 +55,27 @@ export default async function handler(request, response) {
     if (endpoint === "preview") return await startPreview(request, response, context);
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
+      if (endpoint === "payout") {
+        const pageIds = isAdmin ? null : new Set((context.pageIds || []).map(String));
+        const profileIds = isAdmin ? null : new Set((context.paymentProfileIds || []).map(String));
+        const visibleUserIds = isAdmin ? null : new Set((context.visibleUserIds || []).map(String));
+        const [pages, paymentProfiles, links, paymentAccess, commissions, users] = await Promise.all([
+          db("pages?select=id,name,category,asset_scope,custodian_business_id,custodian_business_name&order=name.asc&limit=5000").catch(() => []),
+          db("payment_profiles?select=*&order=updated_at.desc&limit=5000").catch(() => []),
+          db("page_payment_profiles?select=page_id,payment_profile_id,relation_type,last_seen_at&limit=20000").catch(() => []),
+          db("payment_profile_access?select=*&status=eq.active&limit=20000").catch(() => []),
+          db("page_commissions?select=*&status=eq.active&limit=20000").catch(() => []),
+          db("profiles?select=id,email,display_name,role,status&status=eq.active&order=email.asc&limit=5000").catch(() => [])
+        ]);
+        const scopedPages = pageIds ? pages.filter(page => pageIds.has(String(page.id))) : pages;
+        const scopedLinks = links.filter(link => (!pageIds || pageIds.has(String(link.page_id))) && (!profileIds || profileIds.has(String(link.payment_profile_id))));
+        const linkedProfileIds = new Set(scopedLinks.map(link => String(link.payment_profile_id)));
+        const scopedProfiles = paymentProfiles.filter(profile => (!profileIds || profileIds.has(String(profile.id))) && (!profileIds && linkedProfileIds.size ? linkedProfileIds.has(String(profile.id)) : true));
+        const scopedAccess = paymentAccess.filter(row => (!profileIds || profileIds.has(String(row.payment_profile_id))) && (!visibleUserIds || visibleUserIds.has(String(row.user_id))));
+        const scopedCommissions = commissions.filter(row => !pageIds || pageIds.has(String(row.page_id)));
+        const scopedUsers = users.filter(user => !visibleUserIds || visibleUserIds.has(String(user.id)));
+        return send(response, 200, { pages: scopedPages, payment_profiles: scopedProfiles, profiles: scopedProfiles, links: scopedLinks, payment_access: scopedAccess, commissions: scopedCommissions, users: scopedUsers, access: { role: context.profile.role, page_ids: pageIds ? [...pageIds] : null, payment_profile_ids: profileIds ? [...profileIds] : null, inherited_page_ids: context.inheritedPageIds || [] } });
+      }
       if (!isAdmin) throw new Error("Forbidden");
       response.setHeader("Cache-Control", "private, no-store, max-age=0");
       const [pages, businesses, users, access, assignments, histories, paymentProfiles, loadedGroups, loadedCategories, team, reportingLines, pageGroups, paymentAccess, commissions, pagePaymentProfiles, paymentProfileManagers, scheduleSlots, syncJobs, syncRuns, syncJobStatuses] = await Promise.all([
