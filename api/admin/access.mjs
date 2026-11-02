@@ -1,7 +1,11 @@
 import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync } from "../cron/sync.mjs";
 
-const todayUTC = () => new Date().toISOString().slice(0, 10);
+// Manual sync must use the same business timezone as the report filters. Using
+// UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
+// "Hôm nay", leaving the current-period post list empty.
+const todayUTC = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" })
+  .format(new Date()).replace(/\//g, "-");
 function syncRange(period) {
   const today = todayUTC();
   const days = { "7d": 6, "28d": 27, "60d": 59, "90d": 89, "365d": 364 };

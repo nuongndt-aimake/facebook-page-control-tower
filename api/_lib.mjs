@@ -237,8 +237,11 @@ export async function upsert(table, records, conflict = "id") {
     method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(records)
   });
 }
-export const todayUTC = () => new Date().toISOString().slice(0, 10);
-export const yesterdayUTC = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+const BUSINESS_TZ = "Asia/Ho_Chi_Minh";
+export const todayUTC = () => new Intl.DateTimeFormat("en-CA", { timeZone: BUSINESS_TZ, year: "numeric", month: "2-digit", day: "2-digit" })
+  .format(new Date()).replace(/\//g, "-");
+export const yesterdayUTC = () => new Intl.DateTimeFormat("en-CA", { timeZone: BUSINESS_TZ, year: "numeric", month: "2-digit", day: "2-digit" })
+  .format(new Date(Date.now() - 86400000)).replace(/\//g, "-");
 export function send(response, status, payload) { return response.status(status).json(payload); }
 export function redactSecrets(value) {
   if (value == null) return value;
