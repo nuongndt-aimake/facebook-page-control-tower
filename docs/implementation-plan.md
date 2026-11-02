@@ -90,7 +90,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | Post metric snapshots/refresh có chủ đích | Roadmap/Thử nghiệm | Migration, worker và pilot riêng |
 | Cấu hình ba slot đồng bộ 06:00/14:00/22:00 | Đang dùng (cấu hình an toàn) | Kiểm tra plan Vercel, dispatcher, quota và rollback trước khi bật |
 | Dispatcher chạy hàng loạt theo slot | Roadmap/Thử nghiệm | Đã nối giới hạn concurrency + delay/jitter; vẫn chỉ bật sau pilot và xác minh quota/lock |
-| Meta token secret store | Roadmap | Migration an toàn, không làm gián đoạn connection hiện tại |
+| Meta token hardening | Đang triển khai | Token OAuth mới mã hóa AES-256-GCM; token cũ tương thích, cần authorize lại để chuyển dần |
 | Admin preview nhiều tầng | Thử nghiệm | Pilot với membership thực tế và kiểm thử read-only |
 
 Production hiện đã khớp `HEAD`/`origin/main`; không cần tạo lại các commit UI/menu đã phát hành. Bước tiếp theo phải ưu tiên các dòng còn Roadmap/Thử nghiệm ở bảng này.

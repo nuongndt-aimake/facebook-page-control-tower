@@ -21,7 +21,7 @@ Không còn commit tính năng đã nằm trên `main` nhưng chưa được ph�
 - Bảo mật token/secret.
 - Hoàn thiện Auth, RBAC, RLS.
 - Registry Page/BM/connection bất biến.
-- Mã hóa hoặc chuyển token Meta sang secret store; loại bỏ lưu plaintext trong `meta_connections`.
+- Mã hóa hoặc chuyển token Meta sang secret store; token OAuth mới đã được mã hóa AES-256-GCM khi `META_TOKEN_ENCRYPTION_KEY` được cấu hình. Token cũ vẫn tương thích và sẽ được chuyển khi authorize lại.
 
 ## P1 — Đồng bộ ổn định
 

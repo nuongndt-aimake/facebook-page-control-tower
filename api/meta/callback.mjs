@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { db, graph, graphPages } from "../_lib.mjs";
+import { db, graph, graphPages, protectMetaToken } from "../_lib.mjs";
 
 const redirectUri = () => process.env.META_OAUTH_REDIRECT_URI || "https://money.aiecom.vn/api/meta/callback";
 const clean = value => String(value || "").replace(/[<>&]/g, "");
@@ -37,7 +37,7 @@ export default async function handler(request, response) {
     const profile = await graph("me", long.access_token, { fields: "id,name" });
     const businesses = await graphPages("me/businesses", long.access_token, { fields: "id,name", limit: "100" }).catch(() => []);
     const expiresAt = long.expires_in ? new Date(Date.now() + Number(long.expires_in) * 1000).toISOString() : null;
-    await db("meta_connections?on_conflict=label", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ label: `meta-${profile.id}`, user_access_token: long.access_token, business_ids: businesses.map(item => item.id), page_ids: [], token_expires_at: expiresAt, updated_at: new Date().toISOString() }) });
+    await db("meta_connections?on_conflict=label", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ label: `meta-${profile.id}`, user_access_token: protectMetaToken(long.access_token), business_ids: businesses.map(item => item.id), page_ids: [], token_expires_at: expiresAt, updated_at: new Date().toISOString() }) });
     response.status(200).setHeader("Content-Type", "text/html; charset=utf-8");
     return response.send(html("Đã kết nối Meta", `Tài khoản ${clean(profile.name || "Meta")} đã được lưu phía máy chủ. Hãy mở báo cáo và chọn phạm vi đồng bộ để tải dữ liệu theo chu kỳ.`));
   } catch (error) {

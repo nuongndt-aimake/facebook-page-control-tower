@@ -2,6 +2,36 @@ import crypto from "node:crypto";
 
 const GRAPH_VERSION = "v26.0";
 const GRAPH = `https://graph.facebook.com/${GRAPH_VERSION}`;
+const META_TOKEN_PREFIX = "enc:v1:";
+
+function tokenKey() {
+  const raw = process.env.META_TOKEN_ENCRYPTION_KEY;
+  if (!raw) return null;
+  const key = Buffer.from(raw, "base64");
+  if (key.length !== 32) throw new Error("META_TOKEN_ENCRYPTION_KEY phải là base64 của 32 byte");
+  return key;
+}
+
+export function protectMetaToken(value) {
+  const key = tokenKey();
+  if (!key || !value || String(value).startsWith(META_TOKEN_PREFIX)) return value;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(String(value), "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${META_TOKEN_PREFIX}${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+
+export function revealMetaToken(value) {
+  if (!value || !String(value).startsWith(META_TOKEN_PREFIX)) return value;
+  const key = tokenKey();
+  if (!key) throw new Error("Thiếu META_TOKEN_ENCRYPTION_KEY để giải mã kết nối Meta");
+  const [ivText, tagText, dataText] = String(value).slice(META_TOKEN_PREFIX.length).split(".");
+  if (!ivText || !tagText || !dataText) throw new Error("Token Meta mã hóa không hợp lệ");
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(ivText, "base64url"));
+  decipher.setAuthTag(Buffer.from(tagText, "base64url"));
+  return Buffer.concat([decipher.update(Buffer.from(dataText, "base64url")), decipher.final()]).toString("utf8");
+}
 
 export function requireAdmin(request, allowCron = false) {
   const expected = process.env.DASHBOARD_ADMIN_KEY;
@@ -119,6 +149,7 @@ export async function connections() {
     const stored = await db("meta_connections?select=id,label,user_access_token,business_ids,page_ids,token_expires_at&order=updated_at.desc");
     items = stored.map(item => ({
       ...item,
+      user_access_token: revealMetaToken(item.user_access_token),
       business_ids: Array.isArray(item.business_ids) ? item.business_ids : [],
       page_ids: Array.isArray(item.page_ids) ? item.page_ids : []
     }));
