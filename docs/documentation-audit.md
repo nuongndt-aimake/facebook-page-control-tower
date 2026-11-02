@@ -66,6 +66,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 
 - `auth-nav.js` là nguồn điều hướng chuẩn; menu con không còn trải phẳng trên thanh ngang và CSS đã có cache-bust tương ứng.
 - Admin preview đã được harden ở màn hình `/users`: nút xem trước gắn trực tiếp `user_id`/email vào từng dòng, không còn phụ thuộc vào việc phân tích text của hàng; token được lưu ở session storage và cookie, banner thoát hoạt động trên mọi route.
+- Phạm vi tổng hợp báo cáo đã chuẩn hóa `page_id` từ `page_access`/`page_assignments` về chuỗi ngay tại access context; tránh lệch kiểu string/number làm Page được gán bị loại khỏi tổng views, bài, tương tác hoặc doanh thu.
 - `/team` đã có bulk `set_reporting_lines`/`end_reporting_lines`, nhưng việc nghiệm thu quyền kế thừa vẫn cần pilot bằng dữ liệu người dùng thực tế.
 - Không đánh dấu các hạng mục này là Roadmap nữa; chỉ phần pilot, token hardening, dispatcher nhiều slot và post metric snapshots vẫn là Roadmap/Thử nghiệm.
 
