@@ -9,6 +9,7 @@
   const session=(await client.auth.getSession()).data.session;
   const brand=wrap.querySelector('.brand')||Object.assign(document.createElement('a'),{className:'brand',href:'/'});if(!brand.textContent.trim())brand.innerHTML='AI<span>/</span>FB MONEY';
   const links=document.createElement('div');links.className='quick-menu-links';links.id='quick-menu-links';const path=location.pathname.replace(/\.html$/,'')||'/';
+  canonical.forEach(([groupName,items])=>{const group=document.createElement('div');group.className='quick-menu-group';if(items.length===1){const item=items[0],link=document.createElement('a');link.href=item[0];link.textContent=item[1];if(path===item[0])link.classList.add('active');group.appendChild(link)}else{const toggle=document.createElement('button');toggle.type='button';toggle.className='quick-menu-group-toggle';toggle.setAttribute('aria-expanded','false');toggle.textContent=groupName;const submenu=document.createElement('div');submenu.className='quick-menu-submenu';items.forEach(([href,label])=>{const link=document.createElement('a');link.href=href;link.textContent=label;if(path===href)link.classList.add('active');submenu.appendChild(link)});group.append(toggle,submenu)}links.appendChild(group)});
   const account=document.createElement('span');account.className='quick-account';
   if(session){
     const meta=document.createElement('span');meta.className='quick-account-meta';meta.textContent=session.user?.email||'Đã đăng nhập';meta.title='Tài khoản đang đăng nhập';
