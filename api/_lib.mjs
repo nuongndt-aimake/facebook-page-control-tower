@@ -63,8 +63,11 @@ async function accessContextForUser(user, profile, preview = null) {
     db(`page_assignments?select=page_id,assignment_role,group_name,topic,user_id&user_id=in.(${ids})&status=eq.active`),
     db(`payment_profile_access?select=payment_profile_id&user_id=in.(${ids})&status=eq.active`).catch(() => [])
   ]);
-  const pageIds = [...new Set([...accessRows.map(row => row.page_id), ...assignmentRows.map(row => row.page_id)])];
-  const paymentProfileIds = [...new Set(paymentRows.map(row => row.payment_profile_id))];
+  // IDs arrive from Supabase as either strings or numbers depending on the
+  // underlying column and serializer. Normalize them once so every report
+  // aggregate/filter uses the same comparison semantics as the Page API.
+  const pageIds = [...new Set([...accessRows.map(row => row.page_id), ...assignmentRows.map(row => row.page_id)].filter(Boolean).map(String))];
+  const paymentProfileIds = [...new Set(paymentRows.map(row => row.payment_profile_id).filter(Boolean).map(String))];
   const sourceMap = {};
   const addSource = (pageId, ownerId, source) => {
     const key = String(pageId);
