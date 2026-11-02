@@ -27,7 +27,7 @@ Không còn commit tính năng đã nằm trên `main` nhưng chưa được ph�
 
 - Lịch động active/inactive.
 - Queue, lock, retry, dead-letter.
-- Snapshot Page, nội dung và doanh thu.
+- Snapshot Page, nội dung và doanh thu; worker bài viết cho phép xếp hàng và làm mới có chủ đích theo bộ lọc.
 - Health check và audit log.
 - Worker sử dụng `sync_schedule_slots`, queue/lock/attempt/dead-letter và snapshot daily; control-plane, migration snapshot và dispatcher đã có, pilot 5 Page đạt. Ba slot mặc định đã seed nhưng đang inactive; đồng bộ hàng loạt vẫn chưa bật.
 

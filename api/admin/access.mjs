@@ -1,5 +1,5 @@
 import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
-import { runSync, runOrchestratedSync } from "../cron/sync.mjs";
+import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 
 // Manual sync must use the same business timezone as the report filters. Using
 // UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
@@ -115,6 +115,12 @@ export default async function handler(request, response) {
         if (!isAdmin && (context.profile.role !== "manager" || !context.pageIds.includes(pageId))) throw new Error("Forbidden");
         const sync = await executeManualSync({ period: body.period || "day", pageId });
         return send(response, 200, { ok: true, selected_period: body.period || "day", page_id: pageId, ...sync });
+      }
+      if (body.action === "post_sync") {
+        if (!isAdmin) throw new Error("Forbidden");
+        const limit = Math.min(100, Math.max(1, Number(body.limit || process.env.POST_SYNC_BATCH || 20)));
+        const sync = await runPostSync({ limit });
+        return send(response, 200, { ok: true, ...sync });
       }
       if (body.action === "refresh_assets") {
         const today = new Date().toISOString().slice(0, 10);

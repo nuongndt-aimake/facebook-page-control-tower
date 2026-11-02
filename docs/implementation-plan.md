@@ -87,7 +87,7 @@ Các bước trên phải tuần tự ở phần tích hợp cuối, nhưng có 
 | Responsive menu/submenu | Đang dùng | Regression 390px/desktop sau mỗi thay đổi CSS |
 | Tuyến quản lý một-nhiều `/team` | Đang dùng | Pilot nhiều tầng và xác minh quyền kế thừa |
 | Bulk selector và bulk reporting-line API | Đang dùng | Bổ sung audit log/metric vận hành nếu cần |
-| Post metric snapshots/refresh có chủ đích | Roadmap/Thử nghiệm | Migration, worker và pilot riêng |
+| Post metric snapshots/refresh có chủ đích | Đang dùng có kiểm soát | Nút đồng bộ theo bộ lọc tạo queue request và worker xử lý giới hạn; tiếp tục pilot 5–20 Page |
 | Cấu hình ba slot đồng bộ 06:00/14:00/22:00 | Đang dùng (cấu hình an toàn) | Kiểm tra plan Vercel, dispatcher, quota và rollback trước khi bật |
 | Dispatcher chạy hàng loạt theo slot | Roadmap/Thử nghiệm | Đã nối giới hạn concurrency + delay/jitter; vẫn chỉ bật sau pilot và xác minh quota/lock |
 | Meta token hardening | Đang triển khai | Token OAuth mới mã hóa AES-256-GCM; token cũ tương thích, cần authorize lại để chuyển dần |
