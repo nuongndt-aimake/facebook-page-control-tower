@@ -6,7 +6,7 @@ Kế hoạch thực thi có dependency và workstream song song được chuẩn
 
 ## Baseline production đã đối chiếu
 
-Đối chiếu ngày 2026-11-01: production alias đang trỏ tới commit `5fa8d02` (`READY`). Các commit từ `431bd0c` trở đi đã nằm trong cùng deployment production, gồm:
+Đối chiếu ngày 2026-11-02: các thay đổi menu và scheduler đã được push lên `origin/main` tại commit `e210126`; deployment production gần nhất được tạo bằng Vercel inspect URL `https://vercel.com/aimake/facebook-page-control-tower/8hysrrnL2XJyJTosJJgtPGNa9eHS`. Gồm:
 
 - module boundary và giới hạn Function;
 - navigator hai lớp theo module, responsive mobile/desktop và xử lý submenu không overlap;

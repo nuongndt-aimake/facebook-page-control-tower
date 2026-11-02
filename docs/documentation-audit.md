@@ -9,13 +9,13 @@
 
 ## Kết luận
 
-Đối chiếu production lần cuối: alias production đang chạy commit `5fa8d02` ở trạng thái `READY`; `HEAD` và `origin/main` cùng commit này. Vì vậy các thay đổi gần đây về module map, navigator hai lớp, responsive submenu, `/team` một-nhiều và bulk actions đã được phát hành; không có commit tính năng bị bỏ lại ngoài production.
+Đối chiếu production lần cuối: các thay đổi menu và scheduler đã được push lên `origin/main` tại commit `e210126`; deployment production gần nhất dùng inspect URL `https://vercel.com/aimake/facebook-page-control-tower/8hysrrnL2XJyJTosJJgtPGNa9eHS`. Tài nguyên production đã kiểm tra có cache-bust menu `20261102-6`. Trạng thái READY đầy đủ cần tiếp tục xác nhận trong Vercel dashboard khi mạng/API ổn định.
 
 Tài liệu đủ để onboarding và vận hành phiên bản hiện tại nếu phân biệt ba lớp:
 
 1. **Đã chạy:** HTML/JS, Vercel Functions, Supabase REST, Meta OAuth, registry Page/BM, access context và sync hiện tại.
 2. **Tương thích/legacy:** `/api/report` dùng `DASHBOARD_ADMIN_KEY`, `META_USER_ACCESS_TOKEN` trong `.env.meta.example`.
-3. **Roadmap:** ba slot active, mã hóa token và kiểm thử admin preview nhiều tầng. Snapshot daily và admin preview read-only đã có; control-plane tables và RPC claim đã có; dispatcher/attempt logging chạy có điều kiện khi bật `ENABLE_SYNC_ORCHESTRATOR` và vẫn cần pilot production.
+3. **Roadmap:** bật rộng các slot theo tải thực tế, mã hóa token và kiểm thử admin preview nhiều tầng. Snapshot daily và admin preview read-only đã có; control-plane tables và RPC claim đã có; dispatcher/attempt logging đang chạy có điều kiện với cờ production, cần theo dõi queue và tỷ lệ lỗi.
 
 ## Phát hiện và xử lý
 

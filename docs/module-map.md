@@ -51,7 +51,7 @@ Menu quản trị là một phần hạ tầng dùng chung, không phải cấu 
 
 Quan hệ quản lý–nhân viên là quan hệ một-nhiều: một quản lý có thể có nhiều nhân viên, nhưng mỗi nhân viên chỉ có tối đa một `user_reporting_lines` đang active. Màn hình `/team` dùng bộ chọn chuẩn: tìm kiếm, checkbox từng dòng, chọn tất cả/bỏ chọn tất cả riêng cho từng danh sách, bộ đếm và lọc chỉ các mục đang chọn. Ghi nhiều quan hệ được gửi theo một thao tác lưu; kết thúc nhiều quan hệ cũng có thao tác hàng loạt và vẫn giữ lịch sử trong DB.
 
-Phiên bản cache-bust hiện tại của tài nguyên menu là `20261101-7`. Khi thay đổi hành vi menu, cập nhật phiên bản này trên các HTML admin và ghi lại trong changelog; không xóa các route cũ khỏi tài liệu, chỉ đánh dấu hết hiệu lực nếu đã được thay thế.
+Phiên bản cache-bust hiện tại của tài nguyên menu là `20261102-6`. Menu render danh sách route độc lập với trạng thái tải Supabase; trên desktop submenu nằm trên lớp nội dung, còn mobile dùng panel có z-index riêng. Chọn route, bấm ngoài hoặc nhấn Escape đều đóng menu. Khi thay đổi hành vi menu, cập nhật phiên bản này trên các HTML admin và ghi lại trong changelog; không xóa các route cũ khỏi tài liệu, chỉ đánh dấu hết hiệu lực nếu đã được thay thế.
 
 ## Quy tắc Function boundary
 

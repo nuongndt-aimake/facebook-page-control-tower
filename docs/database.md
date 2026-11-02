@@ -33,9 +33,9 @@ Quy tắc kế thừa quản lý: `team_memberships.parent_user_id` xác định
 
 `posts` hiện là registry nội dung, còn lịch sử số liệu bài viết và yêu cầu làm mới vẫn là **Roadmap**. Thiết kế mục tiêu gồm `post_publications`, `post_metric_snapshots` và `post_sync_requests`; không ghi đè snapshot cũ và không coi thiếu quyền là giá trị 0. Chi tiết và thứ tự triển khai xem [implementation-plan.md](implementation-plan.md).
 
-Migration `20261101110000_post_observation_foundation.sql` đã tạo ba bảng này với RLS bật. API tạo yêu cầu và ghi provenance đã có; worker xử lý `post_sync_requests` và ghi `post_metric_snapshots` vẫn là bước tiếp theo, chưa tự động chạy production.
+Migration `20261101110000_post_observation_foundation.sql` đã tạo ba bảng này với RLS bật. API tạo yêu cầu và ghi provenance đã có; worker xử lý `post_sync_requests` và ghi `post_metric_snapshots` được bật có điều kiện bằng `ENABLE_POST_SYNC_WORKER`.
 
-Migration `20261101120000_post_sync_worker.sql` bổ sung `post_sync_attempts` và RPC `claim_post_sync_requests`; worker vẫn tắt mặc định bằng `ENABLE_POST_SYNC_WORKER`.
+Migration `20261101120000_post_sync_worker.sql` bổ sung `post_sync_attempts` và RPC `claim_post_sync_requests`; production hiện bật worker qua `ENABLE_POST_SYNC_WORKER=true`. Cờ vẫn được giữ để rollback an toàn.
 
 Migration `20261101130000_community_post_identity.sql` cho phép `posts.page_id` rỗng đối với bài chỉ tồn tại trong cộng đồng, đồng thời lưu `origin_type`, group nguồn, URL ngoài và nguồn ingest. Bản ghi cộng đồng không được suy diễn là bài của Page.
 
@@ -43,7 +43,7 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 
 ## Bảng snapshot và phần worker còn hiệu lực trong roadmap
 
-- `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; dispatcher/worker chưa bật production.
+- `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` đã có migration control-plane; production hiện bật dispatcher qua `ENABLE_SYNC_ORCHESTRATOR=true`. Slot inactive được bỏ qua, không tự tạo hàng loạt job.
 - `page_daily_snapshots`
 - `post_daily_snapshots`
 - `revenue_daily_snapshots`
@@ -53,7 +53,7 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 
 Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.
 
-Phần worker/dispatcher và cấu hình active slot vẫn là phần cần mở có kiểm soát trong roadmap.
+Phần worker/dispatcher đã được mở có kiểm soát trong production; các slot vẫn do quản trị viên bật/tắt riêng. Khi một slot chạy, job được tạo idempotent vào `sync_jobs`, claim theo concurrency, ghi `sync_attempts` và snapshot chỉ được cập nhật khi request thành công.
 
 Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply production và tạo control-plane tối thiểu gồm `sync_schedule_slots`, `sync_jobs`, `sync_attempts`, `sync_locks` và `admin_audit_logs`; migration `20261101100000_sync_job_claim_rpc.sql` bổ sung RPC nhận job nguyên tử. Cả 5 bảng đã được xác minh bật RLS. Worker/dispatcher vẫn mặc định tắt theo feature flag sau khi kiểm tra rollback.
 
