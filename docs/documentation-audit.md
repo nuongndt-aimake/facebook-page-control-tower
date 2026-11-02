@@ -23,7 +23,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 | --- | --- | --- |
 | Cao | Tên biến callback tài liệu không khớp code (`META_REDIRECT_URI` vs `META_OAUTH_REDIRECT_URI`) | Đã sửa trong `configuration.md` và `installation.md` |
 | Cao | `/api/report` không dùng Supabase session | Đã sửa API reference thành `DASHBOARD_ADMIN_KEY` |
-| Cao | `handover_user` từng được mô tả như API có sẵn | Đã đánh dấu roadmap; bàn giao deal hiện dùng `/api/admin/handover` |
+| Cao | `handover_user` từng được mô tả như API có sẵn | Đã thay bằng action `offboard_user` trong `/api/admin/access`; bàn giao successor và audit đã có |
 | Cao | Admin preview cần kiểm thử nhiều tầng membership thực tế | Endpoint read-only, token hết hạn và audit đã có; tiếp tục pilot dữ liệu thật |
 | Cao | Token Meta còn được lưu ở `meta_connections.user_access_token` | Đã ghi rõ rủi ro và đưa encryption/secret store vào P0 |
 | Trung bình | Cron Hobby có độ trễ trong phạm vi một giờ | Đã cấu hình ba cron một lần/ngày theo UTC tương ứng 06:00/14:00/22:00 Việt Nam; mỗi slot vẫn tôn trọng `active` và `periods` |
@@ -69,7 +69,7 @@ Tài liệu đủ để onboarding và vận hành phiên bản hiện tại n�
 - Phạm vi tổng hợp báo cáo đã chuẩn hóa `page_id` từ `page_access`/`page_assignments` về chuỗi ngay tại access context; tránh lệch kiểu string/number làm Page được gán bị loại khỏi tổng views, bài, tương tác hoặc doanh thu.
 - Chuỗi biểu đồ báo cáo dùng cùng múi giờ `Asia/Ho_Chi_Minh` với bộ lọc kỳ; đồng thời bỏ qua phản hồi tải cũ khi người dùng đổi kỳ liên tiếp, tránh KPI của kỳ mới đi cùng biểu đồ của kỳ trước.
 - Manual/page sync và daily snapshot dùng cùng ngày nghiệp vụ `Asia/Ho_Chi_Minh`; tránh trường hợp nút “Hôm nay” chạy theo UTC rồi bài viết mới bị ghi vào ngày hôm qua.
-- `/team` đã có bulk `set_reporting_lines`/`end_reporting_lines`, nhưng việc nghiệm thu quyền kế thừa vẫn cần pilot bằng dữ liệu người dùng thực tế.
+- `/team` đã có bulk `set_reporting_lines`/`end_reporting_lines`; `offboard_user` chuyển tuyến và ghi audit, nhưng quyền kế thừa vẫn cần pilot bằng dữ liệu người dùng thực tế.
 - Không đánh dấu các hạng mục này là Roadmap nữa; chỉ phần pilot, token hardening, dispatcher nhiều slot và post metric snapshots vẫn là Roadmap/Thử nghiệm.
 
 ## Xung đột đã rà soát trong đợt 2026-11-01

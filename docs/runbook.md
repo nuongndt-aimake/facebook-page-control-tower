@@ -35,5 +35,5 @@ Chỉ loại thứ hai và thứ ba mới có thể dùng để suy luận "khô
 
 ## Bàn giao người dùng/Page
 
-Việc chọn người tiếp quản và chuyển assignment nhân sự là roadmap; hiện chưa có action `handover_user` hoàn chỉnh. Không xóa/suspend trước khi có quy trình bàn giao được triển khai và kiểm thử. Bàn giao deal/Page hiện dùng `/api/admin/handover` và phải kiểm tra audit sau thao tác.
+Việc chọn người tiếp quản và chuyển assignment nhân sự dùng action `offboard_user` trong `/api/admin/access`. Hệ thống bắt buộc chọn successor, chuyển Page/Payout/team/reporting lines, kết thúc quyền cũ, sau đó đình chỉ hoặc xóa và ghi audit. Bàn giao deal/Page độc lập vẫn dùng `/api/admin/handover`; sau mỗi thao tác phải kiểm tra `admin_audit_logs`.
 

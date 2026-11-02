@@ -41,7 +41,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/admin/access` | `POST` `set_reporting_lines` / `end_reporting_lines` | Gán hoặc kết thúc nhiều nhân viên cho một quản lý trong một thao tác; mỗi nhân viên vẫn chỉ có một quản lý active | `platform_admin`/`super_admin` |
 | `/api/admin/revenue` | `GET/POST` | Đọc/ghi khoản doanh thu manual | Admin |
 | `/api/admin/deals` | `GET/POST` | Quản lý deal và yêu cầu truy cập | Admin |
-| `/api/admin/handover` | `POST` | Bàn giao tài sản/người phụ trách | Admin |
+| `/api/admin/handover` | `POST` | Bàn giao deal/tài sản theo workflow; bàn giao tài khoản nhân sự dùng `offboard_user` trong `/api/admin/access` | Admin |
 | `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
 | `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |
@@ -64,7 +64,7 @@ Authorization: Bearer <CRON_SECRET>
 - `set_commission`.
 - `update_sync_slot`: cập nhật active/inactive, giờ địa phương, kỳ đồng bộ và concurrency cho một slot lịch; chỉ `platform_admin`/`super_admin`, có audit log.
 
-Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. `handover_user` cho việc chuyển assignment nhân sự vẫn là hạng mục cần hoàn thiện, chưa phải API hiện hữu.
+Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. Bàn giao tài khoản nhân sự dùng action `offboard_user` trong `/api/admin/access`, bắt buộc successor, chuyển Page/Payout/team/reporting lines, kết thúc quyền cũ và ghi `admin_audit_logs`.
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
 

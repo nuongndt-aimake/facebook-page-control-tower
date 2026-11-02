@@ -295,7 +295,9 @@ export default async function handler(request, response) {
           const result = await fetch(`${process.env.SUPABASE_URL.replace(/\/$/, "")}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } });
           if (!result.ok) throw new Error(`Supabase Auth ${result.status}: ${await result.text()}`);
         }
-        return send(response, 200, { ok: true, transferred: { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length }, successor_user_id: successorId });
+        const transferred = { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length };
+        await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "offboard_user", target_type: "profile", target_id: userId, details: { successor_user_id: successorId, final_status: body.final_status === "deleted" ? "deleted" : "suspended", transferred } }) });
+        return send(response, 200, { ok: true, transferred, successor_user_id: successorId });
       }
       if (body.action === "grant_payment_profile") {
         if (!body.user_id || !body.payment_profile_id) return send(response, 400, { error: "user_id và payment_profile_id là bắt buộc" });
