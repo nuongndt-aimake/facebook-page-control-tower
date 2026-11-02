@@ -5,6 +5,15 @@ const TZ = "Asia/Ho_Chi_Minh";
 const dateInVietnam = () => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
   .format(new Date()).replace(/\//g, "-");
 const shift = (date, days) => { const d = new Date(`${date}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+const localDateKey = value => {
+  if (!value) return "";
+  const raw = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw.slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(date).replace(/\//g, "-");
+};
 const monthStart = date => `${date.slice(0, 7)}-01`;
 const ranges = () => {
   const today = dateInVietnam(), thisMonth = monthStart(today), previousEnd = shift(thisMonth, -1), previousStart = monthStart(previousEnd);
@@ -293,12 +302,12 @@ export default async function handler(request, response) {
     const days = [];
     for (let cursor = range.start; cursor <= range.end; cursor = shift(cursor, 1)) days.push(cursor);
     const series = days.map(day => {
-      const dayMetrics = metricRows.filter(row => String(row.end_time).slice(0, 10) === day && (!allowed || allowed.includes(row.entity_id)));
+      const dayMetrics = metricRows.filter(row => localDateKey(row.end_time) === day && (!allowed || allowed.includes(row.entity_id)));
       const views = pageViewMetric ? dayMetrics.filter(row => row.entity_type === "page" && row.metric === pageViewMetric).reduce((sum, row) => sum + number(parse(row.value_json)), 0) : 0;
-      const dayRevenue = reportRevenue.filter(row => String(row.period_end).slice(0, 10) === day && (row.currency || currency) === currency).reduce((sum, row) => sum + number(row.gross_amount), 0)
+      const dayRevenue = reportRevenue.filter(row => localDateKey(row.period_end) === day && (row.currency || currency) === currency).reduce((sum, row) => sum + number(row.gross_amount), 0)
         || (approximateMetric ? dayMetrics.filter(row => row.entity_type === "page" && row.metric === approximateMetric)
           .reduce((sum, row) => sum + metricNumber(row.value_json, row.metric), 0) : 0);
-      const dayPosts = scopedPosts.filter(row => String(row.created_time || '').slice(0, 10) === day).length;
+      const dayPosts = scopedPosts.filter(row => localDateKey(row.created_time) === day).length;
       return { date: day, views, revenue: dayRevenue, posts: dayPosts };
     });
     const pageEngagements = pageMetricTotals.page_post_engagements || 0;
@@ -311,3 +320,4 @@ export default async function handler(request, response) {
       pages: pageReports, monetization_groups: monetizationGroups, posts: visiblePosts.map(post => { const snapshot = latestPostSnapshots.get(String(post.id)); const syncState = postSyncState(post); return { ...post, page_name: pageNames.get(post.page_id) || post.page_id, interactions: postStats(post), discovery_synced_at: post.synced_at || null, interaction_synced_at: snapshot?.observed_at || null, sync_state: syncState.status, sync_error: syncState.error, synced_at: post.synced_at || null, interaction_snapshot: snapshot || null, metrics: perEntity.get(post.id) || {} }; }), revenue, series, pagination: { pages: { page: pageNumber, page_size: pageSize, total: pageReportsAll.length, pages: Math.ceil(pageReportsAll.length / pageSize) }, posts: { page: postNumber, page_size: postSize, total: scopedPosts.length, pages: Math.ceil(scopedPosts.length / postSize) } }, access: { role: context.profile.role, page_ids: allowed, visible_user_ids: context.visibleUserIds || [], managed_user_ids: context.managedUserIds || [], direct_page_ids: context.directPageIds || [], inherited_page_ids: context.inheritedPageIds || [] }});
   } catch (error) { response.setHeader("Cache-Control", "no-store, max-age=0"); return send(response, error.message === "Unauthorized" ? 401 : error.message === "Forbidden" ? 403 : 500, { error: error.message }); }
 }
+
