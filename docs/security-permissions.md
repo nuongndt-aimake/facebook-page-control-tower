@@ -20,7 +20,7 @@ Quyền cần tách theo domain:
 
 Manager/lead xem được người tuyến dưới đang active và tài sản được gán cho họ. Page kế thừa phải được đánh dấu `inherited` trong access context/báo cáo; Page gán trực tiếp là `direct`, nếu có cả hai nguồn là `direct_and_inherited`. Hồ sơ tuyến hiển thị cả người quản lý trực tiếp, vai trò hiện tại, số Page/Payout và số tuyến dưới. Khi bàn giao, Page/Payout và các tuyến quản lý liên quan phải chuyển sang successor; tuyến dưới không được tự động nhận quyền ngược lên tuyến trên.
 
-Màn hình Payout đọc qua `/api/admin/access?endpoint=payout` để áp dụng cùng access context. Người quản lý chỉ thấy Page và hồ sơ Payout trực tiếp/kế thừa đã được cấp; không có `payment_profile_access` thì không thấy hồ sơ hoặc dữ liệu thanh toán. Các thao tác tạo/sửa/gắn/cấp quyền vẫn yêu cầu `platform_admin` hoặc `super_admin`.
+Màn hình Payout đọc qua `/api/admin/access?endpoint=payout` để áp dụng cùng access context. Người quản lý chỉ thấy Page và hồ sơ Payout trực tiếp/kế thừa đã được cấp; một quyền Payout hợp lệ cũng mở phạm vi đọc cho các Page được liên kết với hồ sơ đó, không cần cấp trùng `page_access`. Không có `payment_profile_access` thì không thấy hồ sơ hoặc dữ liệu thanh toán. Các thao tác tạo/sửa/gắn/cấp quyền vẫn yêu cầu `platform_admin` hoặc `super_admin`.
 - đồng bộ;
 - sửa nhóm;
 - quản lý nhân sự;

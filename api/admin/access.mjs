@@ -67,14 +67,21 @@ export default async function handler(request, response) {
           db("page_commissions?select=*&status=eq.active&limit=20000").catch(() => []),
           db("profiles?select=id,email,display_name,role,status&status=eq.active&order=email.asc&limit=5000").catch(() => [])
         ]);
-        const scopedPages = pageIds ? pages.filter(page => pageIds.has(String(page.id))) : pages;
+        // A Payout grant is also an explicit visibility path for the Pages linked
+        // to that payout profile. Do not require a second page_access row or the
+        // manager would see the payout but not the asset it belongs to.
         const scopedLinks = links.filter(link => (!pageIds || pageIds.has(String(link.page_id))) && (!profileIds || profileIds.has(String(link.payment_profile_id))));
+        const effectivePageIds = pageIds ? new Set([
+          ...pageIds,
+          ...scopedLinks.map(link => String(link.page_id))
+        ]) : null;
+        const scopedPages = effectivePageIds ? pages.filter(page => effectivePageIds.has(String(page.id))) : pages;
         const linkedProfileIds = new Set(scopedLinks.map(link => String(link.payment_profile_id)));
         const scopedProfiles = paymentProfiles.filter(profile => (!profileIds || profileIds.has(String(profile.id))) && (!profileIds && linkedProfileIds.size ? linkedProfileIds.has(String(profile.id)) : true));
         const scopedAccess = paymentAccess.filter(row => (!profileIds || profileIds.has(String(row.payment_profile_id))) && (!visibleUserIds || visibleUserIds.has(String(row.user_id))));
-        const scopedCommissions = commissions.filter(row => !pageIds || pageIds.has(String(row.page_id)));
+        const scopedCommissions = commissions.filter(row => !effectivePageIds || effectivePageIds.has(String(row.page_id)));
         const scopedUsers = users.filter(user => !visibleUserIds || visibleUserIds.has(String(user.id)));
-        return send(response, 200, { pages: scopedPages, payment_profiles: scopedProfiles, profiles: scopedProfiles, links: scopedLinks, payment_access: scopedAccess, commissions: scopedCommissions, users: scopedUsers, access: { role: context.profile.role, page_ids: pageIds ? [...pageIds] : null, payment_profile_ids: profileIds ? [...profileIds] : null, inherited_page_ids: context.inheritedPageIds || [] } });
+        return send(response, 200, { pages: scopedPages, payment_profiles: scopedProfiles, profiles: scopedProfiles, links: scopedLinks, payment_access: scopedAccess, commissions: scopedCommissions, users: scopedUsers, access: { role: context.profile.role, page_ids: effectivePageIds ? [...effectivePageIds] : null, payment_profile_ids: profileIds ? [...profileIds] : null, inherited_page_ids: context.inheritedPageIds || [] } });
       }
       if (!isAdmin) throw new Error("Forbidden");
       response.setHeader("Cache-Control", "private, no-store, max-age=0");
