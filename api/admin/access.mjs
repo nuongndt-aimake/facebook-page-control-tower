@@ -111,11 +111,24 @@ async function sepayWebhook(request, response) {
   }
   return send(response, 200, { success: true, processing_status: processingStatus });
 }
+async function publicCheckout(request, response) {
+  if (String(process.env.SALES_PUBLIC_CHECKOUT_ENABLED).toLowerCase() !== "true") return send(response, 503, { error: "Checkout chưa mở" });
+  if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  const input = await readBody(request); const quantity = Math.max(1, Math.min(100, Number(input.quantity || 1)));
+  if (!String(input.buyer_name || "").trim() || !String(input.buyer_phone || "").trim() || !String(input.buyer_email || "").trim() || !String(input.fulfillment_profile_url || "").trim()) return send(response, 400, { error: "Thiếu thông tin đơn hàng" });
+  const products = await db("sales_products?select=id,unit_price_vnd,status&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
+  const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE"; const amount = inhouse ? 10000 : Number(product.unit_price_vnd) * quantity;
+  const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
+  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_name: String(input.buyer_name).trim(), buyer_phone: String(input.buyer_phone).trim(), buyer_email: String(input.buyer_email).trim(), fulfillment_profile_url: String(input.fulfillment_profile_url).trim(), quantity, unit_price_vnd: product.unit_price_vnd, expected_amount_vnd: amount, payment_reference: reference }) });
+  const qr = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
+  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, payment_reference: reference }, qr_url: qr });
+}
 
 export default async function handler(request, response) {
   try {
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
     if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
+    if (endpoint === "public-checkout") return await publicCheckout(request, response);
     const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
     if (endpoint === "sales-orders") return await salesOrders(request, response, context);
