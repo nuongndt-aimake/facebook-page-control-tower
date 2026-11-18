@@ -58,7 +58,7 @@ Không dùng URL preview làm callback production lâu dài.
 
 1. Apply migration `20261119090000_fanpage_sales_line.sql`, xác nhận bốn bảng có RLS và không có quyền `anon`/`authenticated`.
 2. Deploy preview của nhánh trước; đăng nhập Google bằng platform admin, mở `/sales-orders` và xác minh user không phải admin nhận `403` từ API.
-3. Thêm secret SePay ở môi trường Preview, dùng tài khoản MBBank đã sao chép ở SePay Test Mode để tạo một giao dịch thử nhỏ có chủ đích.
+3. Thêm `SEPAY_WEBHOOK_API_KEY` ở môi trường Preview, tạo webhook SePay Test Mode trỏ tới `/api/payments/sepay` với Authentication = API Key, rồi dùng giao dịch mô phỏng của Test Mode.
 4. Chỉ sau khi webhook xác thực, đúng mã nội dung, đúng số tiền và idempotency, mới lên lịch bật production. Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` trong toàn bộ bước này.
 5. Khi production được phê duyệt riêng, cấu hình webhook live trỏ tới domain production; không dùng URL preview làm webhook live.
 

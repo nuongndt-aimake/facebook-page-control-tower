@@ -39,9 +39,9 @@ Việc chọn người tiếp quản và chuyển assignment nhân sự dùng ac
 
 ## SePay và đơn hàng
 
-1. Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` cho đến khi webhook test xác thực được chữ ký/token, đúng số tiền và idempotency.
+1. Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` cho đến khi webhook test xác thực được API key, đúng số tiền và idempotency.
 2. Mỗi đơn tạo server-side có `order_code`/`payment_reference` duy nhất; QR lấy đúng số tiền đã chốt trong `sales_orders`.
-3. Webhook chỉ được chuyển `pending_payment` sang `paid` khi tìm đúng mã, đúng số tiền; sai/mơ hồ chuyển `reconciliation_required` và ghi `sales_payment_events`.
+3. Webhook `/api/payments/sepay` chỉ nhận `Authorization: Apikey ...` so với `SEPAY_WEBHOOK_API_KEY`; chỉ chuyển `pending_payment` sang `paid` khi tìm đúng mã, đúng số tiền và giao dịch vào. Sai/mơ hồ chuyển `reconciliation_required` và ghi `sales_payment_events`.
 4. Không sửa thủ công `paid` trước khi đối chiếu sao kê; nếu cần, dùng màn hình Đơn hàng và kiểm tra `admin_audit_logs`.
 5. Khi có lỗi, tắt checkout public, giữ dữ liệu và chuyển các event chưa khớp sang đối soát; không tạo lại đơn hay quét lại giao dịch tiền thật.
 

@@ -1,5 +1,6 @@
 import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
+import crypto from "node:crypto";
 
 // Manual sync must use the same business timezone as the report filters. Using
 // UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
@@ -80,10 +81,39 @@ async function salesOrders(request, response, context) {
   return send(response, 400, { error: "Action không hỗ trợ" });
 }
 
+function safeEqual(left, right) {
+  const a = Buffer.from(String(left || "")); const b = Buffer.from(String(right || ""));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+async function sepayWebhook(request, response) {
+  if (request.method !== "POST") return send(response, 405, { success: false, error: "Method not allowed" });
+  const expected = process.env.SEPAY_WEBHOOK_API_KEY;
+  const authorization = String(request.headers.authorization || "");
+  const supplied = authorization.replace(/^Apikey\s+/i, "");
+  if (!expected || !/^Apikey\s+/i.test(authorization) || !safeEqual(expected, supplied)) return send(response, 401, { success: false, error: "Unauthorized" });
+  const payload = await readBody(request);
+  const providerEventId = String(payload.id || payload.referenceCode || "");
+  if (!providerEventId) return send(response, 400, { success: false, error: "Missing transaction id" });
+  const existing = await db(`sales_payment_events?select=id&provider_event_id=eq.${encodeURIComponent(providerEventId)}&limit=1`);
+  if (existing.length) return send(response, 200, { success: true, duplicate: true });
+  const amount = Number(payload.transferAmount || 0);
+  const reference = String(payload.code || "").trim().toUpperCase();
+  const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
+  const order = found[0];
+  const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
+  await db("sales_payment_events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ provider_event_id: providerEventId, order_id: order?.id || null, amount_vnd: Number.isFinite(amount) ? amount : null, processing_status: processingStatus, raw_payload: payload }) });
+  if (order) {
+    const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
+    await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(update) });
+  }
+  return send(response, 200, { success: true, processing_status: processingStatus });
+}
+
 export default async function handler(request, response) {
   try {
-    const context = await accessContext(request);
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
+    if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
+    const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
     if (endpoint === "sales-orders") return await salesOrders(request, response, context);
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";

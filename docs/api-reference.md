@@ -44,6 +44,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/admin/handover` | `POST` | Bàn giao deal/tài sản theo workflow; bàn giao tài khoản nhân sự dùng `offboard_user` trong `/api/admin/access` | Admin |
 | `/api/admin/sales-orders` | `GET` | Đọc catalog, đơn hàng và phân công bán hàng | `platform_admin` |
 | `/api/admin/sales-orders` | `POST` `assign_order` / `set_payment_status` | Phân công hoặc đối soát thủ công, có audit | `platform_admin` |
+| `/api/payments/sepay` | `POST` | Nhận webhook SePay, xác thực API key timing-safe, chống trùng theo transaction id và đối soát số tiền | SePay API key |
 | `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
 | `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |

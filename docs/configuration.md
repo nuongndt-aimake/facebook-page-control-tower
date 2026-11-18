@@ -28,7 +28,7 @@
 | `META_POST_METRICS` | Post insight metrics | Danh sách metric phân tách bằng dấu phẩy |
 | `META_REPORT_VIEW_METRICS` | Chọn metric view ưu tiên khi dựng báo cáo | Tùy chọn |
 | `SALES_PUBLIC_CHECKOUT_ENABLED` | Checkout Fanpage | Bắt buộc giữ `false` cho đến khi SePay Test Mode đạt nghiệm thu |
-| `SEPAY_WEBHOOK_TOKEN` | Webhook SePay server-side | Secret; so sánh timing-safe, không đưa xuống browser |
+| `SEPAY_WEBHOOK_API_KEY` | Webhook SePay server-side | API Key của webhook; so sánh timing-safe, không đưa xuống browser |
 | `SEPAY_QR_TEMPLATE` | QR thanh toán | Tùy chọn; chỉ dùng để dựng QR sau khi server chốt đơn/số tiền |
 
 ## Tệp cục bộ
