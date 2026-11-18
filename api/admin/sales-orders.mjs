@@ -6,7 +6,7 @@ export default async function handler(request,response){
   if(request.method==="GET"){
    const [products,orders,assignments]=await Promise.all([
     db("sales_products?select=*&order=created_at.desc"),
-    db("sales_orders?select=*,product:sales_products(id,sku,name,product_type),buyer:profiles!sales_orders_buyer_user_id_fkey(id,email,display_name)&order=created_at.desc&limit=500"),
+    db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"),
     db("sales_order_assignments?select=*")
    ]);
    return send(response,200,{products,orders,assignments});
