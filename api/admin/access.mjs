@@ -294,18 +294,20 @@ export default async function handler(request, response) {
         const userId = String(body.user_id || "");
         const successorId = String(body.successor_user_id || "");
         if (!userId || !successorId || userId === successorId) return send(response, 400, { error: "Phải chọn người tiếp quản khác tài khoản cũ" });
-        const [accessRows, assignmentRows, paymentRows, teamRows, reportingAsEmployee, reportingAsManager] = await Promise.all([
+        const [accessRows, assignmentRows, paymentRows, teamRows, reportingAsEmployee, reportingAsManager, salesAssignments] = await Promise.all([
           db(`page_access?select=page_id,access_level&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`),
           db(`page_assignments?select=page_id,group_name,topic,assignment_role,note&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`payment_profile_access?select=payment_profile_id,access_level&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`team_memberships?select=group_id,role,note&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`user_reporting_lines?select=manager_user_id&employee_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
-          db(`user_reporting_lines?select=employee_user_id&manager_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => [])
+          db(`user_reporting_lines?select=employee_user_id&manager_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
+          db(`sales_order_assignments?select=order_id,assignee_user_id,manager_user_id&or=(assignee_user_id.eq.${encodeURIComponent(userId)},manager_user_id.eq.${encodeURIComponent(userId)})`).catch(() => [])
         ]);
         for (const row of accessRows) await db("page_access?on_conflict=user_id,page_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, page_id: row.page_id, access_level: row.access_level, status: "active", granted_by: context.user.id }) });
         for (const row of assignmentRows) await db("page_assignments", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ page_id: row.page_id, user_id: successorId, group_name: row.group_name, topic: row.topic, assignment_role: row.assignment_role, status: "active", note: `Tiếp quản từ ${userId}: ${row.note || ""}` }) });
         for (const row of paymentRows) await db("payment_profile_access?on_conflict=user_id,payment_profile_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, payment_profile_id: row.payment_profile_id, access_level: row.access_level, status: "active", granted_by: context.user.id }) });
         for (const row of teamRows) await db("team_memberships?on_conflict=user_id,group_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, group_id: row.group_id, role: row.role, status: "active", note: `Tiếp quản từ ${userId}: ${row.note || ""}` }) });
+        for (const row of salesAssignments) await db(`sales_order_assignments?order_id=eq.${encodeURIComponent(row.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ assignee_user_id: String(row.assignee_user_id) === userId ? successorId : row.assignee_user_id, manager_user_id: String(row.manager_user_id) === userId ? successorId : row.manager_user_id, assigned_by: context.user.id, assigned_at: new Date().toISOString(), handover_note: `Bàn giao tài khoản từ ${userId}` }) });
         const now = new Date().toISOString();
         const previousManager = reportingAsEmployee[0]?.manager_user_id || null;
         if (previousManager && previousManager !== successorId) await db("user_reporting_lines?on_conflict=employee_user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ employee_user_id: successorId, manager_user_id: previousManager, status: "active", effective_from: now.slice(0, 10), created_by: context.user.id, note: `Tiếp quản tuyến từ ${userId}`, updated_at: now }) });
@@ -323,7 +325,7 @@ export default async function handler(request, response) {
           const result = await fetch(`${process.env.SUPABASE_URL.replace(/\/$/, "")}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } });
           if (!result.ok) throw new Error(`Supabase Auth ${result.status}: ${await result.text()}`);
         }
-        const transferred = { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length };
+        const transferred = { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length, sales_orders: salesAssignments.length };
         await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "offboard_user", target_type: "profile", target_id: userId, details: { successor_user_id: successorId, final_status: body.final_status === "deleted" ? "deleted" : "suspended", transferred } }) });
         return send(response, 200, { ok: true, transferred, successor_user_id: successorId });
       }

@@ -17,8 +17,9 @@
 | `/connect-meta` | `connect-meta.html` | OAuth Meta, cấu hình slot đồng bộ và theo dõi queue/run gần nhất; trạng thái đọc lại không dùng cache, bảng có STT |
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
+| `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
 
-Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
+Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
 ## Quy ước bảng dữ liệu
 

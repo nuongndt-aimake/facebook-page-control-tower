@@ -22,6 +22,8 @@ Các biến production tối thiểu:
 - `META_CONNECTIONS_JSON` hoặc connection lưu trong Database
 - `META_PAGE_METRICS`
 - `META_POST_METRICS`
+- `SALES_PUBLIC_CHECKOUT_ENABLED=false`
+- `SEPAY_WEBHOOK_TOKEN` (chỉ khi endpoint webhook đã được deploy và Test Mode sẵn sàng)
 
 Danh sách đầy đủ và phân loại secret/non-secret xem tại [configuration.md](configuration.md).
 
@@ -51,6 +53,14 @@ Không dùng URL preview làm callback production lâu dài.
 5. Deploy production.
 6. Kiểm tra trạng thái Ready và alias production.
 7. Ghi deployment ID vào release note.
+
+### Phát hành line bán hàng Fanpage
+
+1. Apply migration `20261119090000_fanpage_sales_line.sql`, xác nhận bốn bảng có RLS và không có quyền `anon`/`authenticated`.
+2. Deploy preview của nhánh trước; đăng nhập Google bằng platform admin, mở `/sales-orders` và xác minh user không phải admin nhận `403` từ API.
+3. Thêm secret SePay ở môi trường Preview, dùng tài khoản MBBank đã sao chép ở SePay Test Mode để tạo một giao dịch thử nhỏ có chủ đích.
+4. Chỉ sau khi webhook xác thực, đúng mã nội dung, đúng số tiền và idempotency, mới lên lịch bật production. Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` trong toàn bộ bước này.
+5. Khi production được phê duyệt riêng, cấu hình webhook live trỏ tới domain production; không dùng URL preview làm webhook live.
 
 ## Trạng thái đồng bộ với GitHub
 

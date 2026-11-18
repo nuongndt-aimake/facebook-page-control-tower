@@ -51,6 +51,17 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 `page_daily_snapshots` là nguồn trạng thái theo Page và theo ngày quan sát: lưu cửa sổ dữ liệu, `status`, số bài, metric outcomes và `observed_at`. `metrics` lưu các dòng metric có khóa chống trùng; `sync_runs` lưu kết quả cấp phiên; `sync_jobs`/`sync_attempts` lưu hàng đợi và từng lần thử. Báo cáo phải chọn snapshot mới nhất nằm trong đúng chu kỳ đang lọc, không lấy một phiên đồng bộ của chu kỳ khác để đại diện.
 - `admin_audit_logs` đã có migration; các endpoint quản trị cần bổ sung ghi audit đầy đủ.
 
+## Line bán hàng Fanpage (chờ bật thanh toán công khai)
+
+Migration `20261119090000_fanpage_sales_line.sql` bổ sung catalog và luồng đơn hàng độc lập, sẵn sàng cho các loại sản phẩm tương lai:
+
+- `sales_products`: catalog theo `sku`, `product_type`, giá và trạng thái; bản ghi `FANPAGE` là sản phẩm hiện tại.
+- `sales_orders`: đơn đặt hàng, giá chốt tại thời điểm tạo, người mua tùy chọn, mã chuyển khoản duy nhất và trạng thái thanh toán/giao nhận.
+- `sales_order_assignments`: một người phụ trách và tuyến quản lý cho mỗi đơn; khi bàn giao tài khoản, các đơn đang phụ trách được chuyển sang người tiếp quản và ghi audit.
+- `sales_payment_events`: nhật ký webhook bất biến, khóa chống xử lý trùng `provider_event_id`, trạng thái `processed`, `duplicate`, `amount_mismatch`, `unmatched` hoặc `rejected`.
+
+Cả bốn bảng bật RLS và thu hồi toàn bộ quyền `anon`/`authenticated`; chỉ Vercel server dùng service role sau kiểm tra Supabase Auth + RBAC mới được truy cập. Chưa có grant hay policy cho checkout public.
+
 Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.
 
 Phần worker/dispatcher đã được mở có kiểm soát trong production; các slot vẫn do quản trị viên bật/tắt riêng. Khi một slot chạy, job được tạo idempotent vào `sync_jobs`, claim theo concurrency, ghi `sync_attempts` và snapshot chỉ được cập nhật khi request thành công.
