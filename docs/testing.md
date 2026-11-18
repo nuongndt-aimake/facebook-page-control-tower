@@ -27,6 +27,8 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 4. Chạy sync một Page, sau đó kiểm tra `sync_runs`, `pages`, `posts`, `metrics`.
 5. Tạo một lỗi quyền giả lập hoặc Page không có token và xác nhận các Page khác vẫn hoàn thành.
 6. Kiểm tra `401`, `403`, `400` bằng request thiếu/không hợp lệ.
+7. Với line bán hàng: platform admin mở `/sales-orders`, phân công một đơn rồi kiểm tra `admin_audit_logs`; thử một account không phải admin nhận `403` từ `/api/admin/sales-orders`.
+8. Với SePay Test Mode: tạo đơn tại `/sales` bằng mã `INHOUSE` (kỳ vọng 10.000 đ), dùng nội dung chuyển khoản chính xác `FSXXXXXXXXXX`; chỉ chuyển `paid` khi webhook đúng token, đúng mã và đúng số tiền; gửi lại cùng event để xác nhận không tạo thanh toán trùng. Không dùng giao dịch tiền thật trong bài test này.
 
 ## Ma trận quyền tối thiểu
 
@@ -38,6 +40,8 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 | manager | tuyến dưới | tuyến dưới | tuyến dưới | theo access | Page tuyến dưới | hạn chế |
 | platform_admin | tất cả | tất cả | tất cả | tất cả | tất cả | tất cả |
 | super_admin | tất cả | tất cả | tất cả | tất cả | tất cả | tất cả |
+
+`/api/admin/sales-orders` và `/sales-orders` chỉ dành cho `platform_admin`/`super_admin`; người phụ trách đơn không có quyền tự xem dữ liệu checkout qua API này. Checkout public sẽ có endpoint riêng sau khi được bật có kiểm soát.
 
 ## Responsive QA
 

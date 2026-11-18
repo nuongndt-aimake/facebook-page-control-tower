@@ -42,6 +42,10 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/admin/revenue` | `GET/POST` | Đọc/ghi khoản doanh thu manual | Admin |
 | `/api/admin/deals` | `GET/POST` | Quản lý deal và yêu cầu truy cập | Admin |
 | `/api/admin/handover` | `POST` | Bàn giao deal/tài sản theo workflow; bàn giao tài khoản nhân sự dùng `offboard_user` trong `/api/admin/access` | Admin |
+| `/api/admin/sales-orders` | `GET` | Đọc catalog, đơn hàng và phân công bán hàng | `platform_admin` |
+| `/api/admin/sales-orders` | `POST` `assign_order` / `set_payment_status` | Phân công hoặc đối soát thủ công, có audit | `platform_admin` |
+| `/api/payments/sepay` | `POST` | Nhận webhook SePay, xác thực API key timing-safe, chống trùng theo transaction id và đối soát số tiền | SePay API key |
+| `/api/checkout` | `POST` | Tạo đơn Fanpage public, chốt giá server-side và trả QR SePay theo mã đơn duy nhất | Công khai khi feature flag bật |
 | `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
 | `/api/cron/sync` | `GET/POST` | Chạy đồng bộ Meta theo phạm vi | `CRON_SECRET` hoặc admin |
 | `/api/posts/sync-request` | `GET/POST` | Tạo hoặc xem yêu cầu làm mới chỉ số bài viết | Supabase session + Page access |
@@ -64,9 +68,13 @@ Authorization: Bearer <CRON_SECRET>
 - `set_commission`.
 - `update_sync_slot`: cập nhật active/inactive, giờ địa phương, kỳ đồng bộ và concurrency cho một slot lịch; chỉ `platform_admin`/`super_admin`, có audit log.
 
-Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. Bàn giao tài khoản nhân sự dùng action `offboard_user` trong `/api/admin/access`, bắt buộc successor, chuyển Page/Payout/team/reporting lines, kết thúc quyền cũ và ghi `admin_audit_logs`.
+Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action như `approve_request`, `task_granted`, `ready_for_handover` và `complete_outright_handover`. Bàn giao tài khoản nhân sự dùng action `offboard_user` trong `/api/admin/access`, bắt buộc successor, chuyển Page/Payout/team/reporting lines và `sales_order_assignments`, kết thúc quyền cũ và ghi `admin_audit_logs`.
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
+
+`POST /api/checkout` chỉ hoạt động khi `SALES_PUBLIC_CHECKOUT_ENABLED=true`. Body gồm `buyer_name`, `buyer_phone`, `buyer_email`, `fulfillment_profile_url`, `quantity` (1–100) và tùy chọn `promo_code`. Server tạo `FS` + 10 ký tự, dùng cùng giá trị cho `order_code` và `payment_reference`, rồi trả QR với đúng `expected_amount_vnd`. Mã `INHOUSE` chỉ có hiệu lực tại server và chốt mức phải trả 10.000 đ cho đơn đó. Endpoint không trả secret hoặc quyền quản trị.
+
+Webhook SePay ưu tiên `code`; ở Test Mode, khi không có cấu hình payment-code, nó chỉ nhận mã đơn chính xác dạng `FSXXXXXXXXXX` từ `content`. Transaction id là khóa idempotency, và chỉ giao dịch `in` với số tiền đúng mới chuyển đơn sang `paid`.
 
 Khi `ENABLE_SYNC_ORCHESTRATOR=true`, `/api/cron/sync` hỗ trợ thêm query `period`, `slot`, `limit` và tùy chọn `page_id` để pilot một Page. Endpoint sẽ trả `queued`, `claimed`, `completed`, `failed`, `concurrency`, `pacing`, `warnings` và kết quả từng job. `limit` bị giới hạn 1–100 nhưng còn bị chặn bởi `sync_schedule_slots.max_concurrency` (vận hành 1–10); luồng cũ vẫn là mặc định khi cờ tắt.
 

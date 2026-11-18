@@ -44,6 +44,7 @@ Không còn commit tính năng đã nằm trên `main` nhưng chưa được ph�
 - Màn hình `/team`, bảng `user_reporting_lines`, bulk selector, bulk API và bàn giao successor đã ở production; cần pilot với cặp người dùng thực tế và kiểm tra audit sau thao tác.
 - Payout access: nhánh đọc theo access context đã triển khai; quyền Payout cũng mở Page liên kết với hồ sơ đó; thao tác ghi vẫn giới hạn admin, cần pilot với tài khoản manager có/không có quyền Payout.
 - Admin preview chỉ đọc có token hết hạn, audit và nút trở về đã triển khai; cần tiếp tục kiểm thử nhiều tầng trên dữ liệu membership thực tế.
+- **Line bán hàng Fanpage (đang triển khai):** migration catalog/đơn hàng/payment event, RBAC/RLS server-side, màn hình `/sales-orders` và bàn giao account → đơn hàng đã ở nhánh phát hành. Còn thiếu quyền Supabase để apply migration, endpoint checkout/webhook SePay, nghiệm thu Test Mode và phê duyệt bật thanh toán public.
 
 ## P4 — UX và mở rộng
 

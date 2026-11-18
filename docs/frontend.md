@@ -17,8 +17,10 @@
 | `/connect-meta` | `connect-meta.html` | OAuth Meta, cấu hình slot đồng bộ và theo dõi queue/run gần nhất; trạng thái đọc lại không dùng cache, bảng có STT |
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
+| `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
+| `/sales` | `sales.html` | Trang đặt mua Fanpage công khai; tạo QR/mã chuyển khoản riêng, không yêu cầu đăng nhập |
 
-Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
+Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
 ## Quy ước bảng dữ liệu
 
@@ -46,5 +48,7 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 ## Dữ liệu hiển thị
 
 Frontend chỉ hiển thị snapshot/API response đã được server lọc theo access context. Không suy ra quyền từ query string hoặc `localStorage`. Bộ lọc chỉ thay đổi dữ liệu đang hiển thị, không thay đổi dữ liệu gốc.
+
+`/sales` là tuyến mua hàng ngoài khu quản trị, được phát hành như liên kết chiến dịch/checkout công khai. Không đưa nó vào navigator nội bộ; kết quả đơn chỉ được quản trị viên xem qua `/sales-orders`.
 
 Mọi route mới phải có điểm neo điều hướng trong navigator chung hoặc nút hành động từ màn hình nghiệp vụ liên quan. Route không có điểm neo được xem là chưa hoàn tất nghiệm thu.

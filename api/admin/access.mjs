@@ -1,5 +1,6 @@
 import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
+import crypto from "node:crypto";
 
 // Manual sync must use the same business timezone as the report filters. Using
 // UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
@@ -48,11 +49,93 @@ async function startPreview(request, response, actor) {
   return send(response, 200, { ok: true, token, expires_in: 900, target: { id: target.id, email: target.email, display_name: target.display_name, role: target.role } });
 }
 
+const salesPaymentStates = new Set(["pending_payment", "paid", "reconciliation_required", "expired", "cancelled", "refunded"]);
+async function salesOrders(request, response, context) {
+  if (!(context.profile.role === "platform_admin" || context.profile.role === "super_admin") || context.preview) throw new Error("Forbidden");
+  if (request.method === "GET") {
+    const [products, orders, assignments] = await Promise.all([
+      db("sales_products?select=*&order=created_at.desc"),
+      db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"),
+      db("sales_order_assignments?select=*")
+    ]);
+    return send(response, 200, { products, orders, assignments });
+  }
+  if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  const input = await readBody(request);
+  if (input.action === "assign_order") {
+    if (!input.order_id || !input.assignee_user_id) return send(response, 400, { error: "order_id và assignee_user_id là bắt buộc" });
+    const assignees = await db(`profiles?select=id,status&id=eq.${encodeURIComponent(input.assignee_user_id)}&limit=1`);
+    if (!assignees[0] || assignees[0].status !== "active") return send(response, 400, { error: "Người nhận đơn không hoạt động hoặc không tồn tại" });
+    if (input.manager_user_id) { const managers = await db(`profiles?select=id,status&id=eq.${encodeURIComponent(input.manager_user_id)}&limit=1`); if (!managers[0] || managers[0].status !== "active") return send(response, 400, { error: "Quản lý nhận bàn giao không hoạt động hoặc không tồn tại" }); }
+    const rows = await db("sales_order_assignments?on_conflict=order_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify({ order_id: input.order_id, assignee_user_id: input.assignee_user_id, manager_user_id: input.manager_user_id || null, assigned_by: context.user.id, handover_note: input.handover_note || null }) });
+    await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ fulfillment_status: "assigned", updated_at: new Date().toISOString() }) });
+    await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "assign_sales_order", target_type: "sales_order", target_id: input.order_id, details: { assignee_user_id: input.assignee_user_id, manager_user_id: input.manager_user_id || null, handover_note: input.handover_note || null } }) });
+    return send(response, 200, rows[0]);
+  }
+  if (input.action === "set_payment_status") {
+    if (!input.order_id || !salesPaymentStates.has(input.payment_status)) return send(response, 400, { error: "Trạng thái thanh toán không hợp lệ" });
+    await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ payment_status: input.payment_status, updated_at: new Date().toISOString() }) });
+    await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "set_sales_payment_status", target_type: "sales_order", target_id: input.order_id, details: { payment_status: input.payment_status, source: "manual_admin" } }) });
+    return send(response, 200, { ok: true });
+  }
+  return send(response, 400, { error: "Action không hỗ trợ" });
+}
+
+function safeEqual(left, right) {
+  const a = Buffer.from(String(left || "")); const b = Buffer.from(String(right || ""));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+async function sepayWebhook(request, response) {
+  if (request.method !== "POST") return send(response, 405, { success: false, error: "Method not allowed" });
+  const expected = process.env.SEPAY_WEBHOOK_API_KEY;
+  const authorization = String(request.headers.authorization || "");
+  const supplied = authorization.replace(/^Apikey\s+/i, "");
+  if (!expected || !/^Apikey\s+/i.test(authorization) || !safeEqual(expected, supplied)) {
+    console.warn("sepay_webhook_unauthorized", { configured: Boolean(expected), auth_scheme: authorization.split(/\s+/)[0] || "missing", supplied_length: supplied.length });
+    return send(response, 401, { success: false, error: "Unauthorized" });
+  }
+  const payload = await readBody(request);
+  const providerEventId = String(payload.id || payload.referenceCode || "");
+  if (!providerEventId) return send(response, 400, { success: false, error: "Missing transaction id" });
+  const existing = await db(`sales_payment_events?select=id&provider_event_id=eq.${encodeURIComponent(providerEventId)}&limit=1`);
+  if (existing.length) return send(response, 200, { success: true, duplicate: true });
+  const amount = Number(payload.transferAmount || 0);
+  // SePay supplies `code` when a payment-code rule is configured. Test Mode
+  // may only provide transfer content, so safely recognise our exact order
+  // reference there as well. This does not match partial or arbitrary text.
+  const contentReference = String(payload.content || "").match(/\bFS[A-Z0-9]{10}\b/i)?.[0] || "";
+  const reference = String(payload.code || contentReference).trim().toUpperCase();
+  const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
+  const order = found[0];
+  const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
+  await db("sales_payment_events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ provider_event_id: providerEventId, order_id: order?.id || null, amount_vnd: Number.isFinite(amount) ? amount : null, processing_status: processingStatus, raw_payload: payload }) });
+  if (order) {
+    const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
+    await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(update) });
+  }
+  return send(response, 200, { success: true, processing_status: processingStatus });
+}
+async function publicCheckout(request, response) {
+  if (String(process.env.SALES_PUBLIC_CHECKOUT_ENABLED).toLowerCase() !== "true") return send(response, 503, { error: "Checkout chưa mở" });
+  if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  const input = await readBody(request); const quantity = Math.max(1, Math.min(100, Number(input.quantity || 1)));
+  if (!String(input.buyer_name || "").trim() || !String(input.buyer_phone || "").trim() || !String(input.buyer_email || "").trim() || !String(input.fulfillment_profile_url || "").trim()) return send(response, 400, { error: "Thiếu thông tin đơn hàng" });
+  const products = await db("sales_products?select=id,unit_price_vnd,status&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
+  const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE"; const amount = inhouse ? 10000 : Number(product.unit_price_vnd) * quantity;
+  const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
+  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_name: String(input.buyer_name).trim(), buyer_phone: String(input.buyer_phone).trim(), buyer_email: String(input.buyer_email).trim(), fulfillment_profile_url: String(input.fulfillment_profile_url).trim(), quantity, unit_price_vnd: product.unit_price_vnd, expected_amount_vnd: amount, payment_reference: reference }) });
+  const qr = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
+  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, payment_reference: reference }, qr_url: qr });
+}
+
 export default async function handler(request, response) {
   try {
-    const context = await accessContext(request);
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
+    if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
+    if (endpoint === "public-checkout") return await publicCheckout(request, response);
+    const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
+    if (endpoint === "sales-orders") return await salesOrders(request, response, context);
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (endpoint === "payout") {
@@ -294,18 +377,20 @@ export default async function handler(request, response) {
         const userId = String(body.user_id || "");
         const successorId = String(body.successor_user_id || "");
         if (!userId || !successorId || userId === successorId) return send(response, 400, { error: "Phải chọn người tiếp quản khác tài khoản cũ" });
-        const [accessRows, assignmentRows, paymentRows, teamRows, reportingAsEmployee, reportingAsManager] = await Promise.all([
+        const [accessRows, assignmentRows, paymentRows, teamRows, reportingAsEmployee, reportingAsManager, salesAssignments] = await Promise.all([
           db(`page_access?select=page_id,access_level&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`),
           db(`page_assignments?select=page_id,group_name,topic,assignment_role,note&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`payment_profile_access?select=payment_profile_id,access_level&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`team_memberships?select=group_id,role,note&user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
           db(`user_reporting_lines?select=manager_user_id&employee_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
-          db(`user_reporting_lines?select=employee_user_id&manager_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => [])
+          db(`user_reporting_lines?select=employee_user_id&manager_user_id=eq.${encodeURIComponent(userId)}&status=eq.active`).catch(() => []),
+          db(`sales_order_assignments?select=order_id,assignee_user_id,manager_user_id&or=(assignee_user_id.eq.${encodeURIComponent(userId)},manager_user_id.eq.${encodeURIComponent(userId)})`).catch(() => [])
         ]);
         for (const row of accessRows) await db("page_access?on_conflict=user_id,page_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, page_id: row.page_id, access_level: row.access_level, status: "active", granted_by: context.user.id }) });
         for (const row of assignmentRows) await db("page_assignments", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ page_id: row.page_id, user_id: successorId, group_name: row.group_name, topic: row.topic, assignment_role: row.assignment_role, status: "active", note: `Tiếp quản từ ${userId}: ${row.note || ""}` }) });
         for (const row of paymentRows) await db("payment_profile_access?on_conflict=user_id,payment_profile_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, payment_profile_id: row.payment_profile_id, access_level: row.access_level, status: "active", granted_by: context.user.id }) });
         for (const row of teamRows) await db("team_memberships?on_conflict=user_id,group_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: successorId, group_id: row.group_id, role: row.role, status: "active", note: `Tiếp quản từ ${userId}: ${row.note || ""}` }) });
+        for (const row of salesAssignments) await db(`sales_order_assignments?order_id=eq.${encodeURIComponent(row.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ assignee_user_id: String(row.assignee_user_id) === userId ? successorId : row.assignee_user_id, manager_user_id: String(row.manager_user_id) === userId ? successorId : row.manager_user_id, assigned_by: context.user.id, assigned_at: new Date().toISOString(), handover_note: `Bàn giao tài khoản từ ${userId}` }) });
         const now = new Date().toISOString();
         const previousManager = reportingAsEmployee[0]?.manager_user_id || null;
         if (previousManager && previousManager !== successorId) await db("user_reporting_lines?on_conflict=employee_user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ employee_user_id: successorId, manager_user_id: previousManager, status: "active", effective_from: now.slice(0, 10), created_by: context.user.id, note: `Tiếp quản tuyến từ ${userId}`, updated_at: now }) });
@@ -323,7 +408,7 @@ export default async function handler(request, response) {
           const result = await fetch(`${process.env.SUPABASE_URL.replace(/\/$/, "")}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } });
           if (!result.ok) throw new Error(`Supabase Auth ${result.status}: ${await result.text()}`);
         }
-        const transferred = { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length };
+        const transferred = { pages: accessRows.length, assignments: assignmentRows.length, payment_profiles: paymentRows.length, team_memberships: teamRows.length, reporting_lines: reportingAsEmployee.length + reportingAsManager.length, sales_orders: salesAssignments.length };
         await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "offboard_user", target_type: "profile", target_id: userId, details: { successor_user_id: successorId, final_status: body.final_status === "deleted" ? "deleted" : "suspended", transferred } }) });
         return send(response, 200, { ok: true, transferred, successor_user_id: successorId });
       }

@@ -4,8 +4,12 @@
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/sales", "destination": "/sales.html" },
     { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access?endpoint=payout" },
     { "source": "/api/admin/preview", "destination": "/api/admin/access?endpoint=preview" },
+    { "source": "/api/admin/sales-orders", "destination": "/api/admin/access?endpoint=sales-orders" },
+    { "source": "/api/payments/sepay", "destination": "/api/admin/access?endpoint=sepay-webhook" },
+    { "source": "/api/checkout", "destination": "/api/admin/access?endpoint=public-checkout" },
     { "source": "/api/posts/publication", "destination": "/api/analytics?action=publication" },
     { "source": "/api/posts/sync-request", "destination": "/api/analytics?action=sync-request" },
     { "source": "/api/cron/post-sync", "destination": "/api/cron/sync?worker=post" }
