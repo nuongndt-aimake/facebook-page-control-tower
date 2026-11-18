@@ -83,6 +83,12 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 
 ## Release gần nhất
 
+- Migration: `20261119090000_fanpage_sales_line.sql`.
+- Trạng thái: **Đang dùng** — đã apply Supabase production; webhook SePay Test Mode trả HTTP 200; checkout `/sales` được bật ở Production.
+- Code commit: `42b44bf` (`chore(release): enable public Fanpage checkout after SePay Test callback`).
+- Vercel deployment: `dpl_CL8ojGEmjScZUTRAgiHgt1HyYxbX`, `READY`, aliases gồm `money.aiecom.vn`.
+- Nghiệm thu dữ liệu: đơn Test Mode `FS8BD4948AE3`, 10.000 đ, trạng thái `paid`; không có giao dịch tiền thật.
+
 - Migration: `20261101090000_sync_orchestration_foundation.sql`
 - Trạng thái: đã apply Supabase production và xác minh 5 bảng/RLS.
 - Code commit: `90f73fe` (`feat: add guarded sync job dispatcher`)

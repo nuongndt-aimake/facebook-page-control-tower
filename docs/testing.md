@@ -30,6 +30,13 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 7. Với line bán hàng: platform admin mở `/sales-orders`, phân công một đơn rồi kiểm tra `admin_audit_logs`; thử một account không phải admin nhận `403` từ `/api/admin/sales-orders`.
 8. Với SePay Test Mode: tạo đơn tại `/sales` bằng mã `INHOUSE` (kỳ vọng 10.000 đ), dùng nội dung chuyển khoản chính xác `FSXXXXXXXXXX`; chỉ chuyển `paid` khi webhook đúng token, đúng mã và đúng số tiền; gửi lại cùng event để xác nhận không tạo thanh toán trùng. Không dùng giao dịch tiền thật trong bài test này.
 
+### Nghiệm thu 2026-11-19
+
+- **Đạt:** webhook Test Mode → Production trả HTTP 200.
+- **Đạt:** tạo đơn public `FS8BD4948AE3` với `INHOUSE`, số tiền QR 10.000 đ.
+- **Đạt:** mô phỏng tiền vào 10.000 đ với nội dung đúng mã; SePay xác nhận và trang `/sales-orders` ghi `paid`.
+- **Chưa chạy:** kiểm tra gửi lại cùng `provider_event_id` ở giao diện Test Mode. Code đã có khóa unique/idempotency; cần chạy lại khi cần chứng minh thao tác vận hành này.
+
 ## Ma trận quyền tối thiểu
 
 | Vai trò | Đọc Page | Đọc nội dung | Đọc doanh thu | Đọc payout | Sync Page | Quản lý user |
