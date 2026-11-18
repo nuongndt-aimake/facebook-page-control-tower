@@ -90,7 +90,10 @@ async function sepayWebhook(request, response) {
   const expected = process.env.SEPAY_WEBHOOK_API_KEY;
   const authorization = String(request.headers.authorization || "");
   const supplied = authorization.replace(/^Apikey\s+/i, "");
-  if (!expected || !/^Apikey\s+/i.test(authorization) || !safeEqual(expected, supplied)) return send(response, 401, { success: false, error: "Unauthorized" });
+  if (!expected || !/^Apikey\s+/i.test(authorization) || !safeEqual(expected, supplied)) {
+    console.warn("sepay_webhook_unauthorized", { configured: Boolean(expected), auth_scheme: authorization.split(/\s+/)[0] || "missing", supplied_length: supplied.length });
+    return send(response, 401, { success: false, error: "Unauthorized" });
+  }
   const payload = await readBody(request);
   const providerEventId = String(payload.id || payload.referenceCode || "");
   if (!providerEventId) return send(response, 400, { success: false, error: "Missing transaction id" });
