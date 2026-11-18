@@ -100,7 +100,11 @@ async function sepayWebhook(request, response) {
   const existing = await db(`sales_payment_events?select=id&provider_event_id=eq.${encodeURIComponent(providerEventId)}&limit=1`);
   if (existing.length) return send(response, 200, { success: true, duplicate: true });
   const amount = Number(payload.transferAmount || 0);
-  const reference = String(payload.code || "").trim().toUpperCase();
+  // SePay supplies `code` when a payment-code rule is configured. Test Mode
+  // may only provide transfer content, so safely recognise our exact order
+  // reference there as well. This does not match partial or arbitrary text.
+  const contentReference = String(payload.content || "").match(/\bFS[A-Z0-9]{10}\b/i)?.[0] || "";
+  const reference = String(payload.code || contentReference).trim().toUpperCase();
   const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
   const order = found[0];
   const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";

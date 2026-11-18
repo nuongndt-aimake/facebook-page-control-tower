@@ -28,7 +28,7 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 5. Tạo một lỗi quyền giả lập hoặc Page không có token và xác nhận các Page khác vẫn hoàn thành.
 6. Kiểm tra `401`, `403`, `400` bằng request thiếu/không hợp lệ.
 7. Với line bán hàng: platform admin mở `/sales-orders`, phân công một đơn rồi kiểm tra `admin_audit_logs`; thử một account không phải admin nhận `403` từ `/api/admin/sales-orders`.
-8. Với SePay Test Mode: tạo QR có mã đơn duy nhất; chỉ chuyển `paid` khi webhook đúng token, đúng mã và đúng số tiền; gửi lại cùng event để xác nhận không tạo thanh toán trùng. Không dùng giao dịch tiền thật trong bài test này.
+8. Với SePay Test Mode: tạo đơn tại `/sales` bằng mã `INHOUSE` (kỳ vọng 10.000 đ), dùng nội dung chuyển khoản chính xác `FSXXXXXXXXXX`; chỉ chuyển `paid` khi webhook đúng token, đúng mã và đúng số tiền; gửi lại cùng event để xác nhận không tạo thanh toán trùng. Không dùng giao dịch tiền thật trong bài test này.
 
 ## Ma trận quyền tối thiểu
 
