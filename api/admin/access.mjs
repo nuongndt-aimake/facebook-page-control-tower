@@ -1,6 +1,7 @@
 import { accessContext, assertMutableContext, authenticatedUser, canManageSalesInventory, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
+import { canReadAllSalesOrders, visibleSalesOrders } from '../../sales-order-policy.mjs';
 
 // Manual sync must use the same business timezone as the report filters. Using
 // UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
@@ -67,28 +68,36 @@ async function syncInvoiceForPayment(orderId, paymentStatus) {
   await db(`sales_invoice_records?id=eq.${encodeURIComponent(invoice.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ invoice_status: nextStatus, updated_at: new Date().toISOString() }) });
 }
 async function salesOrders(request, response, context) {
-  if (!salesStaffRoles.has(context.profile.role) || context.preview) throw new Error("Forbidden");
+  if (context.preview && request.method !== 'GET') throw new Error("Forbidden");
   if (request.method === "GET") {
+    const all=canReadAllSalesOrders(context), admin=salesAdminRoles.has(context.profile.role);
+    const scopedAssignments=await db(`sales_order_assignments?select=*${all?'':'&assignee_user_id=eq.'+encodeURIComponent(context.user.id)}`);
+    const assignedIds=scopedAssignments.map(row=>row.order_id).filter(id=>/^[a-f0-9-]{36}$/i.test(id));
+    const scope=all?'':`&or=(buyer_user_id.eq.${encodeURIComponent(context.user.id)}${assignedIds.length?',id.in.('+assignedIds.join(',')+')':''})`;
     const [products, orders, assignments, invoiceRecords, prices, promoCodes, settings] = await Promise.all([
       db("sales_products?select=*&order=created_at.desc"),
-      db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"),
-      db("sales_order_assignments?select=*"),
-      db("sales_invoice_records?select=*&order=created_at.desc&limit=1000"),
+      db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"+scope),
+      Promise.resolve(scopedAssignments),
+      all?db("sales_invoice_records?select=*&order=created_at.desc&limit=1000"):Promise.resolve([]),
       salesAdminRoles.has(context.profile.role) ? db("sales_product_prices?select=*&order=effective_from.desc") : Promise.resolve([]),
       salesAdminRoles.has(context.profile.role) ? db("sales_promo_codes?select=*&order=created_at.desc") : Promise.resolve([]),
       salesAdminRoles.has(context.profile.role) ? db("sales_settings?select=*") : Promise.resolve([])
     ]);
+    const visible=visibleSalesOrders(context,orders,assignments), ids=new Set(visible.map(row=>String(row.id)));
+    if(!all&&ids.size)invoiceRecords.push(...await db(`sales_invoice_records?select=*&order_id=in.(${[...ids].join(',')})`));
+    const safeInvoices=invoiceRecords.filter(row=>ids.has(String(row.order_id)));
     const totalsByDay = new Map();
-    for (const row of invoiceRecords.filter(row => row.invoice_type === "daily_aggregate")) {
+    for (const row of safeInvoices.filter(row => row.invoice_type === "daily_aggregate")) {
       const key = `${row.aggregation_date}:${row.invoice_status}`;
       const item = totalsByDay.get(key) || { aggregation_date: row.aggregation_date, invoice_status: row.invoice_status, order_count: 0, expected_amount_vnd: 0 };
       const order = orders.find(order => String(order.id) === String(row.order_id));
       item.order_count += 1; item.expected_amount_vnd += Number(order?.expected_amount_vnd || 0); totalsByDay.set(key, item);
     }
     const staffOrderIds = new Set(assignments.filter(row => String(row.assignee_user_id) === String(context.user.id)).map(row => String(row.order_id)));
-    return send(response, 200, { products, orders: salesAdminRoles.has(context.profile.role) ? orders : orders.filter(row => staffOrderIds.has(String(row.id))), assignments, invoice_records: invoiceRecords, prices, promo_codes: promoCodes, settings, invoice_aggregate_groups: [...totalsByDay.values()].sort((a, b) => String(b.aggregation_date).localeCompare(String(a.aggregation_date))) });
+    return send(response, 200, { access:{read_all:all,manage:admin}, products, orders:visible.map(row=>{const {gift_download_url,...safe}=row;return {...safe,...(admin||row.payment_status==='paid'?{gift_download_url}:{})}}), assignments:assignments.filter(row=>ids.has(String(row.order_id))), invoice_records:safeInvoices, prices, promo_codes:promoCodes, settings, invoice_aggregate_groups:all?[...totalsByDay.values()].sort((a,b)=>String(b.aggregation_date).localeCompare(String(a.aggregation_date))):[] });
   }
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+  if (!salesStaffRoles.has(context.profile.role)) throw new Error('Forbidden');
   const input = await readBody(request);
   if (input.action === "verify_zero_value_order") {
     if (!input.order_id) return send(response, 400, { error: "Thiếu order_id" });
@@ -519,6 +528,15 @@ export default async function handler(request, response) {
         if (!userId || !["viewer", "analyst", "operator", "manager", "platform_admin", "super_admin"].includes(body.role)) return send(response, 400, { error: "user_id hoặc role không hợp lệ" });
         await db(`profiles?id=eq.${encodeURIComponent(userId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ role: body.role, updated_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true });
+      }
+      if (body.action === 'set_sales_order_permissions') {
+        if (!['platform_admin','super_admin'].includes(context.profile.role)) throw new Error('Forbidden');
+        const id=String(body.user_id||'');if(!id)return send(response,400,{error:'Thiếu user_id'});
+        const rows=await db(`profiles?select=permissions&id=eq.${encodeURIComponent(id)}&limit=1`);if(!rows[0])return send(response,404,{error:'Không tìm thấy tài khoản'});
+        const granted=body.read_all===true?['read_all']:[];
+        await db(`profiles?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({permissions:{...(rows[0].permissions||{}),sales_orders:granted},updated_at:new Date().toISOString()})});
+        await db('admin_audit_logs',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({actor_user_id:context.user.id,action:'set_sales_order_permissions',target_type:'profile',target_id:id,details:{permissions:granted}})});
+        return send(response,200,{ok:true});
       }
       if (body.action === "set_sales_inventory_permissions") {
         if (!["platform_admin", "super_admin"].includes(context.profile.role)) throw new Error("Forbidden");

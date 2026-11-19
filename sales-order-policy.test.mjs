@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {visibleSalesOrders,canReadAllSalesOrders} from './sales-order-policy.mjs';
+const orders=[{id:'a',buyer_user_id:'buyer'},{id:'b',buyer_user_id:'other'},{id:'c',buyer_user_id:null}];
+const ctx=(id,role='viewer',permissions={})=>({user:{id},profile:{role,permissions}});
+test('buyer sees own orders only; guest order is not claimed by email',()=>assert.deepEqual(visibleSalesOrders(ctx('buyer'),orders),[orders[0]]));
+test('manager does not inherit all order rights',()=>assert.deepEqual(visibleSalesOrders(ctx('manager','manager'),orders),[]));
+test('assignee sees assigned and owned orders only',()=>assert.deepEqual(visibleSalesOrders(ctx('buyer'),orders,[{order_id:'b',assignee_user_id:'buyer'},{order_id:'c',assignee_user_id:'other'}]),orders.slice(0,2)));
+test('explicit read_all works; revocation stops access',()=>{assert.equal(canReadAllSalesOrders(ctx('staff','operator',{sales_orders:['read_all']})),true);assert.equal(canReadAllSalesOrders(ctx('staff','operator',{sales_orders:[]})),false)});
+test('admins see all; malformed permission grants nothing',()=>{for(const role of ['platform_admin','super_admin'])assert.deepEqual(visibleSalesOrders(ctx('admin',role),orders),orders);assert.equal(canReadAllSalesOrders(ctx('staff','viewer',{sales_orders:'read_all'})),false)});
