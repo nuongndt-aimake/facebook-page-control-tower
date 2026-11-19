@@ -2,7 +2,7 @@
 
 Trạng thái: Đã phát hành production (68a511b). Menu chung xác nhận tại /, /sales, /account, /sales-orders, /operations, /lo-trinh, /privacy. Trang giới thiệu, mua hàng và tài khoản đạt kiểm tra không tràn ngang tại 390px, 768px và desktop.
 
-Bổ sung kiểm thử: nếu thu hồi phiên trên máy chủ gặp lỗi, thử đăng xuất phạm vi local; chỉ chuyển tới đăng nhập khi phiên đã được xóa. Nếu phiên vẫn tồn tại, cho thử lại. Điều này xử lý cả phiên hết hạn đã bị máy chủ từ chối.
+Bổ sung kiểm thử: nếu thu hồi phiên trên máy chủ gặp lỗi, thử đăng xuất phạm vi local. Nếu máy chủ tiếp tục từ chối phiên hết hạn, xóa khóa phiên của chính ứng dụng trong trình duyệt rồi chuyển đến đăng nhập. Việc này kết thúc phiên trên thiết bị hiện tại; không khẳng định thu hồi được các thiết bị khác.
 
 ## Impact note
 
