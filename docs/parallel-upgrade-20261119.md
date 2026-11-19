@@ -46,3 +46,4 @@ Test Node API dùng 20 request Promise.all cùng event và 20 event khác nhau/�
 - 390px đã kiểm tra panel tap, mở nhóm Tài khoản, aria-current Đơn hàng, đóng khi click ra ngoài. Không tràn trang; bảng cuộn riêng, không cell nào bị ẩn.
 - Runtime tương tác menu dùng một file navigation.js tải bởi auth-nav.js, không duy trì hai bộ listener cũ/mới cùng lúc. CSS chung navigation.css chỉ tác động navigator.
 - Các route giới thiệu con (lộ trình/chương trình/chính sách) đánh dấu section Giới thiệu; control/operations/sync cũ đánh dấu nhóm Vận hành. aria-current=page chỉ dùng khi URL liên kết khớp đúng route.
+- QA cuối: bảng đơn 54 cột tại 390/768/1280px, không cột/cell bị ẩn và không tràn document; cuộn bàn phím ArrowRight làm scrollLeft tăng. Mobile mở panel + accordion, Escape và click ngoài đóng đúng; nhóm Tài khoản active và link Đơn hàng aria-current=page. Dropdown desktop bỏ khoảng hở hover giữa nút và submenu.

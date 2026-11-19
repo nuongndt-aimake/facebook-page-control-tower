@@ -2,7 +2,7 @@
 #quick-nav .quick-menu-group:hover>.quick-menu-submenu{display:none}
 #quick-nav .quick-menu-group.group-open>.quick-menu-submenu{display:flex!important}
 #quick-nav .quick-menu-group-toggle.active,#quick-nav a[aria-current="page"]{color:#d6ff3f!important;background:#1d2a22!important;border-color:#657b35!important}
-#quick-nav .quick-menu-submenu{max-height:calc(100dvh - 90px);overflow:auto}
+#quick-nav .quick-menu-submenu{top:100%;max-height:calc(100dvh - 90px);overflow:auto}
 @media(min-width:901px){#quick-nav .quick-menu-toggle{display:none!important}#quick-nav .quick-menu-links{display:flex!important;position:static!important;flex-direction:row!important}#quick-nav .quick-menu-submenu{right:0;left:auto}}
 @media(max-width:900px){
  #quick-nav>div{min-height:58px!important;flex-wrap:nowrap!important}
