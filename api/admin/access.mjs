@@ -1,4 +1,4 @@
-import { accessContext, authenticatedUser, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
+import { accessContext, assertMutableContext, authenticatedUser, canManageSalesInventory, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
 
@@ -265,6 +265,32 @@ export default async function handler(request, response) {
     const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
     if (endpoint === "sales-orders") return await salesOrders(request, response, context);
+    if (endpoint === "sales_inventory") {
+      const allow = action => { if (!canManageSalesInventory(context, action)) throw new Error("Forbidden"); };
+      if (request.method === "GET") {
+        allow("read");
+        const [items, details, inhouse, products] = await Promise.all([db("sales_inventory_items?select=*&order=created_at.desc&limit=500"), db("fanpage_inventory_details?select=*&limit=500"), db("inhouse_page_inventory?select=*&limit=500"), db("sales_products?select=id,sku,name,status,product_group,sellable&order=name.asc&limit=100")]);
+        return send(response, 200, { items, details, inhouse, products });
+      }
+      if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
+      assertMutableContext(context);
+      const body = await readBody(request), action = String(body.action || ""), itemId = String(body.inventory_item_id || ""), orderRef = String(body.order_ref || "");
+      allow(action);
+      if (action === "intake") {
+        const productId = String(body.product_id || ""), facebookPageId = String(body.facebook_page_id || ""), pageLink = String(body.page_link || "");
+        if (!productId || !facebookPageId || !/^https?:\/\//i.test(pageLink)) return send(response, 400, { error: "product_id, facebook_page_id và page_link hợp lệ là bắt buộc" });
+        const code = `FPINV-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+        const rows = await db("sales_inventory_items?select=*&limit=1", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ product_id: productId, inventory_code: code, status: "draft", purchase_cost_vnd: body.purchase_cost_vnd == null ? null : Math.max(0, Number(body.purchase_cost_vnd)), created_by: context.user.id }) });
+        const item = rows[0]; await db("fanpage_inventory_details", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ inventory_item_id: item.id, facebook_page_id: facebookPageId, page_link: pageLink, current_admin_reference: body.current_admin_reference || null, current_bm_reference: body.current_bm_reference || null, intake_note: body.intake_note || null }) });
+        await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "sales_inventory_intake", target_type: "sales_inventory_item", target_id: item.id, details: { inventory_code: code } }) }); return send(response, 201, { item, inventory_code: code });
+      }
+      if (!itemId) return send(response, 400, { error: "inventory_item_id là bắt buộc" });
+      if (action === "publish") { const rows = await db(`sales_inventory_items?id=eq.${encodeURIComponent(itemId)}&status=eq.draft&select=*`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "available", updated_at: new Date().toISOString() }) }); if (!rows[0]) return send(response, 409, { error: "Chỉ mã kho nháp mới có thể mở bán" }); return send(response, 200, { item: rows[0] }); }
+      const rpc = action === "reserve" ? "sales_reserve_inventory_item" : action === "release" ? "sales_release_inventory_reservation" : action === "finalize" ? "sales_finalize_inventory_item" : null;
+      if (!rpc || !orderRef) return send(response, 400, { error: "action hoặc order_ref không hợp lệ" });
+      const args = action === "finalize" ? { p_inventory_item_id: itemId, p_order_ref: orderRef, p_destination: body.destination, p_actor_user_id: context.user.id, p_page_id: body.page_id || null, p_reason: body.reason || null } : { p_inventory_item_id: itemId, p_order_ref: orderRef, p_actor_user_id: context.user.id, p_reason: body.reason || null };
+      const result = await db(`rpc/${rpc}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(args) }); return send(response, 200, { item: result?.[0] || result });
+    }
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (endpoint === "payout") {
