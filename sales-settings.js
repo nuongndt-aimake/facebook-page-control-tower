@@ -18,10 +18,10 @@
       history.replaceChildren();
       const item=data.products.find(item=>item.id===product.value);if(!item)return;
       const prices=(data.prices||[]).filter(price=>price.product_id===item.id).sort((a,b)=>new Date(b.effective_from)-new Date(a.effective_from));
-      const current=prices.find(price=>new Date(price.effective_from)<=new Date());
+      const current=prices.find(price=>new Date(price.effective_from)<=new Date()&&(!price.effective_until||new Date(price.effective_until)>new Date()));
       const heading=document.createElement('h3');heading.textContent='Giá đang hiệu lực: '+money(current?.unit_price_vnd??item.unit_price_vnd);history.append(heading);
       const title=document.createElement('p');title.textContent='Lịch sử và lịch giá (giờ Việt Nam)';history.append(title);
-      for(const price of prices){const row=document.createElement('p');const future=new Date(price.effective_from)>new Date();row.textContent=money(price.unit_price_vnd)+' · '+new Date(price.effective_from).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})+' · '+(future?'Đã lên lịch':price===current?'Đang hiệu lực':'Lịch sử');history.append(row)}
+      for(const price of prices){const row=document.createElement('p');const future=new Date(price.effective_from)>new Date(),expired=price.effective_until&&new Date(price.effective_until)<=new Date();row.textContent=money(price.unit_price_vnd)+' · '+new Date(price.effective_from).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})+' · '+(expired?'Hết hiệu lực':future?'Đã lên lịch':price===current?'Đang hiệu lực':'Lịch sử');history.append(row)}
       if(!prices.length){const empty=document.createElement('p');empty.textContent='Chưa có lịch giá riêng; đang dùng giá niêm yết.';history.append(empty)}
     };
     product.onchange=renderPrices;renderPrices();
