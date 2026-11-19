@@ -18,7 +18,7 @@
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
 | `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
-| `/sales` | `sales.html` | Trang đặt mua Fanpage công khai; tạo QR/mã chuyển khoản riêng, không yêu cầu đăng nhập |
+| `/sales` | `sales.html` | Trang đặt mua Fanpage công khai theo layout mẫu hai thẻ; tạo QR/mã chuyển khoản riêng, tải QR và đếm ngược 15 phút, không yêu cầu đăng nhập |
 
 Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 

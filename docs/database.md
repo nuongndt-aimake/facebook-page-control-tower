@@ -56,7 +56,7 @@ Migration `20261101140000_publication_actor_provenance.sql` bổ sung `publisher
 Migration `20261119090000_fanpage_sales_line.sql` bổ sung catalog và luồng đơn hàng độc lập, sẵn sàng cho các loại sản phẩm tương lai:
 
 - `sales_products`: catalog theo `sku`, `product_type`, giá và trạng thái; bản ghi `FANPAGE` là sản phẩm hiện tại.
-- `sales_orders`: đơn đặt hàng, giá chốt tại thời điểm tạo, người mua tùy chọn, mã chuyển khoản duy nhất và trạng thái thanh toán/giao nhận.
+- `sales_orders`: đơn đặt hàng, giá chốt tại thời điểm tạo, người mua tùy chọn, mã chuyển khoản duy nhất, `payment_expires_at` (15 phút cho đơn public mới) và trạng thái thanh toán/giao nhận.
 - `sales_order_assignments`: một người phụ trách và tuyến quản lý cho mỗi đơn; khi bàn giao tài khoản, các đơn đang phụ trách được chuyển sang người tiếp quản và ghi audit.
 - `sales_payment_events`: nhật ký webhook bất biến, khóa chống xử lý trùng `provider_event_id`, trạng thái `processed`, `duplicate`, `amount_mismatch`, `unmatched` hoặc `rejected`.
 

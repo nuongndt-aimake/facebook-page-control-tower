@@ -72,7 +72,7 @@ Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action nh�
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
 
-`POST /api/checkout` chỉ hoạt động khi `SALES_PUBLIC_CHECKOUT_ENABLED=true`. Body gồm `buyer_name`, `buyer_phone`, `buyer_email`, `fulfillment_profile_url`, `quantity` (1–100) và tùy chọn `promo_code`. Server tạo `FS` + 10 ký tự, dùng cùng giá trị cho `order_code` và `payment_reference`, rồi trả QR với đúng `expected_amount_vnd`. Mã `INHOUSE` chỉ có hiệu lực tại server và chốt mức phải trả 10.000 đ cho đơn đó. Endpoint không trả secret hoặc quyền quản trị.
+`POST /api/checkout` chỉ hoạt động khi `SALES_PUBLIC_CHECKOUT_ENABLED=true`. Body gồm `buyer_name`, `buyer_phone`, `buyer_email`, `fulfillment_profile_url`, `quantity` (1–100) và tùy chọn `promo_code`. Server tạo `FS` + 10 ký tự, dùng cùng giá trị cho `order_code` và `payment_reference`, rồi trả QR với đúng `expected_amount_vnd`, đường dẫn tải QR giới hạn tham số, và `payment_expires_at` sau 15 phút. Mã `INHOUSE` chỉ có hiệu lực tại server và chốt mức phải trả 10.000 đ cho đơn đó. Endpoint không trả secret hoặc quyền quản trị.
 
 Webhook SePay ưu tiên `code`; ở Test Mode, khi không có cấu hình payment-code, nó chỉ nhận mã đơn chính xác dạng `FSXXXXXXXXXX` từ `content`. Transaction id là khóa idempotency, và chỉ giao dịch `in` với số tiền đúng mới chuyển đơn sang `paid`.
 

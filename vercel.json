@@ -10,6 +10,7 @@
     { "source": "/api/admin/sales-orders", "destination": "/api/admin/access?endpoint=sales-orders" },
     { "source": "/api/payments/sepay", "destination": "/api/admin/access?endpoint=sepay-webhook" },
     { "source": "/api/checkout", "destination": "/api/admin/access?endpoint=public-checkout" },
+    { "source": "/api/checkout/qr", "destination": "/api/admin/access?endpoint=public-qr-download" },
     { "source": "/api/posts/publication", "destination": "/api/analytics?action=publication" },
     { "source": "/api/posts/sync-request", "destination": "/api/analytics?action=sync-request" },
     { "source": "/api/cron/post-sync", "destination": "/api/cron/sync?worker=post" }

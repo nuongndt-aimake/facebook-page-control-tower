@@ -105,9 +105,10 @@ async function sepayWebhook(request, response) {
   // reference there as well. This does not match partial or arbitrary text.
   const contentReference = String(payload.content || "").match(/\bFS[A-Z0-9]{10}\b/i)?.[0] || "";
   const reference = String(payload.code || contentReference).trim().toUpperCase();
-  const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
+  const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status,payment_expires_at&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
   const order = found[0];
-  const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
+  const expired = order?.payment_expires_at && new Date(order.payment_expires_at).getTime() < Date.now();
+  const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : expired ? "expired" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
   await db("sales_payment_events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ provider_event_id: providerEventId, order_id: order?.id || null, amount_vnd: Number.isFinite(amount) ? amount : null, processing_status: processingStatus, raw_payload: payload }) });
   if (order) {
     const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
@@ -123,9 +124,19 @@ async function publicCheckout(request, response) {
   const products = await db("sales_products?select=id,unit_price_vnd,status&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
   const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE"; const amount = inhouse ? 10000 : Number(product.unit_price_vnd) * quantity;
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
-  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_name: String(input.buyer_name).trim(), buyer_phone: String(input.buyer_phone).trim(), buyer_email: String(input.buyer_email).trim(), fulfillment_profile_url: String(input.fulfillment_profile_url).trim(), quantity, unit_price_vnd: product.unit_price_vnd, expected_amount_vnd: amount, payment_reference: reference }) });
+  const paymentExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_name: String(input.buyer_name).trim(), buyer_phone: String(input.buyer_phone).trim(), buyer_email: String(input.buyer_email).trim(), fulfillment_profile_url: String(input.fulfillment_profile_url).trim(), quantity, unit_price_vnd: product.unit_price_vnd, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }) });
   const qr = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
-  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, payment_reference: reference }, qr_url: qr });
+  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }, qr_url: qr, qr_download_url: `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` });
+}
+async function publicQrDownload(request, response) {
+  if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
+  const url = new URL(request.url, "http://localhost"); const amount = Number(url.searchParams.get("amount")); const reference = String(url.searchParams.get("reference") || "").toUpperCase();
+  if (!Number.isSafeInteger(amount) || amount < 1000 || !/^FS[A-Z0-9]{10}$/.test(reference)) return send(response, 400, { error: "QR không hợp lệ" });
+  const qrUrl = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
+  const qrResponse = await fetch(qrUrl); if (!qrResponse.ok) return send(response, 502, { error: "Không thể tạo QR để tải" });
+  const image = Buffer.from(await qrResponse.arrayBuffer());
+  response.statusCode = 200; response.setHeader("Content-Type", qrResponse.headers.get("content-type") || "image/png"); response.setHeader("Content-Disposition", `attachment; filename="QR-${reference}.png"`); response.setHeader("Cache-Control", "no-store"); return response.end(image);
 }
 
 export default async function handler(request, response) {
@@ -133,6 +144,7 @@ export default async function handler(request, response) {
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
     if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
     if (endpoint === "public-checkout") return await publicCheckout(request, response);
+    if (endpoint === "public-qr-download") return await publicQrDownload(request, response);
     const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
     if (endpoint === "sales-orders") return await salesOrders(request, response, context);
