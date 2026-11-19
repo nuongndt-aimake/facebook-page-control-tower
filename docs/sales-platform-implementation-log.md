@@ -53,7 +53,7 @@
 ## Gate 2 — API kho quản trị
 
 - Trạng thái: `Thử nghiệm`
-- API: `GET/POST /api/admin/sales-inventory`
+- API: `GET/POST /api/admin/access?endpoint=sales_inventory` (được gộp vào function admin hiện có để phù hợp giới hạn Vercel Hobby).
 - Quyền: RBAC chủ động trong `profiles.permissions.sales_inventory`; kiểm tra trên server, không dựa vào nút UI. `platform_admin`/`super_admin` có toàn quyền mặc định.
 - Chức năng: xem kho; nhập nháp Page; mở bán mã nháp; gọi RPC reserve/release/finalize có khoá hàng; ghi `admin_audit_logs`.
 - Lưu ý: nhập kho hiện là luồng nhiều ghi bản ghi; chỉ mở bán được sau khi có đầy đủ chi tiết Page. Gate 2.1 sẽ chuyển thao tác nhập kho vào một RPC transaction trước khi cấp cho vai trò nhân viên sale.
@@ -65,3 +65,20 @@
 | Database | Chỉ dùng bảng/RPC Gate 1; không thêm migration. |
 | UI/menu | Chưa thêm menu để không lộ endpoint thử nghiệm. |
 | Kiểm thử | Đã chạy `node --check`; còn cần fixture cho reserve đồng thời và negative RBAC trước deploy. |
+
+## Điều hướng liên khu — giới thiệu, mua hàng, quản lý
+
+- Trạng thái: `Đang dùng`
+- Cập nhật: 2026-11-19
+- Phạm vi: `/`, `/lo-trinh`, `/sales` và các màn hình quản lý sử dụng `auth-nav.js`.
+
+### Impact note
+
+| Vùng | Tác động |
+| --- | --- |
+| Chức năng | Từ giới thiệu đi được tới mua Fanpage và quản lý; từ khu quản lý quay lại được hai khu công khai. Không đổi luồng đặt hàng. |
+| API/Database | Không thay đổi. |
+| Phân quyền | Liên kết `/analytics`, `/sales-orders` vẫn bị kiểm tra session/RBAC bởi API; hiển thị link không cấp quyền. |
+| UI | Menu chung thêm **Giới thiệu** và **Mua Fanpage**; menu mua hàng và hai trang giới thiệu có điểm nối tương ứng. Không liên kết trang kho thử nghiệm vì chưa có UI nghiệm thu. |
+| Responsive | Các liên kết dùng thanh menu hiện có: menu nhóm ở khu quản lý và tab cuộn ngang ở trang mua; cần QA 390px/768px/desktop sau deploy. |
+| Tích hợp/Dữ liệu | Không ảnh hưởng Supabase, SePay, Meta, DNS hay cron. |
