@@ -1,6 +1,6 @@
 # Quyền đơn hàng và kiểm thử checkout — 2026-11-19
 
-Trạng thái: Quyền xem đơn đã phát hành 441e967; các sửa bổ sung và kết quả kiểm thử ghi dưới đây.
+Trạng thái: Đã phát hành production. Quyền xem đơn 441e967, tracking và sửa checkout 95b0931, báo giá đồng nhất và kiểm thử mở rộng dcff59a. Không nghiệm thu chuyển tiền thật trong phiên này.
 
 Impact note: GET /api/admin/sales-orders mở cho tài khoản đã đăng nhập, lọc theo buyer_user_id hoặc phân công. Admin và quyền chủ động profiles.permissions.sales_orders=[read_all] xem toàn bộ. Hóa đơn/phân công/tổng hợp phải lọc cùng tập đơn; không trả dữ liệu cấu hình nhạy cảm cho người mua. /sales-orders bỏ chặn role admin ở UI; hành động thay đổi vẫn kiểm tra server. /users bổ sung quyền xem tất cả đơn. Không đổi cron, domain, SePay, môi trường. Dùng permissions JSON hiện có, không thêm role/bảng; quyền trực tiếp database hiện đóng/RLS giữ nguyên.
 
@@ -37,3 +37,12 @@ QA: tạo đơn thử được ghi rõ QA, không chuyển tiền thật; kiểm
 - Webhook không cho event sai/chi ra đến sau làm tụt đơn paid về cần đối soát. Kiểm thử giả xác nhận trạng thái paid được giữ nguyên; webhook chỉ nhận POST.
 - Test tích hợp API giả: buyer không thấy hóa đơn khác, không thấy quà chưa trả, không sửa được thanh toán; nhân viên read_all xem mọi đơn nhưng không có quyền sửa; khách không có phiên bị 401. Token theo dõi sai/khác đơn/hết hạn bị từ chối.
 - Kiểm thử chưa bao gồm chuyển tiền thật hoặc tình huống hai webhook đến đồng thời. Không khẳng định đã nghiệm thu các trường hợp này.
+
+## Xác nhận cuối trên production
+
+- Cả FSEBF9394C65 và FS80B58299A8 đã hủy, hóa đơn liên quan cancelled; giữ lịch sử, không phát hành hóa đơn/chuyển tiền/giao Page.
+- Báo giá giao diện live 1/2/5/10: 1.500.000 / 2.850.000 / 6.750.000 / 12.750.000đ. Mã không tồn tại hiện lỗi và khóa tạo đơn. Không thay chính sách giá đã được người dùng thiết lập trong admin.
+- SQL read-only xác nhận sales_orders, sales_invoice_records, sales_order_assignments: relrowsecurity=true; anon và authenticated đều không có SELECT trực tiếp. Backend lọc phạm vi qua service-role, không mở policy công khai.
+- 9 kiểm thử Node đều đạt: sales-order-api.test.mjs, sales-checkout.test.mjs, sales-webhook.test.mjs, sales-order-policy.test.mjs, sales-order-tracking.test.mjs. Fetch giả không chạm database/giao dịch production.
+- Kiểm tra trình bày /sales trên IAB với kích thước thực 390px và 768px, không tràn ngang; desktop không tràn. Chrome không áp dụng được viewport override trong lượt kiểm thử này nên không dùng số đo Chrome để khẳng định QA mobile.
+- Còn phụ thuộc: URL video admin hiện rỗng; kiểm thử ngân hàng/SePay thật và cuộc đua webhook đồng thời chưa thực hiện. Không tự đổi quyền của tài khoản nhân viên đang hoạt động để test; quyền read_all được kiểm thử bằng mock API, checkbox live và negative test bằng preview viewer.
