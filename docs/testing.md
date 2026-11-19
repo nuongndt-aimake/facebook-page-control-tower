@@ -1,5 +1,7 @@
 # Kiểm thử và nghiệm thu
 
+Gate 2.2: `node --test` đạt 12 kiểm tra. `supabase/tests/inventory_fulfillment_rollback.sql` chạy BEGIN/ROLLBACK trên dữ liệu QA riêng đạt 21 kiểm tra; hai phiên DB kiểm tra nhập cùng ID và checkout cùng mã đạt, QA đã dọn. Kết quả, phạm vi và giới hạn tại [nghiệm thu kho](inventory-fulfillment-release-20261119.md). Quy tắc mobile bảng chuyển card bên dưới **Hết hiệu lực riêng với bảng đơn/kho**: theo yêu cầu mới, giữ đủ cột và cuộn ngang trong khung. Quy tắc sales-orders chỉ admin bên dưới **Hết hiệu lực**: owner/assignee đọc đơn phạm vi, read_all/admin đọc toàn bộ; ghi kho còn yêu cầu scope và phạm vi đơn.
+
 ## Kiểm tra cú pháp
 
 Project là frontend HTML/JS và Vercel Functions, không có test runner bắt buộc. Chạy tối thiểu:

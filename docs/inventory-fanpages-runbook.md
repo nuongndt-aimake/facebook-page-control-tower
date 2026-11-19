@@ -1,5 +1,17 @@
 # Runbook kho Fanpage — Gate 2.1
 
+## Hiệu lực mới — 2026-11-19, Gate 2.2
+
+Luồng nhập nhiều request bên dưới **Hết hiệu lực** từ migration `20261119210000_sales_inventory_transaction_fulfillment.sql`: thay bằng RPC transaction; trùng ID chuẩn hóa hoặc lỗi detail/ledger/audit đều rollback toàn bộ. Lịch sử được giữ để truy vết. Chi tiết API, quyền và nghiệm thu tại [bản phát hành kho và bàn giao](inventory-fulfillment-release-20261119.md).
+
+- `/inventory-fanpages`: nhập nháp, sửa tên, mở bán và xem lịch sử từng mã.
+- `/sales-orders` → **Kho & bàn giao**: giữ mã đúng sản phẩm/số lượng, trả mã có lý do, xác minh 0đ, chốt bàn giao. Nhân viên có scope và được giao đơn hoặc có `sales_orders.read_all`.
+- Checkout tạo đơn, hóa đơn và giữ kho FIFO cùng transaction; thiếu hàng trả 409 và không tạo đơn dở dang. Đơn cũ chưa gắn mã phải giữ đủ mã trước khi chốt.
+- Bán ngoài: `reserved → external_sold`. Inhouse: đơn 0đ được nhân viên xác minh rồi mới chốt; `reserved → inhouse_transferred`, tạo Page registry nguồn `sales_inventory` và kho Inhouse, không đồng bộ Meta.
+- `/inventory-inhouse`: tạo đơn 0đ (nhân viên có `finalize`), xem kho/phân công, giao nhân sự có `assign_inhouse`; không cấp quyền Facebook thật.
+- Huỷ đơn chưa trả giải phóng mã, huỷ đơn và hóa đơn cùng transaction. Đơn paid/completed cần đối soát. Chưa có cron tự trả mã; dùng trả mã có lý do sau đối soát.
+- Ghi chú “chưa mở nút”, “UI Inhouse còn thiếu” phía dưới là lịch sử Gate 2.1, **Hết hiệu lực** trong phạm vi trên. Bảng dùng cuộn ngang trong khung theo yêu cầu mới, không ẩn cột.
+
 Bổ sung 2026-11-19: nhập mới bắt buộc Tên Page hiện tại; các mã cũ có nút Cập nhật tên dùng quyền intake và audit server. Bảng giữ từng trường thành một cột, scroll ngang trong khung trên mobile, không tự ẩn cột. Xem [migration và kiểm thử](parallel-upgrade-20261119.md). Luồng nhập kho nhiều bước hiện hữu chưa được chuyển sang RPC transaction trong bản bổ sung này.
 
 - Trạng thái: `Thử nghiệm`

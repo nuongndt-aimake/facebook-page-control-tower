@@ -1,5 +1,7 @@
 # Roadmap triển khai
 
+Gate 2.2 ngày 2026-11-19 đã triển khai code, migration và kiểm thử transaction nhập kho, giữ hàng cùng checkout, bán ngoài, chuyển Inhouse, giao nhân sự và ledger UI; đang nghiệm thu deployment. Ghi chú “Gate tiếp theo: intake transaction/Inhouse” bên dưới **Hết hiệu lực** với phần đã hoàn thành, thay bằng [bản phát hành và các phần còn chờ](inventory-fulfillment-release-20261119.md). Báo cáo/hoa hồng/Sheets và sản phẩm nhóm 2–4 vẫn theo lộ trình riêng, không tự đặt chính sách.
+
 Đã phát hành 2026-11-19: webhook atomic và test hai phiên, giá public theo hiệu lực, bảng đủ cột đơn/kho, tên Page, menu active/tap/desktop. [Kế hoạch các luồng độc lập và kết quả](parallel-upgrade-20261119.md). Gate tiếp theo: intake transaction và các phần Inhouse/bàn giao/báo cáo còn Roadmap; không đánh dấu các phần đó hoàn tất chỉ vì bảng kho đã có tên.
 
 > **Bổ sung 2026-11-19 — Roadmap nền tảng sản phẩm:** xem [sales-platform-rearchitecture-plan.md](sales-platform-rearchitecture-plan.md). Nhóm Fanpage là ưu tiên triển khai; Skill, khóa học và thuê bao giữ trạng thái `Roadmap`. Module đồng bộ Meta/Facebook được cách ly trong đợt tái cấu trúc catalog. Gate 1 đang ở mức `Thử nghiệm`, chưa mở bán hoặc thay menu cho người dùng; xem [nhật ký triển khai](sales-platform-implementation-log.md).

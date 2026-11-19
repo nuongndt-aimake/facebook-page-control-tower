@@ -1,5 +1,7 @@
 # API reference
 
+Gate 2.2, 2026-11-19: `endpoint=sales_inventory|sales_fulfillment|sales_inhouse` bổ sung lệnh transaction và scope `assign_inhouse`; checkout gọi RPC atomic giữ hàng. Các RPC loose-order-reference cũ **Hết hiệu lực** làm entry point, thay bằng `sales_inventory_command`. Xem [hợp đồng API, quyền, lỗi và tương thích](inventory-fulfillment-release-20261119.md#api-và-tương-thích).
+
 ## Cập nhật 2026-11-19: sales
 
 - Webhook `/api/payments/sepay` vẫn POST + Apikey; sau xác thực gọi duy nhất RPC `sales_process_payment_event`. Cùng provider event trả success/duplicate, không ghi thêm; các event khác nhau trên cùng đơn khóa hàng và chỉ một processed. Xem [thiết kế và QA](parallel-upgrade-20261119.md).

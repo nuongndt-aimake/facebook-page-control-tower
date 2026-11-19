@@ -1,5 +1,7 @@
 # Auth, RBAC và admin preview
 
+Gate 2.2: thêm capability `sales_inventory.assign_inhouse`, không thêm role. Ma trận API/UI/database đồng bộ tại [release](inventory-fulfillment-release-20261119.md). POST kho dùng actor session, active profile và scope; order action còn kiểm tra assignee/read_all/admin. Owner không được tự chốt. Preview không ghi. Chỉ định nhân sự qua kho Inhouse tạo assignment + page_access hiện có, không cấp quyền Facebook và không thay quyền nền tảng. Client không gọi RPC hoặc truy cập bảng link kho trực tiếp.
+
 ## Auth
 
 - Google OAuth qua Supabase.

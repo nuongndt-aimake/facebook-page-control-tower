@@ -1,5 +1,7 @@
 # Runbook vận hành
 
+Gate 2.2: thao tác kho/đơn/Inhouse và giải phóng mã chưa trả theo [runbook kho](inventory-fanpages-runbook.md). Migration trước API; không gọi RPC loose-order-reference cũ. Theo dõi 409 thiếu hàng/trùng ID là lỗi nghiệp vụ, không retry mù. Đơn hết hạn đang giữ mã cần đối soát/trả mã có lý do; chưa có cron tự trả. Thông tin triển khai/QA tại [release](inventory-fulfillment-release-20261119.md).
+
 ## Webhook đồng thời — 2026-11-19
 
 Trước deploy API webhook, xác nhận RPC trong migration 20261119203000 có mặt và chỉ service_role EXECUTE. Nếu RPC lỗi, request phải trả lỗi để SePay retry; không đánh dấu thành công bằng một ghi event rời. Khi đối soát, phân biệt processed/duplicate/amount_mismatch/expired/rejected; không tự đổi paid khi gặp event gửi lại. QA concurrency có script `sales-payment-concurrency.sql`; chỉ chạy dữ liệu QA, hủy order/invoice sau test và giữ lịch sử. [Kết quả nghiệm thu](parallel-upgrade-20261119.md).

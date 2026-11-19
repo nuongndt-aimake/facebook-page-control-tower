@@ -1,6 +1,7 @@
 import { accessContext, assertMutableContext, authenticatedUser, canManageSalesInventory, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
+import {inventoryService,inventoryFailure,inventoryScopes} from '../../sales-inventory-service.mjs';
 import { canReadAllSalesOrders, visibleSalesOrders } from '../../sales-order-policy.mjs';
 import {signOrderTracking,verifyOrderTracking} from '../../sales-order-tracking.mjs';
 
@@ -95,21 +96,14 @@ async function salesOrders(request, response, context) {
       item.order_count += 1; item.expected_amount_vnd += Number(order?.expected_amount_vnd || 0); totalsByDay.set(key, item);
     }
     const staffOrderIds = new Set(assignments.filter(row => String(row.assignee_user_id) === String(context.user.id)).map(row => String(row.order_id)));
-    return send(response, 200, { access:{read_all:all,manage:admin}, products, orders:visible.map(row=>{const {gift_download_url,...safe}=row;return {...safe,...(admin||row.payment_status==='paid'?{gift_download_url}:{})}}), assignments:assignments.filter(row=>ids.has(String(row.order_id))), invoice_records:safeInvoices, prices, promo_codes:promoCodes, settings, invoice_aggregate_groups:all?[...totalsByDay.values()].sort((a,b)=>String(b.aggregation_date).localeCompare(String(a.aggregation_date))):[] });
+    return send(response, 200, { access:{read_all:all,manage:admin,inventory_scopes:inventoryScopes.filter(scope=>canManageSalesInventory(context,scope))}, products, orders:visible.map(row=>{const {gift_download_url,...safe}=row;return {...safe,...(admin||row.payment_status==='paid'?{gift_download_url}:{})}}), assignments:assignments.filter(row=>ids.has(String(row.order_id))), invoice_records:safeInvoices, prices, promo_codes:promoCodes, settings, invoice_aggregate_groups:all?[...totalsByDay.values()].sort((a,b)=>String(b.aggregation_date).localeCompare(String(a.aggregation_date))):[] });
   }
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
   if (!salesStaffRoles.has(context.profile.role)) throw new Error('Forbidden');
   const input = await readBody(request);
   if (input.action === "verify_zero_value_order") {
-    if (!input.order_id) return send(response, 400, { error: "Thiếu order_id" });
-    const rows = await db(`sales_orders?select=id,expected_amount_vnd,zero_value_verification_status& id=eq.${encodeURIComponent(input.order_id)}&limit=1`.replace("& id", "&id"));
-    const order = rows[0];
-    if (!order || Number(order.expected_amount_vnd) !== 0 || order.zero_value_verification_status !== "pending_staff_verification") return send(response, 400, { error: "Đơn không ở trạng thái chờ xác minh miễn phí" });
-    if (!salesAdminRoles.has(context.profile.role)) { const assignment = await db(`sales_order_assignments?select=order_id&order_id=eq.${encodeURIComponent(order.id)}&assignee_user_id=eq.${encodeURIComponent(context.user.id)}&limit=1`); if (!assignment[0]) throw new Error("Forbidden"); }
-    await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ payment_status: "paid", paid_at: new Date().toISOString(), zero_value_verification_status: "verified", zero_value_verified_by: context.user.id, zero_value_verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }) });
-    await syncInvoiceForPayment(order.id, "paid");
-    await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "verify_zero_value_sales_order", target_type: "sales_order", target_id: order.id, details: {} }) });
-    return send(response, 200, { ok: true });
+    const result=await db('rpc/sales_inventory_command',{method:'POST',body:JSON.stringify({p_action:'verify_zero',p_actor:context.user.id,p_input:{order_id:input.order_id}})});
+    return send(response,200,result);
   }
   if (!salesAdminRoles.has(context.profile.role)) throw new Error("Forbidden");
   if (input.action === "save_sales_setting") {
@@ -134,12 +128,13 @@ async function salesOrders(request, response, context) {
     if (!assignees[0] || assignees[0].status !== "active") return send(response, 400, { error: "Người nhận đơn không hoạt động hoặc không tồn tại" });
     if (input.manager_user_id) { const managers = await db(`profiles?select=id,status&id=eq.${encodeURIComponent(input.manager_user_id)}&limit=1`); if (!managers[0] || managers[0].status !== "active") return send(response, 400, { error: "Quản lý nhận bàn giao không hoạt động hoặc không tồn tại" }); }
     const rows = await db("sales_order_assignments?on_conflict=order_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify({ order_id: input.order_id, assignee_user_id: input.assignee_user_id, manager_user_id: input.manager_user_id || null, assigned_by: context.user.id, handover_note: input.handover_note || null }) });
-    await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ fulfillment_status: "assigned", updated_at: new Date().toISOString() }) });
+    await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}&fulfillment_status=in.(unassigned,assigned)`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ fulfillment_status: "assigned", updated_at: new Date().toISOString() }) });
     await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "assign_sales_order", target_type: "sales_order", target_id: input.order_id, details: { assignee_user_id: input.assignee_user_id, manager_user_id: input.manager_user_id || null, handover_note: input.handover_note || null } }) });
     return send(response, 200, rows[0]);
   }
   if (input.action === "set_payment_status") {
     if (!input.order_id || !salesPaymentStates.has(input.payment_status)) return send(response, 400, { error: "Trạng thái thanh toán không hợp lệ" });
+    if(input.payment_status==='cancelled'){const result=await db('rpc/sales_inventory_command',{method:'POST',body:JSON.stringify({p_action:'cancel_order',p_actor:context.user.id,p_input:{order_id:input.order_id,reason:'Huỷ đơn chờ theo quản trị viên'}})});return send(response,200,result)}
     await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ payment_status: input.payment_status, updated_at: new Date().toISOString() }) });
     await syncInvoiceForPayment(input.order_id, input.payment_status);
     await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "set_sales_payment_status", target_type: "sales_order", target_id: input.order_id, details: { payment_status: input.payment_status, source: "manual_admin" } }) });
@@ -198,7 +193,7 @@ async function currentProductPrice(productId, fallback) {
 }
 async function currentProductPriceRecord(productId,fallback){
   const now = encodeURIComponent(new Date().toISOString());
-  const rows = await db(`sales_product_prices?select=unit_price_vnd,effective_from&product_id=eq.${encodeURIComponent(productId)}&effective_from=lte.${now}&order=effective_from.desc&limit=1`);
+  const rows = await db(`sales_product_prices?select=unit_price_vnd,effective_from&product_id=eq.${encodeURIComponent(productId)}&effective_from=lte.${now}&or=(effective_until.is.null,effective_until.gt.${now})&order=effective_from.desc&limit=1`);
   return {unit_price_vnd:Number(rows[0]?.unit_price_vnd??fallback),price_effective_from:rows[0]?.effective_from||null};
 }
 async function publicSalesConfig(request, response) {
@@ -246,10 +241,9 @@ async function publicCheckout(request, response) {
   if(amount===0&&!salesStaffRoles.has(account.role))throw Error('Forbidden');
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
   const paymentExpiresAt = amount > 0 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
-  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: configuredUnitPrice, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_code: promo?.code || null, promo_discount_vnd: promoDiscount, gift_name: promo?.gift_name || null, gift_download_url: promo?.gift_download_url || null, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: amount === 0 ? "pending_staff_verification" : null }) });
-  if (signedInUser && !account.phone) await db(`profiles?id=eq.${encodeURIComponent(signedInUser.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ phone: buyerPhone, updated_at: new Date().toISOString() }) });
-  const invoiceRecord = invoice.requested ? { customer_name: invoice.customer_name, tax_code: invoice.tax_code, billing_address: invoice.billing_address, billing_email: invoice.billing_email } : {};
-  await db("sales_invoice_records", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ order_id: rows[0].id, invoice_type: invoice.requested ? "individual" : "daily_aggregate", invoice_status: "pending_payment", aggregation_date: vietnamBusinessDate(), ...invoiceRecord }) });
+  const orderData={ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: configuredUnitPrice, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_code: promo?.code || null, promo_discount_vnd: promoDiscount, gift_name: promo?.gift_name || null, gift_download_url: promo?.gift_download_url || null, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: amount === 0 ? "pending_staff_verification" : null };
+  const created=await db('rpc/sales_checkout_create',{method:'POST',body:JSON.stringify({p_order:orderData,p_invoice:invoice})});
+  const rows=Array.isArray(created)?created:[created];
   const qr = amount > 0 ? `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}` : null;
   return send(response, 201, { order_status_token:signOrderTracking(rows[0].id,process.env.SUPABASE_SERVICE_ROLE_KEY), order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_discount_vnd: promoDiscount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: rows[0].zero_value_verification_status, gift: null }, qr_url: qr, qr_download_url: qr ? `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` : null });
 }
@@ -276,45 +270,13 @@ export default async function handler(request, response) {
       response.setHeader('Cache-Control','no-store');return send(response,200,{order_code:order.order_code,payment_status:status,amount_vnd:order.expected_amount_vnd,zero_value_verification_status:order.zero_value_verification_status,...(status==='paid'&&order.gift_download_url?{gift:{name:order.gift_name||'Quà tặng',download_url:order.gift_download_url}}:{})});
     }
     if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
-    if (endpoint === "public-checkout") return await publicCheckout(request, response);
+    if (endpoint === "public-checkout") {try{return await publicCheckout(request,response)}catch(error){return inventoryFailure(response,error)}}
     if (endpoint === "public-sales-config") return await publicSalesConfig(request, response);
     if (endpoint === "public-qr-download") return await publicQrDownload(request, response);
     const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);
     if (endpoint === "sales-orders") return await salesOrders(request, response, context);
-    if (endpoint === "sales_inventory") {
-      const allow = action => { if (!canManageSalesInventory(context, action)) throw new Error("Forbidden"); };
-      if (request.method === "GET") {
-        allow("read");
-        const [items, details, inhouse, products] = await Promise.all([db("sales_inventory_items?select=*&order=created_at.desc&limit=500"), db("fanpage_inventory_details?select=*&limit=500"), db("inhouse_page_inventory?select=*&limit=500"), db("sales_products?select=id,sku,name,status,product_group,sellable&order=name.asc&limit=100")]);
-        return send(response, 200, { items, details, inhouse, products });
-      }
-      if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
-      assertMutableContext(context);
-      const body = await readBody(request), action = String(body.action || ""), itemId = String(body.inventory_item_id || ""), orderRef = String(body.order_ref || "");
-      allow(action==='update_page_name'?'intake':action);
-      if(action==='update_page_name'){
-        const name=cleanText(body.page_name,255);if(!itemId||!name)return send(response,400,{error:'Thiếu mã kho hoặc tên Page'});
-        const updated=await db(`fanpage_inventory_details?inventory_item_id=eq.${encodeURIComponent(itemId)}&select=inventory_item_id,page_name`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({page_name:name,updated_at:new Date().toISOString()})});
-        if(!updated.length)return send(response,404,{error:'Không tìm thấy mã kho'});
-        await db('admin_audit_logs',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({actor_user_id:context.user.id,action:'inventory_update_page_name',target_type:'sales_inventory_item',target_id:itemId,details:{page_name:name}})});
-        return send(response,200,{ok:true});
-      }
-      if (action === "intake") {
-        const productId = String(body.product_id || ""), facebookPageId = String(body.facebook_page_id || "").trim(), pageLink = String(body.page_link || ""), pageName=cleanText(body.page_name,255);
-        if (!productId || !facebookPageId || !pageName || !/^https?:\/\//i.test(pageLink)) return send(response, 400, { error: "Sản phẩm, tên Page, ID Page và link hợp lệ là bắt buộc" });
-        const code = `FPINV-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
-        const rows = await db("sales_inventory_items?select=*&limit=1", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ product_id: productId, inventory_code: code, status: "draft", purchase_cost_vnd: body.purchase_cost_vnd == null ? null : Math.max(0, Number(body.purchase_cost_vnd)), created_by: context.user.id }) });
-        const item = rows[0]; await db("fanpage_inventory_details", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ inventory_item_id: item.id, page_name:pageName, facebook_page_id: facebookPageId, page_link: pageLink, current_admin_reference: body.current_admin_reference || null, current_bm_reference: body.current_bm_reference || null, intake_note: body.intake_note || null }) });
-        await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "sales_inventory_intake", target_type: "sales_inventory_item", target_id: item.id, details: { inventory_code: code } }) }); return send(response, 201, { item, inventory_code: code });
-      }
-      if (!itemId) return send(response, 400, { error: "inventory_item_id là bắt buộc" });
-      if (action === "publish") { const rows = await db(`sales_inventory_items?id=eq.${encodeURIComponent(itemId)}&status=eq.draft&select=*`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "available", updated_at: new Date().toISOString() }) }); if (!rows[0]) return send(response, 409, { error: "Chỉ mã kho nháp mới có thể mở bán" }); return send(response, 200, { item: rows[0] }); }
-      const rpc = action === "reserve" ? "sales_reserve_inventory_item" : action === "release" ? "sales_release_inventory_reservation" : action === "finalize" ? "sales_finalize_inventory_item" : null;
-      if (!rpc || !orderRef) return send(response, 400, { error: "action hoặc order_ref không hợp lệ" });
-      const args = action === "finalize" ? { p_inventory_item_id: itemId, p_order_ref: orderRef, p_destination: body.destination, p_actor_user_id: context.user.id, p_page_id: body.page_id || null, p_reason: body.reason || null } : { p_inventory_item_id: itemId, p_order_ref: orderRef, p_actor_user_id: context.user.id, p_reason: body.reason || null };
-      const result = await db(`rpc/${rpc}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(args) }); return send(response, 200, { item: result?.[0] || result });
-    }
+    if (['sales_inventory','sales_fulfillment','sales_inhouse'].includes(endpoint))return inventoryService(request,response,context,endpoint);
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (endpoint === "payout") {
@@ -556,7 +518,7 @@ export default async function handler(request, response) {
       if (body.action === "set_sales_inventory_permissions") {
         if (!["platform_admin", "super_admin"].includes(context.profile.role)) throw new Error("Forbidden");
         const userId = String(body.user_id || "");
-        const allowed = new Set(["read", "intake", "publish", "reserve", "release", "finalize"]);
+        const allowed = new Set(["read", "intake", "publish", "reserve", "release", "finalize", "assign_inhouse"]);
         const permissions = [...new Set((Array.isArray(body.permissions) ? body.permissions : []).map(String))].filter(item => allowed.has(item));
         if (!userId) return send(response, 400, { error: "user_id là bắt buộc" });
         const rows = await db(`profiles?select=permissions&id=eq.${encodeURIComponent(userId)}&limit=1`);

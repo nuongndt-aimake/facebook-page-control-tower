@@ -1,5 +1,7 @@
 # Triển khai Vercel và Supabase
 
+Gate 2.2: migration `20261119210000_sales_inventory_transaction_fulfillment.sql` đã apply và QA rollback/concurrency đạt trước deploy API. Không thêm env/secret/domain/cron. Chỉ deploy repository `facebook-page-control-tower` để cập nhật `money.aiecom.vn`; không deploy project sales cũ. Phục hồi code giữ schema additive và không mở lại RPC ghi cũ. Xem [release và runbook](inventory-fulfillment-release-20261119.md).
+
 ## Supabase
 
 1. Tạo project Supabase.

@@ -1,5 +1,7 @@
 # Frontend và UX
 
+Gate 2.2 bổ sung `/inventory-inhouse` trong Vận hành, panel **Kho & bàn giao** trong đơn, lịch sử từng mã trong kho. Native dialog có đóng, thông báo kết quả và khoá nút khi gửi. API trả scope để hiển thị thao tác; không thay kiểm tra quyền server. Bảng giữ mọi trường và cuộn ngang trong khung. Xem [luồng và nghiệm thu](inventory-fulfillment-release-20261119.md).
+
 Nâng cấp giá theo hiệu lực, bảng đầy đủ cột, tên Page và cơ chế menu: [kế hoạch độc lập, thiết kế và nghiệm thu](parallel-upgrade-20261119.md). Riêng đơn hàng/kho giữ tất cả cột và scroll ngang trong khung, thay quy tắc ẩn cột/card trước đây theo yêu cầu ngày 2026-11-19.
 
 Quyền xem đơn và luồng báo giá/QR/theo dõi thanh toán: [ma trận quyền, impact note và kết quả QA](order-access-and-checkout-qa-20261119.md). Quy ước chỉ admin xem đơn **hết hiệu lực 2026-11-19**, thay bằng đơn của mình/phân công hoặc quyền read_all; action quản trị vẫn kiểm tra riêng ở server.

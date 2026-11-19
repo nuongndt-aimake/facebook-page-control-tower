@@ -1,5 +1,9 @@
 # Database và migration
 
+## Gate 2.2 — kho atomic và bàn giao 2026-11-19
+
+Migration `20261119210000_sales_inventory_transaction_fulfillment.sql` đã apply: ID Page normalized unique, liên kết đơn–mã kho snapshot + unique partial, RPC intake/checkout/fulfillment atomic, nguồn Page `sales_inventory`, đơn 0đ hợp lệ. RLS bật, không grant client; RPC SECURITY INVOKER chỉ service_role. Không sửa dữ liệu kho/đơn lịch sử. Xem [thiết kế, quyền, kiểm thử và phục hồi](inventory-fulfillment-release-20261119.md).
+
 ## Bổ sung 2026-11-19: webhook atomic và tên Page
 
 Migration `20261119203000_sales_atomic_payment_and_page_name.sql` đã áp dụng production: thêm fanpage_inventory_details.page_name (nullable để tương thích dữ liệu cũ); RPC SECURITY INVOKER chỉ service_role có EXECUTE. Unique provider_event_id + FOR UPDATE theo sales_orders, cập nhật event/order/invoice trong một transaction. Không đổi RLS hay mở quyền anon/authenticated. Xem [kết quả kiểm thử hai phiên](parallel-upgrade-20261119.md).
