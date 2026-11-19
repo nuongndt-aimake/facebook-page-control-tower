@@ -1,6 +1,8 @@
 # Đồng bộ navigator toàn hệ thống — 2026-11-19
 
-Trạng thái: Đã triển khai trong mã nguồn; kiểm thử production sau khi phát hành.
+Trạng thái: Đã phát hành production (68a511b). Menu chung xác nhận tại /, /sales, /account, /sales-orders, /operations, /lo-trinh, /privacy. Trang giới thiệu, mua hàng và tài khoản đạt kiểm tra không tràn ngang tại 390px, 768px và desktop.
+
+Bổ sung kiểm thử: nếu thu hồi phiên trên máy chủ gặp lỗi, thử đăng xuất phạm vi local; chỉ chuyển tới đăng nhập khi phiên đã được xóa. Nếu phiên vẫn tồn tại, cho thử lại. Điều này xử lý cả phiên hết hạn đã bị máy chủ từ chối.
 
 ## Impact note
 
