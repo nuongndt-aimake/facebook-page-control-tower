@@ -1,6 +1,6 @@
 # Khắc phục chặn nhập báo cáo khi thiếu payout — 2026-11-19
 
-Trạng thái: Đang triển khai. Ảnh người dùng cho thấy ô báo cáo của chính nhân sự bị disabled vì chưa có payout. Điều kiện này cản việc báo cáo công việc.
+Trạng thái: Đang dùng. Ảnh người dùng cho thấy ô báo cáo của chính nhân sự bị disabled vì chưa có payout. Điều kiện này cản việc báo cáo công việc.
 
 ## Impact note / luồng thay thế
 
@@ -15,3 +15,5 @@ Trạng thái: Đang triển khai. Ảnh người dùng cho thấy ô báo cáo 
 Quy tắc bắt buộc thiết lập payout trước nộp báo cáo tại bản `6d9ab96`/migration `20261119232000` **Hết hiệu lực ngày 2026-11-19**, thay bằng báo cáo trước và bổ sung payout sau qua migration `20261119234000_allow_reporting_pending_payout.sql`. Mô tả/quy tắc cũ giữ làm lịch sử, không áp dụng tiếp.
 
 Kiểm thử trước phát hành: 46 Node tests pass; 44 kiểm tra SQL (15 currency/payout + 17 operations + 12 profile/scope) chạy trong rollback transaction; 9 trường hợp API báo cáo pass, không giữ dữ liệu thử. Migration 20261119234000 đã áp dụng Supabase. Responsive code có breakpoint 390/768/desktop; kiểm tra trình duyệt sau phát hành được ghi riêng, không suy diễn từ test logic.
+
+Phát hành production: commit a4a41031c18bd77a48c63ad26e8b0c401000f8ac, Vercel 7sti5J2hYjZeZmia12dU9jXHC279 success; HTTP canonical money.aiecom.vn đã xác nhận module mới trả 200, Tổng quan không nạp analytics-runtime. Browser đã thấy ô báo cáo editable và payout trên từng dòng Inhouse. Bổ sung gọn icon/ý nghĩa duyệt: xem [tài liệu nối tiếp](report-verification-and-compact-actions-20261119.md).

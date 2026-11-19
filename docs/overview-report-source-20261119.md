@@ -1,6 +1,6 @@
 # Tổng quan dùng báo cáo vận hành — 2026-11-19
 
-Trạng thái: Đang triển khai. Phát hiện nguyên nhân: `/analytics` vẫn nạp `analytics-runtime.js`/Chart.js và màn hình Meta cũ; widget báo cáo chỉ được thêm lên phía trên, chưa thay nguồn chính.
+Trạng thái: Đang dùng. Phát hiện nguyên nhân: `/analytics` vẫn nạp `analytics-runtime.js`/Chart.js và màn hình Meta cũ; widget báo cáo chỉ được thêm lên phía trên, chưa thay nguồn chính.
 
 ## Impact note và phạm vi chốt
 
@@ -16,3 +16,5 @@ Trạng thái: Đang triển khai. Phát hiện nguyên nhân: `/analytics` vẫ
 Tổng quan Meta trên `/analytics` (META PAGE REPORTING, Đồng bộ lại, lượt xem/tương tác/nhóm kiếm tiền/Chart.js) **Hết hiệu lực ngày 2026-11-19**, thay bằng báo cáo vận hành trong bản này. File runtime/API và mô tả cũ được giữ để tra cứu; không xóa lịch sử hoặc sửa cron ngoài phạm vi.
 
 Kiểm thử trước phát hành: 46 Node tests pass; 44 kiểm tra SQL (15 currency/payout + 17 operations + 12 profile/scope) chạy trong rollback transaction; 9 trường hợp API báo cáo pass, không giữ dữ liệu thử. Migration 20261119234000 đã áp dụng Supabase. Responsive code có breakpoint 390/768/desktop; kiểm tra trình duyệt sau phát hành được ghi riêng, không suy diễn từ test logic.
+
+Phát hành production: commit a4a41031c18bd77a48c63ad26e8b0c401000f8ac, Vercel 7sti5J2hYjZeZmia12dU9jXHC279 success; HTTP canonical money.aiecom.vn đã xác nhận module mới trả 200, Tổng quan không nạp analytics-runtime. Browser đã thấy ô báo cáo editable và payout trên từng dòng Inhouse. Bổ sung gọn icon/ý nghĩa duyệt: xem [tài liệu nối tiếp](report-verification-and-compact-actions-20261119.md).
