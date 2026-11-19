@@ -17,15 +17,18 @@
 | `/connect-meta` | `connect-meta.html` | OAuth Meta, cấu hình slot đồng bộ và theo dõi queue/run gần nhất; trạng thái đọc lại không dùng cache, bảng có STT |
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
+| `/signup` | `signup.html` | Đăng ký/đăng nhập Google, chuyển về Tài khoản sau khi có phiên |
 | `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
 | `/inventory-fanpages` | `inventory-fanpages.html` | Kho Fanpage: xem mã kho theo quyền `sales_inventory.read`; nhập mã nháp khi có `intake`; mở bán mã nháp khi có `publish` |
 | `/sales` | `sales.html` | Trang đặt mua Fanpage công khai theo giao diện **Fanpage Sales V3**: khung thông tin nhận Page và khung thanh toán SePay; tạo QR/mã chuyển khoản riêng, tải QR và đếm ngược 15 phút, không yêu cầu đăng nhập |
 
-Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` và `Kho Fanpage` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
+Navigator dùng các nhóm `Tổng quan`, `Báo cáo`, `Vận hành` và (chỉ sau đăng nhập) `Tài khoản`. `Hoa hồng` và `Quyền lợi & Payout` nằm trong `Vận hành`; `Đơn hàng` nằm trong `Tài khoản`. Cuối menu là **Đăng nhập → Đăng ký** khi chưa có phiên, hoặc **Tài khoản → Đăng xuất** khi đã đăng nhập. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
 ## Target IA: Sales Platform
 
 Thiết kế menu/screen cho catalog, kho Fanpage/kho Inhouse, đơn hàng, bàn giao, báo cáo theo nhân sự/Page và cấu hình được quy định tại [sales-platform-design.md](sales-platform-design.md). `/inventory-fanpages` là menu production Gate 2; catalog, kho Inhouse, bàn giao và báo cáo theo nhân sự/Page vẫn là `Roadmap`. Khi triển khai, cập nhật đồng thời `auth-nav.js`, mobile overlay, route table này và module map; không tạo menu riêng trong từng màn hình sales.
+
+Mã giới thiệu thuộc phạm vi **Tài khoản**, không phải Vận hành. Chưa có route hiển thị/gán mã giới thiệu cho CTV nên chưa được đặt liên kết trong menu production; tránh đưa người dùng tới màn hình rỗng. Module này được triển khai cùng scope `affiliate` và attribution đơn hàng.
 
 ## Quy ước bảng dữ liệu
 
@@ -54,7 +57,7 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 
 Frontend chỉ hiển thị snapshot/API response đã được server lọc theo access context. Không suy ra quyền từ query string hoặc `localStorage`. Bộ lọc chỉ thay đổi dữ liệu đang hiển thị, không thay đổi dữ liệu gốc.
 
-`/sales` là tuyến mua hàng ngoài khu quản trị, được phát hành như liên kết chiến dịch/checkout công khai. Không đưa nó vào navigator nội bộ; kết quả đơn chỉ được quản trị viên xem qua `/sales-orders`.
+Quy ước **Hết hiệu lực từ 2026-11-19**: `/sales` chỉ là liên kết chiến dịch ngoài navigator. Thay thế: `/sales` vẫn là checkout công khai, nhưng có điểm neo **Mua Fanpage** trong navigator chung để người dùng chuyển được giữa giới thiệu, mua và quản lý. Kết quả đơn vẫn chỉ được quản trị viên xem qua `/sales-orders` cho đến khi có màn hình đơn hàng cá nhân.
 
 ### Điều chỉnh giao diện bán hàng 2026-11-19
 

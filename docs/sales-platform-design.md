@@ -85,6 +85,12 @@ Menu này là **target IA**, được đưa vào `auth-nav.js` chỉ tại Gate 
 - Khách vãng lai không thấy menu nội bộ, kho, báo cáo hoặc cấu hình.
 - Người mua không có tài khoản theo dõi đơn bằng token/mã đơn giới hạn thời gian; không cấp dashboard nội bộ.
 
+### Quy ước menu tài khoản (Đang dùng)
+
+- Khi chưa đăng nhập, hai phần tử cuối là **Đăng nhập** rồi **Đăng ký**.
+- Khi đã đăng nhập, nhóm **Tài khoản** đứng cuối điều hướng nghiệp vụ, chứa **Tài khoản** và **Đơn hàng**; sau đó là **Đăng xuất**.
+- Hoa hồng và Payout là nghiệp vụ vận hành. Mã giới thiệu sẽ nằm trong **Tài khoản** khi scope CTV/affiliate có route và dữ liệu attribution; hiện chưa có link để không tạo route rỗng.
+
 ### Quy tắc responsive
 
 - Desktop: module chính + submenu, không trải phẳng toàn bộ route.

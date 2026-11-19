@@ -82,3 +82,17 @@
 | UI | Menu chung thêm **Giới thiệu** và **Mua Fanpage**; menu mua hàng và hai trang giới thiệu có điểm nối tương ứng. Không liên kết trang kho thử nghiệm vì chưa có UI nghiệm thu. |
 | Responsive | Các liên kết dùng thanh menu hiện có: menu nhóm ở khu quản lý và tab cuộn ngang ở trang mua; cần QA 390px/768px/desktop sau deploy. |
 | Tích hợp/Dữ liệu | Không ảnh hưởng Supabase, SePay, Meta, DNS hay cron. |
+
+## Điều chỉnh menu theo hành trình tài khoản
+
+- Trạng thái: `Đang dùng`
+- Cập nhật: 2026-11-19
+
+| Vùng | Tác động |
+| --- | --- |
+| UI/menu | Không đăng nhập: cuối menu là **Đăng nhập → Đăng ký**. Đã đăng nhập: cuối menu là **Tài khoản** (gồm Tài khoản, Đơn hàng) rồi **Đăng xuất**. |
+| Vận hành | Hoa hồng và Quyền lợi & Payout chuyển vào Vận hành; không còn nằm trong Báo cáo. |
+| Route | Thêm `/signup` dùng Google OAuth; route `/register` cũ vẫn giữ nguyên cho đơn đăng ký hợp tác có `deal` và không còn được dùng làm đăng ký tài khoản. |
+| Phân quyền | Menu không cấp quyền. Đơn hàng và màn hình nghiệp vụ vẫn kiểm tra session/RBAC tại API. |
+| Dữ liệu/Tích hợp | Không đổi schema, RLS, SePay, Meta, cron hoặc tên miền. |
+| Responsive | Menu desktop/mobile dùng cùng `auth-nav.js`; nhóm Tài khoản là accordion trên mobile. |
