@@ -1,5 +1,9 @@
 # Nhật ký triển khai nền tảng bán hàng
 
+## Vận hành Inhouse và nâng cấp xử lý đơn — 2026-11-19
+
+Đã phát hành production commit `38d726a`, sau Preview READY. Kho/đơn được tinh gọn, thêm ghi hỏng/chi phí, tài sản từ Inhouse, payout thủ công, báo cáo CTV và dashboard, cấu hình giá/chiết khấu/mã/quà/hỗ trợ, phân bổ/nợ Page/bảo hành và xác nhận cấp quyền ngoài hệ thống. Kiểm thử: 18 test ứng dụng, 53 kiểm tra DB rollback, 33 bước API production và cạnh tranh hai phiên đạt; dữ liệu QA đã dọn. [Impact note, thiết kế, quyền, runbook và phụ thuộc](operations-inhouse-reports-20261119.md). Liên kết quà, số hỗ trợ/Zalo/OA thật cần nhập trong admin; không tự đặt dữ liệu mẫu.
+
 ## Gate 2.2 — 2026-11-19
 
 Nhập kho transaction/normalized Page ID; checkout giữ kho atomic; panel giữ/trả/chốt theo đơn; kho Inhouse + tạo đơn 0đ + chỉ định người vận hành; lịch sử mã kho. Migration đã apply; 21 kiểm thử DB rollback, hai tình huống đồng thời và 12 kiểm thử ứng dụng đạt. Đã phát hành production và nghiệm thu API thật. Xem [impact note, API, quyền và phụ thuộc](inventory-fulfillment-release-20261119.md). Không đổi tiền/secret/DNS/Meta.

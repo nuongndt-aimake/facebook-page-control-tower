@@ -119,8 +119,10 @@ async function salesOrders(request, response, context) {
     await db("sales_settings?on_conflict=setting_key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ setting_key: key, setting_value: { url }, updated_by: context.user.id, updated_at: new Date().toISOString() }) }); return send(response, 200, { ok: true });
   }
   if (input.action === "set_product_price") {
-    const amount = Number(input.unit_price_vnd); if (!input.product_id || !Number.isSafeInteger(amount) || amount < 0) return send(response, 400, { error: "Giá sản phẩm không hợp lệ" });
-    await db("sales_product_prices", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ product_id: input.product_id, unit_price_vnd: amount, effective_from: input.effective_from || new Date().toISOString(), created_by: context.user.id }) }); return send(response, 200, { ok: true });
+    const amount = Number(input.unit_price_vnd),starts=input.effective_from||new Date().toISOString(),ends=input.effective_until||null;
+    if (!/^[a-f0-9-]{36}$/i.test(String(input.product_id||'')) || !Number.isSafeInteger(amount) || amount <= 0) return send(response, 400, { error: "Đơn giá phải là số nguyên lớn hơn 0. Đơn nội bộ 0 đồng áp dụng qua mã ưu đãi." });
+    if(!Number.isFinite(Date.parse(starts))||ends&&(!Number.isFinite(Date.parse(ends))||Date.parse(ends)<=Date.parse(starts)))return send(response,400,{error:'Thời gian hiệu lực chưa hợp lệ; ngày kết thúc phải sau ngày bắt đầu.'});
+    await db("sales_product_prices", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ product_id: input.product_id, unit_price_vnd: amount, effective_from: new Date(starts).toISOString(),effective_until:ends?new Date(ends).toISOString():null, created_by: context.user.id }) }); return send(response, 200, { ok: true });
   }
   if(input.action==='schedule_discount_tier'){
     const result=await db('rpc/sales_discount_tier_schedule',{method:'POST',body:JSON.stringify({p_actor:context.user.id,p_input:input})});return send(response,200,result);

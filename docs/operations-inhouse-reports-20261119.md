@@ -1,6 +1,8 @@
 # Vận hành Inhouse, Page hỏng và báo cáo cộng tác viên
 
-Trạng thái: **Đang triển khai**. Tiếp nối Gate 2.2, yêu cầu bổ sung ngày 2026-11-19.
+Trạng thái: **Đang dùng — đã phát hành production**, commit `38d726a`, Vercel `dpl_BDWDpe2HHhkai7RCtBiBkiWPYCoP` READY. Preview `dpl_FCLBsstZ3eXFVzMwfMRSxvqevuJy` đã đạt trước khi đẩy production. Tiếp nối Gate 2.2, yêu cầu bổ sung ngày 2026-11-19.
+
+Nghiệm thu production: 33 bước API đạt với tài khoản/sản phẩm/đơn/mã QA riêng; gồm cấu hình ưu đãi/quà, hai mã độc lập, giới hạn INHOUSE, lịch chiết khấu riêng, quyền báo cáo theo tuyến, payout và chi phí Page hỏng. Toàn bộ dữ liệu QA đã dọn. Hai phiên checkout cùng mã cuối đều nhận đơn, chỉ một đơn giữ mã và một đơn ghi nợ; không phát sinh giữ hàng trùng. Không chuyển tiền thật hoặc cấp quyền Facebook thật.
 
 ## Phạm vi bổ sung được chốt trong cùng đợt
 
@@ -16,6 +18,8 @@ Trạng thái: **Đang triển khai**. Tiếp nối Gate 2.2, yêu cầu bổ su
 Quy tắc cũ từ chối checkout thiếu kho và bảng đầy đủ mọi cột **Hết hiệu lực** ngày 2026-11-19 trong phạm vi các yêu cầu mới này. Giữ mô tả cũ để tra cứu; không áp dụng lại RPC/luồng cũ làm mất thông tin nợ/bảo hành.
 
 ## Impact note trước triển khai
+
+Bổ sung nghiệm thu cuối: lối tắt cấu hình chỉ xuất hiện cho admin, trỏ tới các khối giá/chiết khấu, ưu đãi, quà và hỗ trợ hiện có. Giá phải là số nguyên dương; lịch giá có ngày kết thúc tuỳ chọn, kiểm tra khoảng thời gian trên server và nhập theo giờ Việt Nam. Không thêm bảng/role/env/cron/domain; API set_product_price lưu effective_until đã có trong schema. Không thay dữ liệu giá hoặc đơn cũ. Kiểm thử âm quyền, input và responsive trước phát hành.
 
 | Vùng | Thay đổi và nguyên tắc |
 | --- | --- |
