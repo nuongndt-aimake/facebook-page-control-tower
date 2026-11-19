@@ -39,9 +39,11 @@ Việc chọn người tiếp quản và chuyển assignment nhân sự dùng ac
 
 ## SePay và đơn hàng
 
-1. Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` cho đến khi webhook test xác thực được API key, đúng số tiền và idempotency.
+1. Production hiện bật `SALES_PUBLIC_CHECKOUT_ENABLED=true` sau nghiệm thu Test Mode và callback SePay Live `HTTP 200` ngày 2026-11-19. Khi callback lỗi hoặc có nghi ngờ đối soát, chuyển ngay về `false`, redeploy, rồi điều tra event chưa khớp.
 2. Mỗi đơn tạo server-side có `order_code`/`payment_reference` duy nhất; QR lấy đúng số tiền đã chốt trong `sales_orders`.
 3. Webhook `/api/payments/sepay` chỉ nhận `Authorization: Apikey ...` so với `SEPAY_WEBHOOK_API_KEY`; chỉ chuyển `pending_payment` sang `paid` khi tìm đúng mã, đúng số tiền và giao dịch vào. Sai/mơ hồ chuyển `reconciliation_required` và ghi `sales_payment_events`.
 4. Không sửa thủ công `paid` trước khi đối chiếu sao kê; nếu cần, dùng màn hình Đơn hàng và kiểm tra `admin_audit_logs`.
 5. Khi có lỗi, tắt checkout public, giữ dữ liệu và chuyển các event chưa khớp sang đối soát; không tạo lại đơn hay quét lại giao dịch tiền thật.
+6. Webhook Live là #73924, chỉ tiền vào MBBank `****0268`, URL `https://money.aiecom.vn/api/payments/sepay`. Khóa chỉ tồn tại ở SePay và Vercel Production Secret; không reveal, chép vào ticket hoặc commit.
+7. Callback thử là kiểm tra kết nối, không phải xác minh luồng tiền. Trước một giao dịch thật đầu tiên, theo dõi đơn tạo mới trong `/sales-orders`, đối chiếu đúng `payment_reference`, số tiền và một event `processed`.
 

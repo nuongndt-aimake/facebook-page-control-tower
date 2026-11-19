@@ -27,8 +27,8 @@
 | `META_PAGE_METRICS` | Page insight metrics | Danh sách metric phân tách bằng dấu phẩy |
 | `META_POST_METRICS` | Post insight metrics | Danh sách metric phân tách bằng dấu phẩy |
 | `META_REPORT_VIEW_METRICS` | Chọn metric view ưu tiên khi dựng báo cáo | Tùy chọn |
-| `SALES_PUBLIC_CHECKOUT_ENABLED` | Checkout Fanpage | `false` khi test; chỉ bật `true` ở Production sau nghiệm thu SePay Test Mode |
-| `SEPAY_WEBHOOK_API_KEY` | Webhook SePay server-side | API Key của webhook; so sánh timing-safe, không đưa xuống browser |
+| `SALES_PUBLIC_CHECKOUT_ENABLED` | Checkout Fanpage | Production là `true` từ 2026-11-19 sau nghiệm thu; đặt `false` và redeploy khi cần dừng nhận đơn khẩn cấp |
+| `SEPAY_WEBHOOK_API_KEY` | Webhook SePay server-side | Production là Secret từ 2026-11-19 cho SePay Live; so sánh timing-safe, không đưa xuống browser |
 | `SEPAY_QR_TEMPLATE` | QR thanh toán | Tùy chọn; chỉ dùng để dựng QR sau khi server chốt đơn/số tiền |
 
 ## Tệp cục bộ
@@ -37,7 +37,7 @@
 - `META_USER_ACCESS_TOKEN` trong `.env.meta.example` là biến legacy cho công cụ cũ; code Vercel hiện ưu tiên `META_CONNECTIONS_JSON` hoặc bảng `meta_connections`.
 - `.env.local`, `.env.meta-temp`: chỉ máy local, không commit.
 - Vercel Environment Variables phải tách theo `Development`, `Preview`, `Production`.
-- Biến SePay chỉ thêm ở `Preview` trước; chuyển sang `Production` sau khi Test Mode xác minh webhook, số tiền và xử lý trùng. Không nhập khóa SePay vào HTML hay file commit.
+- Biến SePay chỉ thêm ở `Preview` trước; chuyển sang `Production` sau khi Test Mode xác minh webhook, số tiền và xử lý trùng. **Đang dùng từ 2026-11-19:** Production dùng Secret khớp với SePay Live #73924. Không nhập khóa SePay vào HTML hay file commit.
 
 ## Kiểm tra trước khi chạy
 

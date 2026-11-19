@@ -22,7 +22,7 @@ Các biến production tối thiểu:
 - `META_CONNECTIONS_JSON` hoặc connection lưu trong Database
 - `META_PAGE_METRICS`
 - `META_POST_METRICS`
-- `SALES_PUBLIC_CHECKOUT_ENABLED=false` (chỉ đổi thành `true` sau nghiệm thu SePay Test Mode)
+- `SALES_PUBLIC_CHECKOUT_ENABLED=true` (Production đã nghiệm thu Test Mode; khi sự cố thanh toán, chuyển ngay về `false` rồi redeploy)
 - `SEPAY_WEBHOOK_API_KEY` (secret server-side của webhook SePay; không dùng tên biến `SEPAY_WEBHOOK_TOKEN` đã hết hiệu lực)
 
 Danh sách đầy đủ và phân loại secret/non-secret xem tại [configuration.md](configuration.md).
@@ -61,11 +61,22 @@ Không dùng URL preview làm callback production lâu dài.
 3. Thêm `SEPAY_WEBHOOK_API_KEY` ở môi trường Preview, tạo webhook SePay Test Mode trỏ tới `/api/payments/sepay` với Authentication = API Key, rồi dùng giao dịch mô phỏng của Test Mode.
 4. Dùng deployment production qua custom domain để Test Mode gọi được webhook (preview bị SSO bảo vệ). Giữ `SALES_PUBLIC_CHECKOUT_ENABLED=false` trong lúc kiểm thử; endpoint `/sales` vẫn hiển thị nhưng không tạo đơn khi cờ tắt.
 5. Xác nhận token, mã nội dung, số tiền và idempotency; sau đó đặt `SALES_PUBLIC_CHECKOUT_ENABLED=true` cho Production, redeploy và kiểm tra `/sales` công khai.
-6. Khi nhận tiền thật được phê duyệt riêng, cấu hình webhook live trỏ tới `https://money.aiecom.vn/api/payments/sepay`; không dùng URL preview làm webhook live.
+6. **Đang dùng từ 2026-11-19:** webhook SePay Live trỏ tới `https://money.aiecom.vn/api/payments/sepay`, chỉ nhận tiền vào MBBank `****0268`, Authentication = API Key, và khóa tương ứng được lưu dạng Vercel Production Secret. Callback thử đã nhận `HTTP 200`; không dùng URL preview làm webhook live.
+
+### Impact note — SePay Live 2026-11-19
+
+| Vùng | Ảnh hưởng |
+| --- | --- |
+| Chức năng/API | `/api/payments/sepay` giữ nguyên contract và xác thực timing-safe; chuyển nguồn nhận callback từ Test Mode sang Live. |
+| Database/RBAC/RLS | Không migration, không thay quyền và không thay policy. Xử lý trùng/đối soát dùng các bảng hiện có. |
+| UI/responsive | Không đổi route hay giao diện; không cần QA breakpoint mới. |
+| Tích hợp/deploy | Webhook Live #73924, Vercel Production Secret và deployment `dpl_86RZRcYnzfrvLERJh1EmTbtMkGd4` đã đồng bộ; không đổi domain. |
+| Dữ liệu/tài liệu | Callback thử chỉ là event kiểm tra, không tạo giao dịch tiền thật; cập nhật configuration, runbook, testing và roadmap. |
 
 ### Biến hết hiệu lực
 
 - `SEPAY_WEBHOOK_TOKEN` — **Hết hiệu lực từ 2026-11-19**: tên biến ban đầu trong runbook không khớp code. Thay bằng `SEPAY_WEBHOOK_API_KEY` (commit `207df6e`).
+- Quy trình Production chỉ dùng SePay Test Mode — **Hết hiệu lực từ 2026-11-19**: đã thay bằng webhook SePay Live #73924 tới `https://money.aiecom.vn/api/payments/sepay`; Test Mode vẫn giữ cho kiểm thử có kiểm soát ở Preview.
 
 ## Trạng thái đồng bộ với GitHub
 
@@ -84,9 +95,9 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 ## Release gần nhất
 
 - Migration: `20261119090000_fanpage_sales_line.sql`.
-- Trạng thái: **Đang dùng** — đã apply Supabase production; webhook SePay Test Mode trả HTTP 200; checkout `/sales` được bật ở Production.
+- Trạng thái: **Đang dùng** — đã apply Supabase production; checkout `/sales` bật ở Production; webhook SePay Live #73924 trả `HTTP 200` qua callback thử.
 - Code commit: `42b44bf` (`chore(release): enable public Fanpage checkout after SePay Test callback`).
-- Vercel deployment: `dpl_CL8ojGEmjScZUTRAgiHgt1HyYxbX`, `READY`, aliases gồm `money.aiecom.vn`.
+- Vercel deployment hiện hành: `dpl_86RZRcYnzfrvLERJh1EmTbtMkGd4`, `READY`, aliases gồm `money.aiecom.vn`.
 - Nghiệm thu dữ liệu: đơn Test Mode `FS8BD4948AE3`, 10.000 đ, trạng thái `paid`; không có giao dịch tiền thật.
 
 - Migration: `20261101090000_sync_orchestration_foundation.sql`
