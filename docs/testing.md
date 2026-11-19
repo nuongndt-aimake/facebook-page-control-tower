@@ -37,6 +37,7 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 - **Đạt:** tạo đơn public `FS8BD4948AE3` với `INHOUSE`, số tiền QR 10.000 đ.
 - **Đạt:** mô phỏng tiền vào 10.000 đ với nội dung đúng mã; SePay xác nhận và trang `/sales-orders` ghi `paid`.
 - **Chưa chạy:** kiểm tra gửi lại cùng `provider_event_id` ở giao diện Test Mode. Code đã có khóa unique/idempotency; cần chạy lại khi cần chứng minh thao tác vận hành này.
+- **UI V3:** kiểm tra `/sales` phải giữ bố cục Fanpage Sales V3 ở desktop, 768px và 390px: tab không che nội dung, hai thẻ chuyển về một cột trên mobile, nhãn/nút không tràn và QR vẫn tải được sau khi tạo đơn.
 
 ## Ma trận quyền tối thiểu
 

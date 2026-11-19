@@ -18,7 +18,7 @@
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
 | `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
-| `/sales` | `sales.html` | Trang đặt mua Fanpage công khai theo layout mẫu hai thẻ; tạo QR/mã chuyển khoản riêng, tải QR và đếm ngược 15 phút, không yêu cầu đăng nhập |
+| `/sales` | `sales.html` | Trang đặt mua Fanpage công khai theo giao diện **Fanpage Sales V3**: khung thông tin nhận Page và khung thanh toán SePay; tạo QR/mã chuyển khoản riêng, tải QR và đếm ngược 15 phút, không yêu cầu đăng nhập |
 
 Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
@@ -50,5 +50,18 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 Frontend chỉ hiển thị snapshot/API response đã được server lọc theo access context. Không suy ra quyền từ query string hoặc `localStorage`. Bộ lọc chỉ thay đổi dữ liệu đang hiển thị, không thay đổi dữ liệu gốc.
 
 `/sales` là tuyến mua hàng ngoài khu quản trị, được phát hành như liên kết chiến dịch/checkout công khai. Không đưa nó vào navigator nội bộ; kết quả đơn chỉ được quản trị viên xem qua `/sales-orders`.
+
+### Điều chỉnh giao diện bán hàng 2026-11-19
+
+- **Hiệu lực:** `/sales` dùng lại cấu trúc Fanpage Sales V3 đã được duyệt: nhận diện xanh–trắng, tiêu đề `FANPAGE SALES SYSTEM`, tab mua/đăng ký quyền lợi/Admin/FAQ, form `Thông tin nhận page` và thẻ `Thanh toán an toàn`.
+- **Thay thế:** layout cam hai thẻ phát hành trước đó **hết hiệu lực ngày 2026-11-19** vì không phải bản V3 đã chốt; thay thế bằng thay đổi giao diện trong commit này. API checkout, QR, thời hạn 15 phút và quyền truy cập `/sales-orders` không thay đổi.
+
+| Vùng tác động | Đánh giá |
+| --- | --- |
+| Chức năng và UI | Chỉ thay trình bày `/sales`; giữ trường checkout, QR tải về, đồng hồ 15 phút, trạng thái chờ và thông báo lỗi. |
+| API và database | Không đổi `POST /api/checkout`, webhook SePay, request/response, migration hoặc dữ liệu đơn hàng. |
+| Phân quyền | Không thêm role. `/sales` vẫn công khai; `/sales-orders` vẫn kiểm tra `platform_admin`/`super_admin` ở máy chủ. |
+| Tích hợp | Không đổi Supabase, SePay, Vercel, cron hoặc tên miền. |
+| Responsive | Kiểm thử bắt buộc tại 390px, 768px và desktop trước khi phát hành. |
 
 Mọi route mới phải có điểm neo điều hướng trong navigator chung hoặc nút hành động từ màn hình nghiệp vụ liên quan. Route không có điểm neo được xem là chưa hoàn tất nghiệm thu.
