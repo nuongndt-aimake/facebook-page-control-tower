@@ -1,5 +1,9 @@
 # Auth, RBAC và admin preview
 
+## 2026-11-19 — Quyền nhập tài sản Inhouse
+
+Không thêm role. Nhân sự operator phải được cấp đủ scope kho trước khi RPC nhập tài sản đã cầm cho phép chạy; RPC không cấp quyền cho chính actor. Quyền operator và quyền manager từng Page có audit riêng. Không suy ra quyền xem tất cả đơn. [Ma trận và giới hạn](inhouse-page-import-20261119.md).
+
 Đợt mới: thêm inventory.writeoff/warranty và sales_operations.manage_payout/verify_reports/read_reports_all; [ma trận và âm quyền](operations-inhouse-reports-20261119.md). Người được phân công nộp báo cáo mình; manager kế thừa visibility nhưng không có quyền duyệt ngầm, không tự duyệt. Payout chỉ trả đầy đủ theo scope/access, INHOUSE yêu cầu staff + finalize. Gift URL chỉ sau paid, đơn 0đ còn phải verified. Phân bổ/bảo hành/chốt kiểm tra cả capability và assignee/read_all/admin; chốt cần access_granted. Không tự cấp quyền Facebook thực tế.
 
 Gate 2.2: thêm capability `sales_inventory.assign_inhouse`, không thêm role. Ma trận API/UI/database đồng bộ tại [release](inventory-fulfillment-release-20261119.md). POST kho dùng actor session, active profile và scope; order action còn kiểm tra assignee/read_all/admin. Owner không được tự chốt. Preview không ghi. Chỉ định nhân sự qua kho Inhouse tạo assignment + page_access hiện có, không cấp quyền Facebook và không thay quyền nền tảng. Client không gọi RPC hoặc truy cập bảng link kho trực tiếp.

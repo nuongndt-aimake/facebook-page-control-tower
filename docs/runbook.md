@@ -1,5 +1,9 @@
 # Runbook vận hành
 
+## 2026-11-19 — Nhập số dư Page đang cầm
+
+Chỉ chạy sau khi có danh sách và chỉ định người quản lý từ người dùng. Parse/đối chiếu ID, giữ nguyên link, không lấy ID URL để ghi đè ID nguồn. Backup trong audit, thử toàn batch bằng ROLLBACK, đối chiếu giá vốn và quyền, rồi COMMIT; chạy lại dùng cùng batch key/hash. 148 mã chưa có giá vốn cần bổ sung sau. [Kết quả lượt nhập và hướng dẫn](inhouse-page-import-20261119.md).
+
 [Runbook mới](operations-inhouse-reports-20261119.md): cấu hình tại Đơn hàng (giá/chiết khấu cùng lịch, mã ưu đãi, mã giới thiệu/quà, hỗ trợ/Zalo); xử lý đơn paid tự đề xuất mã, thiếu hàng ghi nợ, cấp quyền bên ngoài rồi tick xác nhận hoàn tất. Bảo hành giữ lịch sử mã cũ lỗi và Page thay. Tài sản lấy Inhouse, payout nhập tay; CTV nộp tại Báo cáo → Báo cáo cộng tác viên. Cần cấu hình link quà, điện thoại/Zalo/OA thật trước khi hiển thị liên hệ tương ứng; không có dữ liệu mặc định giả.
 
 Gate 2.2: thao tác kho/đơn/Inhouse và giải phóng mã chưa trả theo [runbook kho](inventory-fanpages-runbook.md). Migration trước API; không gọi RPC loose-order-reference cũ. Theo dõi 409 thiếu hàng/trùng ID là lỗi nghiệp vụ, không retry mù. Đơn hết hạn đang giữ mã cần đối soát/trả mã có lý do; chưa có cron tự trả. Thông tin triển khai/QA tại [release](inventory-fulfillment-release-20261119.md).

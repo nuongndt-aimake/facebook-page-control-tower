@@ -1,5 +1,9 @@
 # Database và migration
 
+## 2026-11-19 — Nhập tài sản đang cầm vào Inhouse
+
+Migration `20261119230000_import_held_inhouse_pages.sql`: bảng batch có RLS, RPC transaction service-only, advisory lock/batch hash chống lặp; tái sử dụng mã kho và giữ giá vốn. Dữ liệu cá nhân/tài sản nguồn không nằm trong migration. [Thiết kế, kết quả và kiểm thử](inhouse-page-import-20261119.md).
+
 Đợt mới: migrations `20261119220000`, `20261119223000`, `20261119224000` bổ sung writeoffs, report revisions, referral_code, phiên bản chiết khấu và warranties. Trạng thái kho damaged; đơn allocated/granting/page_debt/failed; link mã replaced. RLS + revoke client, RPC service-only, transaction/lock/audit và kiểm thử rollback. [Chi tiết và tương thích](operations-inhouse-reports-20261119.md). Migration giá `20261119215000` chỉ kết thúc baseline chồng lấn, giữ lịch sử admin.
 
 ## Gate 2.2 — kho atomic và bàn giao 2026-11-19

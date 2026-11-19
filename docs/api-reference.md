@@ -1,5 +1,9 @@
 # API reference
 
+## 2026-11-19 — RPC bảo trì nhập kho Inhouse
+
+`sales_import_held_inhouse_batch(p_actor uuid,p_batch_key text,p_source_sha256 text,p_pages jsonb)` không có endpoint public; chỉ service_role EXECUTE, SECURITY INVOKER, kiểm tra actor active/staff và 6 scope kho. Trả total/created/reused/orders; batch trùng cùng hash trả duplicate, khác hash hoặc trạng thái tài sản xung đột thì lỗi và rollback. Nguồn 1–500 Page, chia đơn <=100. [Luồng và bảo mật](inhouse-page-import-20261119.md).
+
 Đợt vận hành mới 2026-11-19: [hợp đồng kho hỏng, tài sản Inhouse, báo cáo, lịch chiết khấu, quà/Zalo và đơn nợ/bảo hành](operations-inhouse-reports-20261119.md). Thêm endpoints inhouse_assets/content_reports/operations_permissions/sales-discount-history; checkout tách referral_code/promo_code và trả cảnh báo thiếu kho. Xử lý đơn dùng allocate/start_handover/finalize(access_granted)/warranty. Quy tắc trước đây từ chối đơn thiếu kho **Hết hiệu lực** theo yêu cầu mới; bảng dữ liệu và scope vẫn kiểm tra server-side.
 
 Gate 2.2, 2026-11-19: `endpoint=sales_inventory|sales_fulfillment|sales_inhouse` bổ sung lệnh transaction và scope `assign_inhouse`; checkout gọi RPC atomic giữ hàng. Các RPC loose-order-reference cũ **Hết hiệu lực** làm entry point, thay bằng `sales_inventory_command`. Xem [hợp đồng API, quyền, lỗi và tương thích](inventory-fulfillment-release-20261119.md#api-và-tương-thích).
