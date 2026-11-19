@@ -3,6 +3,7 @@ import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
 import {inventoryService,inventoryFailure,inventoryScopes} from '../../sales-inventory-service.mjs';
 import {operationsService} from '../../operations-service.mjs';
+import {canOperate} from '../../operations-policy.mjs';
 import { canReadAllSalesOrders, visibleSalesOrders } from '../../sales-order-policy.mjs';
 import {signOrderTracking,verifyOrderTracking} from '../../sales-order-tracking.mjs';
 
@@ -302,20 +303,23 @@ export default async function handler(request, response) {
     const isAdmin = context.profile.role === "platform_admin" || context.profile.role === "super_admin";
     if (request.method === "GET") {
       if (endpoint === "payout") {
-        const pageIds = isAdmin ? null : new Set((context.pageIds || []).map(String));
-        const profileIds = isAdmin ? null : new Set((context.paymentProfileIds || []).map(String));
+        const managePayout=canOperate(context,'manage_payout');
+        const pageIds = isAdmin ? null : new Set(await db('rpc/operations_visible_pages',{method:'POST',body:JSON.stringify({p_actor:context.user.id})}));
+        const profileIds = managePayout ? null : new Set((context.paymentProfileIds || []).map(String));
         const visibleUserIds = isAdmin ? null : new Set((context.visibleUserIds || []).map(String));
-        const [pages, paymentProfiles, links, paymentAccess, commissions, users] = await Promise.all([
+        const [pages, paymentProfiles, legacyLinks, paymentAccess, commissions, users, currentPayouts] = await Promise.all([
           db("pages?select=id,name,category,asset_scope,custodian_business_id,custodian_business_name&order=name.asc&limit=5000").catch(() => []),
           db("payment_profiles?select=*&order=updated_at.desc&limit=5000").catch(() => []),
           db("page_payment_profiles?select=page_id,payment_profile_id,relation_type,last_seen_at&limit=20000").catch(() => []),
           db("payment_profile_access?select=*&status=eq.active&limit=20000").catch(() => []),
           db("page_commissions?select=*&status=eq.active&limit=20000").catch(() => []),
-          db("profiles?select=id,email,display_name,role,status&status=eq.active&order=email.asc&limit=5000").catch(() => [])
+          db("profiles?select=id,email,display_name,role,status&status=eq.active&order=email.asc&limit=5000").catch(() => []),
+          db("page_payout_assignments?select=page_id,payment_profile_id,updated_at&limit=20000")
         ]);
         // A Payout grant is also an explicit visibility path for the Pages linked
         // to that payout profile. Do not require a second page_access row or the
         // manager would see the payout but not the asset it belongs to.
+        const currentPages=new Set(currentPayouts.map(row=>String(row.page_id))),links=[...legacyLinks.filter(link=>!currentPages.has(String(link.page_id))),...currentPayouts.map(row=>({...row,relation_type:'current_inhouse',last_seen_at:row.updated_at}))];
         const scopedLinks = links.filter(link => (!pageIds || pageIds.has(String(link.page_id))) && (!profileIds || profileIds.has(String(link.payment_profile_id))));
         const effectivePageIds = pageIds ? new Set([
           ...pageIds,
@@ -323,7 +327,7 @@ export default async function handler(request, response) {
         ]) : null;
         const scopedPages = effectivePageIds ? pages.filter(page => effectivePageIds.has(String(page.id))) : pages;
         const linkedProfileIds = new Set(scopedLinks.map(link => String(link.payment_profile_id)));
-        const scopedProfiles = paymentProfiles.filter(profile => (!profileIds || profileIds.has(String(profile.id))) && (!profileIds && linkedProfileIds.size ? linkedProfileIds.has(String(profile.id)) : true));
+        const scopedProfiles = managePayout?paymentProfiles:paymentProfiles.filter(profile => (!profileIds || profileIds.has(String(profile.id))) && (!profileIds && linkedProfileIds.size ? linkedProfileIds.has(String(profile.id)) : true));
         const scopedAccess = paymentAccess.filter(row => (!profileIds || profileIds.has(String(row.payment_profile_id))) && (!visibleUserIds || visibleUserIds.has(String(row.user_id))));
         const scopedCommissions = commissions.filter(row => !effectivePageIds || effectivePageIds.has(String(row.page_id)));
         const scopedUsers = users.filter(user => !visibleUserIds || visibleUserIds.has(String(user.id)));
@@ -361,7 +365,7 @@ export default async function handler(request, response) {
     if (request.method === "POST") {
       if (context.preview) throw new Error("Chế độ xem trước chỉ đọc; hãy thoát xem trước để thao tác");
       const body = await readBody(request);
-      if (!isAdmin && body.action !== "sync_page") throw new Error("Forbidden");
+      if (!isAdmin && body.action !== "sync_page" && !(endpoint==='payout'&&canOperate(context,'manage_payout')&&['upsert_profile','link_page'].includes(body.action))) throw new Error("Forbidden");
       if (body.action === "update_sync_slot") {
         if (!isAdmin) throw new Error("Forbidden");
         const slotKey = String(body.slot_key || "");
@@ -417,10 +421,14 @@ export default async function handler(request, response) {
       }
       if (body.action === "link_page") {
         if (!body.page_id || !body.payment_profile_id) return send(response, 400, { error: "page_id và payment_profile_id là bắt buộc" });
+        if(await db('rpc/operations_page_visible',{method:'POST',body:JSON.stringify({p_actor:context.user.id,p_page:String(body.page_id)})})!==true)throw Error('Forbidden');
+        const warehouse=await db(`inhouse_page_inventory?select=page_id&page_id=eq.${encodeURIComponent(String(body.page_id))}&limit=1`);
+        if(warehouse.length){const result=await db('rpc/inhouse_payout_save',{method:'POST',body:JSON.stringify({p_actor:context.user.id,p_input:{page_id:String(body.page_id),payment_profile_id:body.payment_profile_id,note:'Thiết lập từ hồ sơ payout'}})});return send(response,200,result)}
         await db("page_payment_profiles?on_conflict=page_id,payment_profile_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ page_id: String(body.page_id), payment_profile_id: body.payment_profile_id, relation_type: body.relation_type || "associated", last_seen_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true });
       }
       if (body.action === "unlink_page") {
+        const current=await db(`inhouse_page_inventory?select=page_id&page_id=eq.${encodeURIComponent(String(body.page_id||''))}&limit=1`);if(current.length)return send(response,409,{error:'Page Inhouse cần một payout đang dùng. Hãy chọn payout thay thế thay vì bỏ liên kết.'});
         await db(`page_payment_profiles?page_id=eq.${encodeURIComponent(String(body.page_id || ""))}&payment_profile_id=eq.${encodeURIComponent(String(body.payment_profile_id || ""))}`, { method: "DELETE" });
         return send(response, 200, { ok: true });
       }

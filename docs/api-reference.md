@@ -1,5 +1,14 @@
 # API reference
 
+## 2026-11-19 — Báo cáo USD, payout và hồ sơ hiện hành
+
+- `content_reports` POST submit: `assignment_id`, `report_date`, `published_post_count`, `currency:"USD"`, `revenue_amount`, `cumulative_amount`; chỉ chính người được giao nộp. Yêu cầu payout USD đang hoạt động; thiếu payout trả 409. Lưu snapshot payout và revision. `_vnd` giữ tương thích VND cũ, không chứa USD.
+- GET báo cáo trả các phân công trong phạm vi vai trò cùng `payout_links`, `payout_profiles` tối thiểu (không có số tài khoản). Admin tất cả, manager tuyến quản lý, nhân viên/CTV trực tiếp; scope chức năng không bỏ qua phạm vi này.
+- `inhouse_assets` POST `save_payout` tạo/chọn hồ sơ chung và cập nhật đúng một payout hiện hành/Page; `assign` và `update_page_name` kiểm tra scope + Page phía server. Kho/Inhouse cũng dùng cùng kiểm tra phạm vi.
+- `GET /api/auth/profile?include=account_assets` trả thống kê từ kho Inhouse hiện hành, loại Page/grant đồng bộ cũ. `PATCH /api/auth/profile` chỉ nhận `{phone,facebook_profile_url}` cho chính session; cấm quyền/role/ID, preview chỉ đọc. RPC cập nhật và audit atomic.
+
+[Thiết kế báo cáo/payout](daily-report-matrix-20261119.md) · [Hồ sơ, giao người và phạm vi Page](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Nhập kho hàng loạt và quản lý cùng dòng
 
 `POST /api/admin/access?endpoint=sales_inventory`, action `intake_batch`: `{request_id,product_id,pages:[{facebook_page_id,page_name,page_link,current_admin_reference?,purchase_cost_vnd?,current_bm_reference?,intake_note?}]}`. Scope intake, actor từ context; 201 trả created/items/duplicate. 400 dữ liệu sai, 403 thiếu quyền, 409 ID đã tồn tại hoặc retry đổi payload. GET kho tổng/Inhouse trả assignments active và users tối thiểu để hiển thị tên cùng dòng. [Contract, giới hạn và QA](inventory-bulk-and-inline-assignees-20261119.md).

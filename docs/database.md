@@ -1,5 +1,9 @@
 # Database và migration
 
+## 2026-11-19 — USD/payout và liên hệ/phạm vi Page
+
+Áp dụng cùng transaction: `20261119232000_report_currency_page_payout.sql`, `20261119233000_profile_contacts_and_page_scope.sql`. Tiền báo cáo có currency/generic amount; dữ liệu VND cũ giữ nguyên. `page_payout_assignments` PK Page + history, payout snapshot trên report; không tự chọn quan hệ cũ mơ hồ. Helpers scope và RPC contacts/rename/account assets đều SECURITY INVOKER/service-only, RLS cho bảng mới. Account chỉ đếm Inhouse không-retired trong phạm vi, không sửa/xóa grants lịch sử. [Thiết kế/QA](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Batch intake
 
 Migration `20261119231000_inventory_intake_batch.sql`: request UUID + hash payload do server tính, actor binding, transaction tất cả dòng hoặc rollback, dùng intake command/unique Page ID/ledger/audit hiện có. RLS bảng batch và chỉ service_role EXECUTE. [Chi tiết và giá vốn 149 Page](inventory-bulk-and-inline-assignees-20261119.md).

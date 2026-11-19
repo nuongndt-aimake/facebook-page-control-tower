@@ -1,5 +1,7 @@
 # Roadmap triển khai
 
+Đợt USD/payout + tài khoản/giao người/phạm vi Page đang phát hành đầy đủ: [báo cáo](daily-report-matrix-20261119.md), [hồ sơ và Inhouse](inventory-assignment-profile-20261119.md). Tài khoản không dùng số Page đồng bộ cũ; phone/Facebook cùng đợt. Hoa hồng tự động/tỷ giá và Google Sheet không tự mở rộng theo thay đổi tiền tệ này.
+
 Đợt 2026-11-19: nhập hàng loạt CSV/TSV, giá vốn 149 Page và nhân sự cùng bảng đã có code/migration/QA; đang phát hành. [Phạm vi và trạng thái](inventory-bulk-and-inline-assignees-20261119.md). Hoa hồng/Sheets/nhóm 2–4 vẫn theo roadmap riêng.
 
 Đợt tiếp theo đã có code/migration/QA và đang phát hành: kho nghiệp vụ + hỏng/chi phí, tài sản Inhouse + payout/gán người, báo cáo CTV theo phân công và tổng quan, cấu hình giá/chiết khấu/mã/quà/hỗ trợ, menu viewport, đơn gọn/bộ lọc/phân bổ/nợ Page/bảo hành. [Phạm vi, trạng thái và kết quả](operations-inhouse-reports-20261119.md). Thông tin cũ nói các phần này chưa có được giữ làm lịch sử và **Hết hiệu lực riêng trong phạm vi đã nêu**. Hoa hồng, Google Sheet và nhóm 2–4 tiếp tục roadmap.

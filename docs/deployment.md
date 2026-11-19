@@ -1,5 +1,9 @@
 # Triển khai Vercel và Supabase
 
+## 2026-11-19 — Báo cáo USD, payout, tài khoản và phạm vi Page
+
+Phát hành toàn bộ thay đổi cùng đợt, gồm cả form contacts và thống kê tài khoản mới; không treo phần tài khoản. Migrations `20261119232000` và `20261119233000` áp dụng cùng transaction sau 44 SQL checks, kiểm tra schema cache/RPC rồi Git Preview → production trên dự án `aimake/facebook-page-control-tower`, domain `money.aiecom.vn`. Không đổi env/DNS/SePay/cron, không chuyển tiền thật. [Báo cáo/payout](daily-report-matrix-20261119.md) · [Hồ sơ/phạm vi Page](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Import hàng loạt / giá vốn
 
 Migration `20261119231000_inventory_intake_batch.sql` đã áp dụng sau rollback QA. Phát hành `sales-inventory-service.mjs`, `inventory-business.js`, module import và Inhouse cùng tài liệu; không đổi env/domain. 149 Page batch cũ đã điều chỉnh giá vốn 700.000đ theo yêu cầu có audit, độc lập với triển khai UI. [Biên bản và kiểm thử](inventory-bulk-and-inline-assignees-20261119.md).

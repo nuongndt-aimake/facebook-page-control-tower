@@ -1,5 +1,9 @@
 # Kiểm thử và nghiệm thu
 
+## 2026-11-19 — Bản báo cáo USD và tài khoản/phạm vi Page
+
+40 test Node pass. SQL rollback: 15 checks currency/payout + 17 hồi quy vận hành + 12 hồ sơ/phạm vi/account = 44 pass. Kiểm tra ownership, khóa verified, retry, tiền không hữu hạn, payout history/snapshot, admin-all/manager-branch/staff-direct và account loại Page cũ. CUA đã xem lưới USD ở 390/768/1280px, modal payout, tìm Inhouse không dấu 1/4 và bộ lọc/mobile. CUA kiểm tra tiếp modal giao người bị công cụ dừng do không xác định URL đủ chắc chắn; không coi phần đó đã nghiệm thu trực tiếp. Các tương tác tìm/copy/rename/contacts có unit/SQL và sẽ đối chiếu API khi phát hành. [Phạm vi nghiệm thu](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Nhập hàng loạt / nhiều người cầm
 
 `inventory-import.test.mjs`, `sales-grid.test.mjs`, `sales-inventory-service.test.mjs`: parser, ID dài/ID trùng/CSV quoted/giá, nhiều phân công active cùng dòng, API intake scope và actor chống giả mạo. `supabase/tests/inventory_intake_batch_rollback.sql` 8 checks pass trong rollback. CUA renderer 390/768/1280 và xem trước TSV mẫu pass. [Biên bản](inventory-bulk-and-inline-assignees-20261119.md).

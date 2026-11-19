@@ -67,7 +67,7 @@ function readAdminPreviewToken(token, actorId) {
   return data;
 }
 async function profileForUser(user) {
-  let rows = await db(`profiles?select=id,email,display_name,phone,role,status,permissions&id=eq.${encodeURIComponent(user.id)}&limit=1`);
+  let rows = await db(`profiles?select=id,email,display_name,phone,facebook_profile_url,role,status,permissions&id=eq.${encodeURIComponent(user.id)}&limit=1`);
   if (!rows.length) {
     const configured = (process.env.PLATFORM_ADMIN_EMAIL || "").trim().toLowerCase();
     const role = configured && user.email?.toLowerCase() === configured ? "platform_admin" : "viewer";
@@ -120,7 +120,7 @@ export async function accessContext(request) {
   if (previewHeader) {
     if (!["platform_admin", "super_admin"].includes(actorProfile.role)) throw new Error("Forbidden");
     const preview = readAdminPreviewToken(previewHeader, actor.id);
-    const targetRows = await db(`profiles?select=id,email,display_name,role,status,permissions&id=eq.${encodeURIComponent(preview.target_id)}&limit=1`);
+    const targetRows = await db(`profiles?select=id,email,display_name,phone,facebook_profile_url,role,status,permissions&id=eq.${encodeURIComponent(preview.target_id)}&limit=1`);
     if (!targetRows.length) throw new Error("Không tìm thấy tài khoản xem trước");
     return accessContextForUser({ id: targetRows[0].id, email: targetRows[0].email, user_metadata: { full_name: targetRows[0].display_name } }, targetRows[0], { actor_user_id: actor.id, target_user_id: targetRows[0].id, read_only: true, expires_at: new Date(preview.exp * 1000).toISOString() });
   }

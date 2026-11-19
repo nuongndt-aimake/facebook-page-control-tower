@@ -1,5 +1,9 @@
 # Báo cáo
 
+## Báo cáo vận hành hiện hành — 2026-11-19
+
+`/daily-reports`: lưới theo ngày, từng phân công/person/Page, ba chỉ số số bài và tiền USD; không cộng USD với dữ liệu VND cũ. Mỗi Page cần một payout hiện hành trước nộp; report giữ payout tại thời điểm nộp. Admin/manager được xem các dòng theo phạm vi nhưng không nhập thay người khác. Ngày là ngày số liệu, mặc định hôm trước; lưu riêng từng dòng, thông báo rõ dòng lỗi và giữ sửa chưa lưu. [Thiết kế và lịch sử thay thế](daily-report-matrix-20261119.md). Các mục đồng bộ Meta dưới đây là lịch sử/phân vùng riêng, không dùng làm nguồn cho báo cáo thủ công Inhouse.
+
 ## Page
 
 Hiển thị Page, BM, nguồn tài sản, token health, lần đồng bộ, bài đăng, tương tác, metric và doanh thu.

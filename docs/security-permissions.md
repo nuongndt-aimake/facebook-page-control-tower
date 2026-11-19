@@ -1,5 +1,9 @@
 # Auth, RBAC và admin preview
 
+## 2026-11-19 — Phạm vi Page bắt buộc
+
+Admin xem tất cả; manager xem trực tiếp và toàn tuyến; operator/analyst/viewer/CTV chỉ trực tiếp. SQL helpers + API kiểm tra cả thao tác, dữ liệu danh sách, ledger và payout; `read_reports_all` non-admin không còn mở vượt tuyến (**Hết hiệu lực quy tắc cũ**). Quyền intake/assign/manage_payout vẫn bắt buộc. Chỉ người được giao tự nộp; quản lý có verify_reports mới duyệt tuyến, không tự duyệt. Contacts chỉ tự sửa qua RPC atomic; thông tin phone/Facebook của người khác chỉ trả cho chức năng giao người được cấp quyền. [Ma trận đầy đủ](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Batch intake kế thừa phân quyền chủ động
 
 Scope intake dùng cho nhập đơn/hàng loạt, read cho kho và nhãn phân công; không thêm role hoặc quyền xem mọi đơn. RPC batch không cho anon/authenticated gọi trực tiếp; API lấy actor từ session, preview không được ghi. Tên phân công chỉ trả sau kiểm tra quyền kho. [Ma trận, audit và QA](inventory-bulk-and-inline-assignees-20261119.md).

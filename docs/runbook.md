@@ -1,5 +1,9 @@
 # Runbook vận hành
 
+## 2026-11-19 — Thiết lập trước khi báo cáo
+
+Người có manage_payout chọn/tạo hồ sơ USD trong Thiết lập payout của Page; hồ sơ xuất hiện tại `/payout`. Chưa cung cấp mã payout thì giữ trạng thái Chưa thiết lập và chặn nộp, không tạo hồ sơ giả. Nhân sự bổ sung phone/Profile Facebook tại `/account`, sau đó mở lại cửa sổ giao người để lấy dữ liệu mới. Tài khoản đếm lại từ Inhouse hiện hành, dữ liệu đồng bộ cũ không còn tính. Báo cáo ngày nhập USD và lưu riêng từng phân công; kiểm tra dòng lỗi trước khi rời ngày. [Chi tiết](daily-report-matrix-20261119.md) · [Phân quyền/giao người](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Nhập kho nhanh
 
 Trong Kho Fanpage, chọn sản phẩm và Nhập hàng loạt; dùng mẫu CSV UTF-8 hoặc dán vùng ô có tiêu đề. Kiểm tra danh sách trước khi nhập kho nháp. Có lỗi/trùng ID thì sửa nguồn và kiểm tra lại, không dùng bỏ qua lỗi. Giao nhân sự tại Inhouse và đọc người đang quản lý ngay dòng Page, hỗ trợ nhiều người. [Hướng dẫn đầy đủ](inventory-bulk-and-inline-assignees-20261119.md).

@@ -1,5 +1,9 @@
 # Frontend và UX
 
+## 2026-11-19 — Lưới báo cáo và Inhouse/tài khoản
+
+`daily-report-grid.mjs` + CSS: chọn ngày, ba chỉ số USD, payout và lưu các dòng thay đổi; Page tuyến dưới hiện người báo cáo và chỉ đọc. Tổng hợp/widget dùng currency riêng. Inhouse dùng `inventory-inhouse-screen.mjs`, bộ lọc và `inventory-assignment.mjs`: tìm người, Page ID/link/copy, Profile Facebook và sửa tên nội bộ. Script `inventory-inhouse.js` cũ **Hết hiệu lực** ngày 2026-11-19 cho route này, thay bằng module mới; không còn được HTML nạp. Tài khoản có phone/Facebook, số Page/phân công/payout lấy kho hiện hành. Checkout lấy link hồ sơ đã lưu. [Luồng báo cáo](daily-report-matrix-20261119.md) · [Luồng tài khoản/giao người](inventory-assignment-profile-20261119.md).
+
 ## 2026-11-19 — Import và nhân sự cùng bảng
 
 `inventory-import.mjs` mở từ nút trong Nhập kho, đọc CSV/TSV/dán bảng, kiểm tra/xem trước trước khi POST. Renderer chung kho tổng/Inhouse thêm Người đang quản lý, hiển thị nhiều phân công active cùng dòng. Vùng nhân sự riêng trên Inhouse hết hiệu lực, thay bằng cột này; không xóa phân công. [Luồng và responsive QA](inventory-bulk-and-inline-assignees-20261119.md).
