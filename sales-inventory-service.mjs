@@ -9,6 +9,9 @@ export function inventoryFailure(response,error){
  if(message.includes('Cannot write off'))return send(response,409,{error:'Chỉ ghi hỏng hàng nháp, sẵn bán hoặc Inhouse. Hàng đang giữ cần trả mã trước; hàng đã bán ngoài cần đối soát.'});
  if(message.includes('Access handover confirmation required'))return send(response,409,{error:'Cần xác nhận đã cấp quyền Page bên ngoài hệ thống trước khi hoàn tất đơn.'});
  if(message.includes('Forbidden'))return send(response,403,{error:'Tài khoản chưa được cấp quyền hoặc đơn không trong phạm vi phụ trách'});
+ const importRow=message.match(/Import row (\d+): Page ID already exists/);if(importRow)return send(response,409,{error:'Dòng '+importRow[1]+': ID Page đã tồn tại. Chưa nhập dòng nào của lượt này.'});
+ if(message.includes('Invalid duplicate Page ID in import'))return send(response,400,{error:'Danh sách có ID Page trùng. Chưa nhập dòng nào.'});
+ if(message.includes('Invalid import retry payload'))return send(response,409,{error:'Nội dung lượt nhập đã thay đổi. Vui lòng kiểm tra lại danh sách.'});
  const labels=[['duplicate key','ID Page hoặc mã kho đã tồn tại; không tạo thêm bản ghi'],['Insufficient available inventory','Không đủ Page sẵn sàng bán. Vui lòng giảm số lượng hoặc liên hệ hỗ trợ.'],['Price changed','Giá vừa thay đổi, vui lòng kiểm tra lại và tạo đơn.'],['Inventory exceeds','Số mã kho vượt số lượng trên đơn'],['not available','Mã kho đã được giữ hoặc đã bán'],['payment or verification incomplete','Đơn chưa thanh toán hoặc chưa xác minh 0 đồng'],['already exists','Page đã có trong hệ thống; cần đối soát trước khi chuyển Inhouse'],['Reserve exactly','Cần giữ đủ số mã theo số lượng đơn trước khi bàn giao'],['does not match','Mã kho không khớp đơn hoặc sản phẩm'],['reason required','Vui lòng nhập lý do trả mã'],['Target user','Người nhận chưa hoạt động hoặc không tồn tại']];
  const matched=labels.find(([key])=>message.includes(key));if(matched)return send(response,409,{error:matched[1]});
  if(message.includes('P0001')||message.includes('23505')||message.includes('23503'))return send(response,409,{error:'Trạng thái hoặc dữ liệu không hợp lệ cho thao tác này. Vui lòng làm mới và kiểm tra lại.'});
@@ -34,25 +37,28 @@ export async function inventoryService(request,response,context,endpoint){
     return send(response,200,{order,items,order_inventory:orderInventory,warranties,order_items:orderItems,assignments,details:details.filter(item=>itemIds.has(item.inventory_item_id)),users,permissions:caps,manage:['platform_admin','super_admin'].includes(context.profile.role)});
    }
    const [items,details,inhouse,products]=await Promise.all([db('sales_inventory_items?select=*&order=created_at.desc&limit=1000'),db('fanpage_inventory_details?select=*&limit=1000'),db('inhouse_page_inventory?select=*&limit=1000'),db('sales_products?select=id,sku,name,status,product_group,sellable&order=name.asc&limit=100')]);
+   const pageIds=inhouse.map(row=>row.page_id).filter(Boolean);
+   const assignments=pageIds.length?await db(`page_assignments?select=id,page_id,user_id,assignment_role,status&limit=5000&page_id=in.(${pageIds.map(encodeURIComponent).join(',')})&status=eq.active`):[];
+   const assignedUsers=[...new Set(assignments.map(row=>row.user_id))];
+   const users=caps.includes('assign_inhouse')||caps.includes('finalize')?await db('profiles?select=id,display_name,role&status=eq.active&limit=5000'):assignedUsers.length?await db(`profiles?select=id,display_name&limit=5000&id=in.(${assignedUsers.map(encodeURIComponent).join(',')})`):[];
    if(endpoint==='sales_inhouse'){
-    const ids=new Set(inhouse.map(row=>row.inventory_item_id)),pageIds=inhouse.map(row=>row.page_id).filter(Boolean);
-    const assignments=pageIds.length?await db(`page_assignments?select=*&page_id=in.(${pageIds.map(encodeURIComponent).join(',')})&status=eq.active`):[];
-    const users=caps.includes('assign_inhouse')||caps.includes('finalize')?await db('profiles?select=id,display_name,role&status=eq.active&limit=5000'):[];
+    const ids=new Set(inhouse.map(row=>row.inventory_item_id));
     const writeoffs=await db('sales_inventory_writeoffs?select=inventory_item_id,cost_vnd,revenue_vnd,reason,created_at&limit=5000');
     return send(response,200,{items:items.filter(row=>ids.has(row.id)),details:details.filter(row=>ids.has(row.inventory_item_id)),inhouse,products,assignments,users,writeoffs:writeoffs.filter(row=>ids.has(row.inventory_item_id)),permissions:caps,can_create:['operator','manager','platform_admin','super_admin'].includes(context.profile.role)&&caps.includes('finalize')});
    }
    const item=params.get('inventory_item_id');if(item&&!uuid(item))return send(response,400,{error:'Mã kho không hợp lệ'});
    const [ledger,writeoffs]=await Promise.all([db(`sales_inventory_ledger?select=*&order=created_at.desc&limit=200${item?'&inventory_item_id=eq.'+item:''}`),db('sales_inventory_writeoffs?select=inventory_item_id,cost_vnd,revenue_vnd,reason,created_at&limit=5000')]);
-   return send(response,200,{items,details,inhouse,products,ledger,writeoffs,permissions:caps});
+   return send(response,200,{items,details,inhouse,products,ledger,writeoffs,assignments,users,permissions:caps});
   }
   if(request.method!=='POST')return send(response,405,{error:'Method not allowed'});
   assertMutableContext(context);const input=await readBody(request),action=String(input.action||'');
-  const scope={update_page_name:'intake',release_order:'release',cancel_order:'release',create_inhouse_order:'finalize',verify_zero:'finalize',allocate:'reserve',start_handover:'finalize'}[action]||action;
+  const scope={intake_batch:'intake',update_page_name:'intake',release_order:'release',cancel_order:'release',create_inhouse_order:'finalize',verify_zero:'finalize',allocate:'reserve',start_handover:'finalize'}[action]||action;
   allow(scope);
-  if(!['intake','publish','update_page_name','reserve','release','release_order','cancel_order','finalize','assign_inhouse','create_inhouse_order','verify_zero','writeoff','allocate','start_handover','warranty'].includes(action))return send(response,400,{error:'Thao tác không hợp lệ'});
+  if(!['intake_batch','intake','publish','update_page_name','reserve','release','release_order','cancel_order','finalize','assign_inhouse','create_inhouse_order','verify_zero','writeoff','allocate','start_handover','warranty'].includes(action))return send(response,400,{error:'Thao tác không hợp lệ'});
+  if(action==='intake_batch'&&(!uuid(input.request_id)||!uuid(input.product_id)||!Array.isArray(input.pages)||input.pages.length<1||input.pages.length>500))return send(response,400,{error:'Chọn sản phẩm, mã lượt nhập và từ 1 đến 500 Page hợp lệ'});
   if(['intake','writeoff'].includes(action)&&input.purchase_cost_vnd!=null&&(!Number.isSafeInteger(Number(input.purchase_cost_vnd))||Number(input.purchase_cost_vnd)<0))return send(response,400,{error:'Giá nhập phải là số nguyên không âm'});
-  const rpc={writeoff:'sales_inventory_writeoff',allocate:'sales_order_allocate',finalize:'sales_order_finish',start_handover:'sales_order_finish',warranty:'sales_order_warranty'}[action];
+  const rpc={intake_batch:'sales_inventory_intake_batch',writeoff:'sales_inventory_writeoff',allocate:'sales_order_allocate',finalize:'sales_order_finish',start_handover:'sales_order_finish',warranty:'sales_order_warranty'}[action];
   const result=await db('rpc/'+(rpc||'sales_inventory_command'),{method:'POST',body:JSON.stringify({...(rpc?{}:{p_action:action}),p_actor:context.user.id,p_input:input})});
-  return send(response,action==='intake'||action==='create_inhouse_order'?201:200,result);
+  return send(response,['intake_batch','intake','create_inhouse_order'].includes(action)?201:200,result);
  }catch(error){return inventoryFailure(response,error)}
 }

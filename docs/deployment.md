@@ -1,5 +1,9 @@
 # Triển khai Vercel và Supabase
 
+## 2026-11-19 — Import hàng loạt / giá vốn
+
+Migration `20261119231000_inventory_intake_batch.sql` đã áp dụng sau rollback QA. Phát hành `sales-inventory-service.mjs`, `inventory-business.js`, module import và Inhouse cùng tài liệu; không đổi env/domain. 149 Page batch cũ đã điều chỉnh giá vốn 700.000đ theo yêu cầu có audit, độc lập với triển khai UI. [Biên bản và kiểm thử](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Phát hành nhập tài sản Inhouse
 
 Migration `20261119230000_import_held_inhouse_pages.sql` đã chạy production trong cùng transaction với batch, ghi migration history sau đối chiếu 149 Page. UI sử dụng đúng repository `facebook-page-control-tower` / `money.aiecom.vn`; không dùng team CONUONGAI của CLI để tạo dự án khác. Không đổi env/domain/cron. [Theo dõi phát hành](inhouse-page-import-20261119.md).

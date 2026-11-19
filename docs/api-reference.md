@@ -1,5 +1,9 @@
 # API reference
 
+## 2026-11-19 — Nhập kho hàng loạt và quản lý cùng dòng
+
+`POST /api/admin/access?endpoint=sales_inventory`, action `intake_batch`: `{request_id,product_id,pages:[{facebook_page_id,page_name,page_link,current_admin_reference?,purchase_cost_vnd?,current_bm_reference?,intake_note?}]}`. Scope intake, actor từ context; 201 trả created/items/duplicate. 400 dữ liệu sai, 403 thiếu quyền, 409 ID đã tồn tại hoặc retry đổi payload. GET kho tổng/Inhouse trả assignments active và users tối thiểu để hiển thị tên cùng dòng. [Contract, giới hạn và QA](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — RPC bảo trì nhập kho Inhouse
 
 `sales_import_held_inhouse_batch(p_actor uuid,p_batch_key text,p_source_sha256 text,p_pages jsonb)` không có endpoint public; chỉ service_role EXECUTE, SECURITY INVOKER, kiểm tra actor active/staff và 6 scope kho. Trả total/created/reused/orders; batch trùng cùng hash trả duplicate, khác hash hoặc trạng thái tài sản xung đột thì lỗi và rollback. Nguồn 1–500 Page, chia đơn <=100. [Luồng và bảo mật](inhouse-page-import-20261119.md).

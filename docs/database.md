@@ -1,5 +1,9 @@
 # Database và migration
 
+## 2026-11-19 — Batch intake
+
+Migration `20261119231000_inventory_intake_batch.sql`: request UUID + hash payload do server tính, actor binding, transaction tất cả dòng hoặc rollback, dùng intake command/unique Page ID/ledger/audit hiện có. RLS bảng batch và chỉ service_role EXECUTE. [Chi tiết và giá vốn 149 Page](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Nhập tài sản đang cầm vào Inhouse
 
 Migration `20261119230000_import_held_inhouse_pages.sql`: bảng batch có RLS, RPC transaction service-only, advisory lock/batch hash chống lặp; tái sử dụng mã kho và giữ giá vốn. Dữ liệu cá nhân/tài sản nguồn không nằm trong migration. [Thiết kế, kết quả và kiểm thử](inhouse-page-import-20261119.md).

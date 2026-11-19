@@ -1,5 +1,9 @@
 # Kiểm thử và nghiệm thu
 
+## 2026-11-19 — Nhập hàng loạt / nhiều người cầm
+
+`inventory-import.test.mjs`, `sales-grid.test.mjs`, `sales-inventory-service.test.mjs`: parser, ID dài/ID trùng/CSV quoted/giá, nhiều phân công active cùng dòng, API intake scope và actor chống giả mạo. `supabase/tests/inventory_intake_batch_rollback.sql` 8 checks pass trong rollback. CUA renderer 390/768/1280 và xem trước TSV mẫu pass. [Biên bản](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Import Inhouse
 
 Dry-run 149 Page rollback; kiểm tra 148 mới/1 tái sử dụng, giữ giá vốn, từng tên/link/tài khoản cầm, manager/page access, người mua/phụ trách, 2 đơn zero verified, import lặp, hash sai, actor thiếu quyền, ID trùng và rollback lỗi dòng cuối. Kiểm tra client không EXECUTE RPC và bảng batch bật RLS. `sales-grid.test.mjs` bổ sung 4 trường và link không an toàn. [Chi tiết nghiệm thu](inhouse-page-import-20261119.md).

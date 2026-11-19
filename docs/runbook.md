@@ -1,5 +1,9 @@
 # Runbook vận hành
 
+## 2026-11-19 — Nhập kho nhanh
+
+Trong Kho Fanpage, chọn sản phẩm và Nhập hàng loạt; dùng mẫu CSV UTF-8 hoặc dán vùng ô có tiêu đề. Kiểm tra danh sách trước khi nhập kho nháp. Có lỗi/trùng ID thì sửa nguồn và kiểm tra lại, không dùng bỏ qua lỗi. Giao nhân sự tại Inhouse và đọc người đang quản lý ngay dòng Page, hỗ trợ nhiều người. [Hướng dẫn đầy đủ](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Nhập số dư Page đang cầm
 
 Chỉ chạy sau khi có danh sách và chỉ định người quản lý từ người dùng. Parse/đối chiếu ID, giữ nguyên link, không lấy ID URL để ghi đè ID nguồn. Backup trong audit, thử toàn batch bằng ROLLBACK, đối chiếu giá vốn và quyền, rồi COMMIT; chạy lại dùng cùng batch key/hash. 148 mã chưa có giá vốn cần bổ sung sau. [Kết quả lượt nhập và hướng dẫn](inhouse-page-import-20261119.md).

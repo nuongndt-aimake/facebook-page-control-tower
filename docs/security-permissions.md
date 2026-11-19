@@ -1,5 +1,9 @@
 # Auth, RBAC và admin preview
 
+## 2026-11-19 — Batch intake kế thừa phân quyền chủ động
+
+Scope intake dùng cho nhập đơn/hàng loạt, read cho kho và nhãn phân công; không thêm role hoặc quyền xem mọi đơn. RPC batch không cho anon/authenticated gọi trực tiếp; API lấy actor từ session, preview không được ghi. Tên phân công chỉ trả sau kiểm tra quyền kho. [Ma trận, audit và QA](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Quyền nhập tài sản Inhouse
 
 Không thêm role. Nhân sự operator phải được cấp đủ scope kho trước khi RPC nhập tài sản đã cầm cho phép chạy; RPC không cấp quyền cho chính actor. Quyền operator và quyền manager từng Page có audit riêng. Không suy ra quyền xem tất cả đơn. [Ma trận và giới hạn](inhouse-page-import-20261119.md).

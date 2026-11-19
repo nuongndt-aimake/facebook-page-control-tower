@@ -12,7 +12,10 @@ test('inventory RBAC denies ungranted roles, preview writes and foreign orders; 
  const call=async(method='POST',body={action:'intake'},endpoint='sales_inventory')=>{let status,payload;await inventoryService({url:'/?order_id='+order,method,body},{setHeader(){},status(n){status=n;return this},json(value){payload=value}},context,endpoint);return {status,payload}};
  try{
   assert.equal((await call()).status,403);assert.equal(writes.length,0);
+  assert.equal((await call('POST',{action:'intake_batch',request_id:order,product_id:order,pages:[{}]})).status,403);assert.equal(writes.length,0);
   context.profile.permissions={sales_inventory:['read','intake']};
+  assert.equal((await call('POST',{action:'intake_batch',request_id:order,product_id:order,pages:[]})).status,400);
+  assert.equal((await call('POST',{action:'intake_batch',request_id:order,product_id:order,pages:[{}],p_actor:'forged'})).status,201);assert.equal(writes.pop().p_actor,uid);
   assert.equal((await call('POST',{action:'finalize',order_id:order})).status,403);
   assert.equal((await call('GET',null,'sales_fulfillment')).status,403,'ownership or read scope alone cannot operate foreign orders');
   assigned=true;assert.equal((await call('GET',null,'sales_fulfillment')).status,200);

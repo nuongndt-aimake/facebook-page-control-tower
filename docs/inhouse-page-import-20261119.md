@@ -1,6 +1,8 @@
 # Nhập danh sách Page đã cầm vào Inhouse — 2026-11-19
 
-Trạng thái: Dữ liệu production đã nhập và đối chiếu; UI đã nghiệm thu cục bộ, đang phát hành. Nguồn: tệp người dùng cung cấp; không đưa danh sách tài sản chi tiết lên Git.
+Trạng thái: Đã phát hành production tại commit `5a8a9d6`, Vercel success. Nguồn: tệp người dùng cung cấp; không đưa danh sách tài sản chi tiết lên Git.
+
+**Cập nhật tiếp nối:** giá vốn NULL/650.000đ trong biên bản bên dưới **Hết hiệu lực ngày 2026-11-19** theo yêu cầu mới, đã điều chỉnh 149 Page về 700.000đ/Page với audit. [Thay thế bằng giá vốn mới, Import và nhân sự cùng bảng](inventory-bulk-and-inline-assignees-20261119.md).
 
 ## Impact note
 

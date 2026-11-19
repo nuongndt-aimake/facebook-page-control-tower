@@ -1,0 +1,21 @@
+create temporary table batch_import_checks(name text primary key);
+do $$
+declare actor uuid:=gen_random_uuid();product uuid;key uuid:=gen_random_uuid();input jsonb;r jsonb;retry jsonb;failed boolean;n bigint;
+begin
+ insert into auth.users(id,email) values(actor,'batch-qa-'||actor||'@example.invalid');
+ insert into public.profiles(id,email,role,status,permissions) values(actor,'batch-qa-'||actor||'@example.invalid','viewer','active','{}') on conflict(id) do update set role='viewer',permissions='{}',status='active';
+ select id into product from public.sales_products where product_group='fanpage' and status='active' order by created_at,id limit 1;
+ input:=jsonb_build_object('request_id',key,'product_id',product,'pages','[{"facebook_page_id":"990019231001","page_name":"Batch QA","page_link":"https://facebook.com/990019231001","purchase_cost_vnd":700000},{"facebook_page_id":"990019231002","page_name":"Batch QA 2","page_link":"https://facebook.com/990019231002"}]'::jsonb);
+ failed:=false;begin perform public.sales_inventory_intake_batch(actor,input);exception when raise_exception then if sqlerrm='Forbidden' then failed:=true;else raise;end if;end;if not failed then raise exception 'QA permission bypass';end if;insert into batch_import_checks values('ungranted viewer denied');
+ update public.profiles set permissions='{"sales_inventory":["intake"]}' where id=actor;
+ select count(*) into n from public.sales_inventory_items;
+ failed:=false;begin perform public.sales_inventory_intake_batch(actor,jsonb_set(input,'{pages,1,page_name}','""'));exception when raise_exception then if sqlerrm like 'Invalid import row 2:%' then failed:=true;else raise;end if;end;if not failed or (select count(*) from public.sales_inventory_items)<>n then raise exception 'QA late failure leaked writes';end if;insert into batch_import_checks values('late failure rolls back first item');
+ r:=public.sales_inventory_intake_batch(actor,input);if r->>'created'<>'2' then raise exception 'QA count';end if;
+ if not exists(select 1 from public.sales_inventory_items i join public.fanpage_inventory_details d on d.inventory_item_id=i.id where d.facebook_page_id='990019231001' and i.purchase_cost_vnd=700000 and i.status='draft') then raise exception 'QA stock';end if;insert into batch_import_checks values('two items imported as drafts with costs');
+ retry:=public.sales_inventory_intake_batch(actor,input);if retry->>'duplicate'<>'true' or retry->'items'<>r->'items' then raise exception 'QA retry';end if;insert into batch_import_checks values('retry idempotent');
+ failed:=false;begin perform public.sales_inventory_intake_batch(actor,jsonb_set(input,'{pages,0,page_name}','"Changed"'));exception when raise_exception then if sqlerrm='Invalid import retry payload' then failed:=true;else raise;end if;end;if not failed then raise exception 'QA changed retry accepted';end if;insert into batch_import_checks values('changed payload rejected');
+ failed:=false;begin perform public.sales_inventory_intake_batch(actor,jsonb_set(input,'{request_id}',to_jsonb(gen_random_uuid())));exception when raise_exception then if sqlerrm='Import row 1: Page ID already exists' then failed:=true;else raise;end if;end;if not failed then raise exception 'QA existing ID accepted';end if;insert into batch_import_checks values('existing Page IDs rejected');
+ failed:=false;begin perform public.sales_inventory_intake_batch(actor,jsonb_set(jsonb_set(input,'{request_id}',to_jsonb(gen_random_uuid())),'{pages,1,facebook_page_id}','"000990019231001"'));exception when raise_exception then if sqlerrm='Invalid duplicate Page ID in import' then failed:=true;else raise;end if;end;if not failed then raise exception 'QA normalized duplicate';end if;insert into batch_import_checks values('normalized duplicates rejected');
+ if has_function_privilege('anon','public.sales_inventory_intake_batch(uuid,jsonb)','execute') or has_function_privilege('authenticated','public.sales_inventory_intake_batch(uuid,jsonb)','execute') or not (select relrowsecurity from pg_class where oid='public.sales_inventory_intake_batches'::regclass) then raise exception 'QA insecure ACL';end if;insert into batch_import_checks values('service-only RPC and RLS');
+end $$;
+select name as passed from batch_import_checks order by name;

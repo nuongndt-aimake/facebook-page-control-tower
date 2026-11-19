@@ -1,5 +1,9 @@
 # Frontend và UX
 
+## 2026-11-19 — Import và nhân sự cùng bảng
+
+`inventory-import.mjs` mở từ nút trong Nhập kho, đọc CSV/TSV/dán bảng, kiểm tra/xem trước trước khi POST. Renderer chung kho tổng/Inhouse thêm Người đang quản lý, hiển thị nhiều phân công active cùng dòng. Vùng nhân sự riêng trên Inhouse hết hiệu lực, thay bằng cột này; không xóa phân công. [Luồng và responsive QA](inventory-bulk-and-inline-assignees-20261119.md).
+
 ## 2026-11-19 — Bốn trường Page trên danh sách kho
 
 Kho tổng và Inhouse dùng chung `inventory-business.js`: ID Page, Link, Tên hiện tại, Tài khoản cầm, trạng thái, giá nhập, thao tác. Link Facebook HTTPS được escape và mở tab mới an toàn. Thông tin hệ thống/BM nằm trong Chi tiết. Màn hình <=1000px dùng thẻ để đọc đầy đủ; desktop dùng bảng. [Nghiệm thu](inhouse-page-import-20261119.md).
