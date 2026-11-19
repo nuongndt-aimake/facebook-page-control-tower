@@ -11,6 +11,9 @@
 3. Chỉ định tài sản Page vẫn do quản lý thực hiện sang cộng tác viên; không tự cấp quyền trực tiếp từ checkout.
 4. Đồng bộ Facebook/API và báo cáo hiện có được cách ly: không dùng làm nguồn nhập kho, không thay schema/luồng hiện hữu trong đợt này.
 5. Fanpage bán giá 0 đồng không tạo QR; phải được nhân viên có quyền xác minh và quản lý chỉ định trước khi bàn giao.
+6. Có **kho Page tổng** và **kho Inhouse**. Bán ngoài làm mất Page khỏi kho tổng; bán Inhouse chuyển Page từ kho tổng sang kho Inhouse, không còn phụ thuộc đồng bộ Meta để có Page đầu vào.
+7. Báo cáo và hoa hồng là theo từng nhân sự–Page assignment; nhiều người cùng xử lý một Page có kết quả và quyền lợi độc lập.
+8. Google Sheet là nguồn đọc một chiều để hiển thị trực quan trên hệ thống; hệ thống không ghi ngược về Sheet.
 
 ## Mô hình sản phẩm mục tiêu
 
@@ -25,10 +28,16 @@
 
 Tạo `inventory_items`/`fanpage_inventory_details`, không dùng trực tiếp `pages` làm kho:
 
-- mã hàng bất biến, trạng thái `draft → available → reserved → sold/cancelled`;
+- mã hàng bất biến, trạng thái `draft → available → reserved → external_sold/cancelled`;
 - ID Page, link, tài khoản quản trị hiện tại, BM hiện tại (tùy chọn), giá nhập, ngày/nguồn nhập, chứng từ nội bộ;
 - một dòng `order_item` chỉ tham chiếu một mã hàng; transaction khóa hàng theo cách nguyên tử để không bán trùng;
-- `pages` chỉ kế thừa dữ liệu sau khi hoàn tất bàn giao hoặc với đơn Inhouse 0đ, có `source = sales_zero_value_input`; giữ provenance, không giả là dữ liệu đồng bộ Meta.
+- Bán ngoài: Page đạt `external_sold`, rời kho tổng và không được đưa vào kho Inhouse.
+- Bán Inhouse: transaction nguyên tử chuyển Page `available/reserved → inhouse_active`, giảm kho tổng và tạo record kho Inhouse; Page đó là nguồn nhập trực tiếp cho module quản lý/báo cáo Page, không yêu cầu discovery hay sync Meta.
+- `pages` kế thừa dữ liệu của kho Inhouse với `source = inhouse_inventory_transfer`; giữ order, nhân viên xác minh và thời điểm chuyển kho làm provenance, không giả là dữ liệu đồng bộ Meta.
+
+### Kho Inhouse
+
+Kho Inhouse là tập Page đang được vận hành nội bộ, có quan hệ một-một với mã hàng gốc và Page registry. Nó lưu trạng thái vận hành (`awaiting_assignment`, `active`, `suspended`, `retired`), quản lý phụ trách, thời điểm nhận kho và lý do rời kho. Không được xóa Page lịch sử khi chuyển trạng thái; rời kho chỉ kết thúc hiệu lực assignment/quyền lợi.
 
 ## Phân quyền và vai trò
 
@@ -66,11 +75,16 @@ paid/verified → quản lý chỉ định CTV/nhân viên nhận Page → hando
 
 Tạo báo cáo ngày theo **assignment**, không chỉ theo Page:
 
-- mỗi người quản lý cùng một Page là hai assignment riêng;
-- mỗi assignment ghi số bài đầu ngày, doanh thu hôm trước, doanh thu luỹ kế, bằng chứng/nguồn và trạng thái duyệt;
-- tổng Page là aggregate của assignment đã hợp lệ, không ghi đè số của từng người;
-- chính sách hoa hồng versioned/effective-dated, đánh giá theo số bài và doanh thu;
-- quản lý nhìn thấy dữ liệu `direct`, `inherited` hoặc `direct_and_inherited` theo access context hiện có.
+- mỗi người xử lý cùng một Page là một assignment riêng; số liệu, báo cáo và hoa hồng thuộc assignment đó, không chia đều/ghi đè theo Page;
+- mỗi ngày mọi nhân sự có assignment active phải nộp báo cáo: số bài đăng, số tiền thu được của ngày trước, số tiền luỹ kế hiện tại và nguồn/bằng chứng;
+- dashboard có hai trục: **theo nhân sự** (từng nhân sự và assignment) và **theo Page** (tổng của các assignment hợp lệ);
+- quản lý xem báo cáo `direct`, `inherited` hoặc `direct_and_inherited`, nhưng số liệu chỉ được cộng vào quyền lợi quản lý sau khi có quy tắc/approval xác minh rõ ràng; mặc định chỉ là visibility, không tự cộng dồn;
+- chính sách hoa hồng versioned/effective-dated gồm `đơn giá × số bài hợp lệ + phần trăm × doanh thu hợp lệ`; công thức, kỳ chốt, điều kiện duyệt và quy tắc làm tròn được snapshot trên từng kết quả;
+- thiếu báo cáo không được ghi 0 doanh thu: hiển thị trạng thái `missing`, có nhắc việc và giữ tách khỏi tổng chốt hoa hồng.
+
+### Google Sheet read-only
+
+Mỗi assignment có thể gắn một nguồn Google Sheet đã được cấp quyền đọc qua kết nối server-side. Worker chỉ đọc, chuẩn hóa và hiển thị các hàng/metric trên bảng hệ thống; không có endpoint, token hay UI nào được phép ghi ngược về Sheet. Mỗi lần import lưu `source_sheet_id`, thời điểm đọc, checksum/range và trạng thái lỗi để có thể đối chiếu.
 
 ## Tích hợp dữ liệu Page hiện hữu
 
@@ -85,19 +99,19 @@ Tạo báo cáo ngày theo **assignment**, không chỉ theo Page:
 | --- | --- | --- |
 | 0. Chuẩn hóa | Ghi quyết định, trạng thái, role × permission, inventory/order contract | Không còn yêu cầu mâu thuẫn chưa đánh dấu `Blocked` |
 | 1. Nền dữ liệu | Migration additive, RLS, audit, fixture, rollback note | Test khóa tồn kho và user không quyền bị từ chối |
-| 2. Fanpage inventory | Nhập kho, giá nhập, reserve/sold/release, chỉ định tài sản | Không bán trùng, truy được provenance |
+| 2. Fanpage inventory | Kho tổng, kho Inhouse, giá nhập, reserve/external-sold/transfer, chỉ định tài sản | Không bán trùng, truy được provenance và chuyển kho nguyên tử |
 | 3. Checkout & payment | Order item, pricing snapshot, SePay, đơn 0đ | Không QR với 0đ, webhook idempotent |
-| 4. Handover & reports | Assignment, CTV nội dung, quản lý trực tiếp/kế thừa | Tổng Page và tổng cá nhân đúng, có audit |
+| 4. Handover & reports | Assignment, báo cáo ngày, dashboard Page/nhân sự, quản lý trực tiếp/kế thừa, Sheet read-only | Tổng Page/tổng nhân sự đúng, không tự cộng quyền lợi quản lý, có audit |
 | 5. Khung nhóm 2–4 | Product type/fulfillment interface và feature flags | Không làm ảnh hưởng kho Fanpage |
 | 6. Mở bán | Preview, responsive 390/768/desktop, release/runbook | Production checklist hoàn tất |
 
 ## Blocker cần chốt trước Gate 2
 
-1. Trạng thái hợp lệ của mỗi mã Fanpage và thời hạn reserve.
-2. Có/không cho phép một Fanpage có nhiều CTV/nhiều người bàn giao cùng lúc.
-3. Công thức hoa hồng CTV bán hàng và CTV nội dung, ngưỡng/rank, kỳ chốt và quy tắc đơn tự mua.
+1. Thời hạn reserve của từng mã Fanpage trước khi trả về kho tổng.
+2. Công thức/đơn giá cụ thể theo bài, tỷ lệ doanh thu, kỳ chốt, ngưỡng/rank và quy tắc làm tròn hoa hồng.
+3. Điều kiện xác minh để quản lý được hưởng quyền lợi từ nhánh trực tiếp/gián tiếp.
 4. Danh sách quyền Inhouse/Sale được cấp trên từng product group.
-5. Nguồn và yêu cầu bảo mật của Google Sheet ở giai đoạn sau.
+5. Cấu trúc Sheet chuẩn, phạm vi đọc và tài khoản Google được cấp quyền server-side.
 
 ## Tài liệu bắt buộc khi có thay đổi
 
