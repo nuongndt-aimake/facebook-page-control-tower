@@ -1,5 +1,7 @@
 # Roadmap triển khai
 
+> **Bổ sung 2026-11-19 — Roadmap nền tảng sản phẩm:** xem [sales-platform-rearchitecture-plan.md](sales-platform-rearchitecture-plan.md). Nhóm Fanpage là ưu tiên triển khai; Skill, khóa học và thuê bao giữ trạng thái `Roadmap`. Module đồng bộ Meta/Facebook được cách ly trong đợt tái cấu trúc catalog.
+
 Kế hoạch thực thi có dependency và workstream song song được chuẩn hóa tại [implementation-plan.md](implementation-plan.md).
 
 Ưu tiên hiện tại là emergency sprint tối đa 48 giờ; các hạng mục chưa đủ điều kiện sẽ giữ trạng thái `Roadmap` và không được mô tả là đã hoàn thành.
