@@ -1,5 +1,7 @@
 # Triển khai Vercel và Supabase
 
+Đợt [vận hành/đơn hàng mới](operations-inhouse-reports-20261119.md): schema additive và migration giá đã apply trước code; branch codex/inhouse-operations-reporting → Preview → main/production dự án facebook-page-control-tower. Không đổi env/domain/SePay/cron. Zalo widget dùng OA ID được admin cấu hình; không chứa server secret. Các liên hệ/quà thật là dữ liệu cấu hình chưa được tự bịa.
+
 Gate 2.2: migration `20261119210000_sales_inventory_transaction_fulfillment.sql` đã apply và QA rollback/concurrency đạt trước deploy API. Không thêm env/secret/domain/cron. Chỉ deploy repository `facebook-page-control-tower` để cập nhật `money.aiecom.vn`; không deploy project sales cũ. Phục hồi code giữ schema additive và không mở lại RPC ghi cũ. Xem [release và runbook](inventory-fulfillment-release-20261119.md).
 
 ## Supabase

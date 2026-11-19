@@ -1,5 +1,7 @@
 # Roadmap triển khai
 
+Đợt tiếp theo đã có code/migration/QA và đang phát hành: kho nghiệp vụ + hỏng/chi phí, tài sản Inhouse + payout/gán người, báo cáo CTV theo phân công và tổng quan, cấu hình giá/chiết khấu/mã/quà/hỗ trợ, menu viewport, đơn gọn/bộ lọc/phân bổ/nợ Page/bảo hành. [Phạm vi, trạng thái và kết quả](operations-inhouse-reports-20261119.md). Thông tin cũ nói các phần này chưa có được giữ làm lịch sử và **Hết hiệu lực riêng trong phạm vi đã nêu**. Hoa hồng, Google Sheet và nhóm 2–4 tiếp tục roadmap.
+
 Gate 2.2 ngày 2026-11-19 đã triển khai code, migration và kiểm thử transaction nhập kho, giữ hàng cùng checkout, bán ngoài, chuyển Inhouse, giao nhân sự và ledger UI; đã phát hành production và nghiệm thu API thật. Ghi chú “Gate tiếp theo: intake transaction/Inhouse” bên dưới **Hết hiệu lực** với phần đã hoàn thành, thay bằng [bản phát hành và các phần còn chờ](inventory-fulfillment-release-20261119.md). Báo cáo/hoa hồng/Sheets và sản phẩm nhóm 2–4 vẫn theo lộ trình riêng, không tự đặt chính sách.
 
 Đã phát hành 2026-11-19: webhook atomic và test hai phiên, giá public theo hiệu lực, bảng đủ cột đơn/kho, tên Page, menu active/tap/desktop. [Kế hoạch các luồng độc lập và kết quả](parallel-upgrade-20261119.md). Gate tiếp theo: intake transaction và các phần Inhouse/bàn giao/báo cáo còn Roadmap; không đánh dấu các phần đó hoàn tất chỉ vì bảng kho đã có tên.

@@ -2,7 +2,8 @@
  const navFor=node=>node?.closest?.('#quick-nav');
  const setGroup=(group,open)=>{group.classList.toggle('group-open',open);group.querySelector('.quick-menu-group-toggle')?.setAttribute('aria-expanded',String(open))};
  const closeGroups=nav=>nav?.querySelectorAll('.quick-menu-group').forEach(group=>setGroup(group,false));
- const setPanel=(nav,open)=>{nav.classList.toggle('menu-open',open);nav.querySelector('.quick-menu-toggle')?.setAttribute('aria-expanded',String(open));if(!open)closeGroups(nav)};
+ const sizePanel=nav=>{const top=Math.max(0,nav.getBoundingClientRect().bottom),viewport=window.visualViewport;nav.style.setProperty('--quick-menu-top',top+'px');nav.style.setProperty('--quick-menu-height',Math.max(120,(viewport?.height||innerHeight)+(viewport?.offsetTop||0)-top-12)+'px')};
+ const setPanel=(nav,open)=>{if(!nav)return;if(open)sizePanel(nav);nav.classList.toggle('menu-open',open);nav.querySelector('.quick-menu-toggle')?.setAttribute('aria-expanded',String(open));if(!open)closeGroups(nav)};
  const openGroup=group=>{const nav=navFor(group);closeGroups(nav);setGroup(group,true)};
  document.addEventListener('click',event=>{
    const nav=navFor(event.target),panel=event.target.closest?.('.quick-menu-toggle'),toggle=event.target.closest?.('.quick-menu-group-toggle');
@@ -20,4 +21,6 @@
  });
  document.addEventListener('focusout',event=>{const nav=navFor(event.target);if(nav)setTimeout(()=>{if(!nav.contains(document.activeElement))setPanel(nav,false)},0)});
  window.addEventListener('resize',()=>document.querySelectorAll('#quick-nav').forEach(nav=>setPanel(nav,false)));
+ window.visualViewport?.addEventListener('resize',()=>document.querySelectorAll('#quick-nav.menu-open').forEach(sizePanel));
+ window.addEventListener('scroll',()=>document.querySelectorAll('#quick-nav.menu-open').forEach(sizePanel),{passive:true});
 })();

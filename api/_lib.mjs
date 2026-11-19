@@ -140,7 +140,7 @@ export async function requirePlatformAdmin(request) {
   return context;
 }
 
-const SALES_INVENTORY_ACTIONS = new Set(["read", "intake", "publish", "reserve", "release", "finalize", "assign_inhouse"]);
+const SALES_INVENTORY_ACTIONS = new Set(["read", "intake", "publish", "reserve", "release", "finalize", "assign_inhouse", "writeoff", "warranty"]);
 export function canManageSalesInventory(context, action) {
   if (!SALES_INVENTORY_ACTIONS.has(action)) return false;
   if (["platform_admin", "super_admin"].includes(context?.profile?.role)) return true;

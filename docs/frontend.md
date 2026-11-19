@@ -1,5 +1,7 @@
 # Frontend và UX
 
+Theo yêu cầu mới, quy tắc hiển thị mọi cột kho/đơn **Hết hiệu lực** từ đợt [vận hành Inhouse và bán hàng](operations-inhouse-reports-20261119.md): kho 6 cột, đơn 7 cột và Chi tiết khi cần; mobile card. `/access` chỉ Page Inhouse, `/daily-reports` nộp báo cáo, bốn trang tổng quan/báo cáo có số liệu vận hành. Cấu hình chiết khấu cùng giá, mã giới thiệu/quà tách mã ưu đãi, hỗ trợ/Zalo; menu mobile giới hạn theo viewport và tự cuộn, không bị cắt trên màn hình thấp.
+
 Gate 2.2 bổ sung `/inventory-inhouse` trong Vận hành, panel **Kho & bàn giao** trong đơn, lịch sử từng mã trong kho. Native dialog có đóng, thông báo kết quả và khoá nút khi gửi. API trả scope để hiển thị thao tác; không thay kiểm tra quyền server. Bảng giữ mọi trường và cuộn ngang trong khung. Xem [luồng và nghiệm thu](inventory-fulfillment-release-20261119.md).
 
 Nâng cấp giá theo hiệu lực, bảng đầy đủ cột, tên Page và cơ chế menu: [kế hoạch độc lập, thiết kế và nghiệm thu](parallel-upgrade-20261119.md). Riêng đơn hàng/kho giữ tất cả cột và scroll ngang trong khung, thay quy tắc ẩn cột/card trước đây theo yêu cầu ngày 2026-11-19.

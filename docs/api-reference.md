@@ -1,5 +1,7 @@
 # API reference
 
+Đợt vận hành mới 2026-11-19: [hợp đồng kho hỏng, tài sản Inhouse, báo cáo, lịch chiết khấu, quà/Zalo và đơn nợ/bảo hành](operations-inhouse-reports-20261119.md). Thêm endpoints inhouse_assets/content_reports/operations_permissions/sales-discount-history; checkout tách referral_code/promo_code và trả cảnh báo thiếu kho. Xử lý đơn dùng allocate/start_handover/finalize(access_granted)/warranty. Quy tắc trước đây từ chối đơn thiếu kho **Hết hiệu lực** theo yêu cầu mới; bảng dữ liệu và scope vẫn kiểm tra server-side.
+
 Gate 2.2, 2026-11-19: `endpoint=sales_inventory|sales_fulfillment|sales_inhouse` bổ sung lệnh transaction và scope `assign_inhouse`; checkout gọi RPC atomic giữ hàng. Các RPC loose-order-reference cũ **Hết hiệu lực** làm entry point, thay bằng `sales_inventory_command`. Xem [hợp đồng API, quyền, lỗi và tương thích](inventory-fulfillment-release-20261119.md#api-và-tương-thích).
 
 ## Cập nhật 2026-11-19: sales

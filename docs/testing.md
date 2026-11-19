@@ -1,5 +1,7 @@
 # Kiểm thử và nghiệm thu
 
+Đợt mới: `node --test` và các SQL rollback `inventory_fulfillment_rollback.sql` (21), `operations_reports_rollback.sql` (17), `order_debt_warranty_rollback.sql` (15) đã đạt. Bộ đầu đã đổi case thiếu kho thành nhận đơn nợ theo yêu cầu mới. API thật qua máy chủ QA + Supabase đạt 24 bước, dữ liệu tách riêng và dọn sau test. UI kiểm tra 390×844, 768×1024, 1440×960 và menu màn hình thấp 390×450. [Chi tiết nghiệm thu](operations-inhouse-reports-20261119.md).
+
 Gate 2.2: `node --test` đạt 12 kiểm tra. `supabase/tests/inventory_fulfillment_rollback.sql` chạy BEGIN/ROLLBACK trên dữ liệu QA riêng đạt 21 kiểm tra; hai phiên DB kiểm tra nhập cùng ID và checkout cùng mã đạt, QA đã dọn. Kết quả, phạm vi và giới hạn tại [nghiệm thu kho](inventory-fulfillment-release-20261119.md). Quy tắc mobile bảng chuyển card bên dưới **Hết hiệu lực riêng với bảng đơn/kho**: theo yêu cầu mới, giữ đủ cột và cuộn ngang trong khung. Quy tắc sales-orders chỉ admin bên dưới **Hết hiệu lực**: owner/assignee đọc đơn phạm vi, read_all/admin đọc toàn bộ; ghi kho còn yêu cầu scope và phạm vi đơn.
 
 ## Kiểm tra cú pháp

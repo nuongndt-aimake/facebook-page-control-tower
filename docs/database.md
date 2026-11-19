@@ -1,5 +1,7 @@
 # Database và migration
 
+Đợt mới: migrations `20261119220000`, `20261119223000`, `20261119224000` bổ sung writeoffs, report revisions, referral_code, phiên bản chiết khấu và warranties. Trạng thái kho damaged; đơn allocated/granting/page_debt/failed; link mã replaced. RLS + revoke client, RPC service-only, transaction/lock/audit và kiểm thử rollback. [Chi tiết và tương thích](operations-inhouse-reports-20261119.md). Migration giá `20261119215000` chỉ kết thúc baseline chồng lấn, giữ lịch sử admin.
+
 ## Gate 2.2 — kho atomic và bàn giao 2026-11-19
 
 Migration `20261119210000_sales_inventory_transaction_fulfillment.sql` đã apply: ID Page normalized unique, liên kết đơn–mã kho snapshot + unique partial, RPC intake/checkout/fulfillment atomic, nguồn Page `sales_inventory`, đơn 0đ hợp lệ. RLS bật, không grant client; RPC SECURITY INVOKER chỉ service_role. Không sửa dữ liệu kho/đơn lịch sử. Xem [thiết kế, quyền, kiểm thử và phục hồi](inventory-fulfillment-release-20261119.md).

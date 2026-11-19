@@ -1,4 +1,5 @@
 /* One interaction model: hover only on precise desktop pointers, tap on mobile. */
+@media(max-width:900px){#quick-nav{overflow:visible!important;backdrop-filter:none!important;transform:none!important;z-index:7000!important}#quick-nav>div{overflow:visible!important}#quick-nav.menu-open .quick-menu-links{position:fixed!important;top:var(--quick-menu-top,58px)!important;left:12px!important;right:12px!important;max-height:var(--quick-menu-height,calc(100dvh - 76px))!important;height:auto!important;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;z-index:7100!important}#quick-nav .quick-menu-group{flex-shrink:0!important}#quick-nav .quick-menu-submenu{max-height:none!important;overflow:visible!important}}
 #quick-nav .quick-menu-group:hover>.quick-menu-submenu{display:none}
 #quick-nav .quick-menu-group.group-open>.quick-menu-submenu{display:flex!important}
 #quick-nav .quick-menu-group-toggle.active,#quick-nav a[aria-current="page"]{color:#d6ff3f!important;background:#1d2a22!important;border-color:#657b35!important}

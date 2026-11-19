@@ -26,8 +26,10 @@ begin
  perform pg_temp.qa((r->>'duplicate')::boolean,'publish retry idempotent');
  code:='FS'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,10));
  input:=jsonb_build_object('product_id',p,'order_code',code,'payment_reference',code,'buyer_name','QA only','buyer_phone','0000000000','buyer_email','qa@example.invalid','quantity',2,'unit_price_vnd',100000,'gross_amount_vnd',200000,'discount_percent',0,'discount_amount_vnd',0,'promo_discount_vnd',0,'expected_amount_vnd',200000,'zero_value_verification_status',null,'payment_expires_at',now()+interval '30 minutes');
- failed:=false;begin perform public.sales_checkout_create(input,'{}');exception when raise_exception then if sqlerrm='Insufficient available inventory' then failed:=true;else raise;end if;end;
- perform pg_temp.qa(failed and not exists(select 1 from public.sales_orders where order_code=code),'stock shortage creates no order');
+ select id into o from public.sales_checkout_create(input,'{}');
+ perform pg_temp.qa((select fulfillment_status='page_debt' from public.sales_orders where id=o),'stock shortage creates backorder with debt');
+ perform public.sales_inventory_command('cancel_order',a,jsonb_build_object('order_id',o,'reason','QA backorder cancellation'));
+ code:='FS'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,10));input:=input||jsonb_build_object('order_code',code,'payment_reference',code);
  select id into o from public.sales_checkout_create(input||'{"quantity":1,"gross_amount_vnd":100000,"expected_amount_vnd":100000}','{}');
  perform pg_temp.qa((select status='reserved' from public.sales_inventory_items where id=x) and (select count(*)=1 from public.sales_invoice_records where order_id=o),'checkout reserves and invoices together');
  update public.profiles set role='operator',permissions='{"sales_inventory":["reserve","release","finalize"]}' where id=u;

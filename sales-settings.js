@@ -28,5 +28,6 @@
     const save=async(form,body)=>{const button=form.querySelector('button');button.disabled=true;try{await request(body);const latest=await request();data.prices=latest.prices;renderPrices();status.textContent='Đã lưu. Trang mua hàng sẽ sử dụng cấu hình theo thời điểm hiệu lực.'}catch(error){status.textContent=error.message}finally{button.disabled=false}};
     panel.querySelector('#sales-settings-form').onsubmit=event=>{event.preventDefault();save(event.target,{action:'save_sales_setting',setting_key:'profile_link_help_video',url:video.value})};
     panel.querySelector('#sales-price-form').onsubmit=event=>{event.preventDefault();const form=event.target;save(form,{action:'set_product_price',product_id:product.value,unit_price_vnd:Number(form.elements.amount.value),effective_from:new Date(form.elements.effective.value).toISOString()})};
+    const codeSettings=document.createElement('script');codeSettings.src='/sales-code-settings.js?v=20261119';document.body.append(codeSettings);
   }catch(error){console.error('Không thể đọc cấu hình bán hàng',error)}
 })();
