@@ -17,10 +17,11 @@
 
 ## Quy trình vận hành
 
-1. Mở **Vận hành → Kho Fanpage** và nhập ID/đường dẫn Page, giá nhập cùng thông tin nội bộ cần thiết.
-2. Hệ thống tạo `FPINV-*` ở trạng thái `draft`; kiểm tra lại ID/link trước khi chọn **Mở bán**.
-3. Không reserve/chốt bán/chuyển Inhouse thủ công tại màn hình này. Các bước đó bắt buộc gắn mã đơn hoặc luồng bàn giao để giữ ledger/audit nhất quán.
-4. Không ghi token Meta, mật khẩu hoặc dữ liệu đăng nhập vào trường tham chiếu quản trị/BM.
+1. Quản trị viên mở **Nhân sự → Quyền → Kho Fanpage** để cấp đúng scope cho nhân sự; sau đó nhân sự mở **Vận hành → Kho Fanpage**.
+2. Nhập ID/đường dẫn Page, giá nhập cùng thông tin nội bộ cần thiết.
+3. Hệ thống tạo `FPINV-*` ở trạng thái `draft`; kiểm tra lại ID/link trước khi chọn **Mở bán**.
+4. Không reserve/chốt bán/chuyển Inhouse thủ công tại màn hình này. Các bước đó bắt buộc gắn mã đơn hoặc luồng bàn giao để giữ ledger/audit nhất quán.
+5. Không ghi token Meta, mật khẩu hoặc dữ liệu đăng nhập vào trường tham chiếu quản trị/BM.
 
 ## Kiểm tra trước khi dùng dữ liệu thật
 

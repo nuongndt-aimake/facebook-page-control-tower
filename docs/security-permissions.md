@@ -34,6 +34,8 @@ Permission `sales_inventory` đã có hiệu lực server-side cho API kho, lưu
 
 Các scope còn lại `inhouse_fulfillment`, `affiliate`, `content_contributor` và policy/configuration vẫn là `Roadmap`. Nhân viên chỉ xác minh đơn 0đ/hoàn tất bàn giao của đơn hoặc Page được chỉ định; manager chỉ có visibility kế thừa, không tự phát sinh quyền lợi tài chính.
 
+Quản trị viên cấp hoặc thu hồi từng scope kho tại **Nhân sự → Quyền → Kho Fanpage**. Đây là thay đổi có audit; UI không làm quyền có hiệu lực nếu server từ chối. Cấp `read` trước khi cấp các thao tác còn lại để nhân sự có thể kiểm tra mã kho và trạng thái.
+
 ## Kế thừa tuyến quản lý
 
 Manager/lead xem được người tuyến dưới đang active và tài sản được gán cho họ. Page kế thừa phải được đánh dấu `inherited` trong access context/báo cáo; Page gán trực tiếp là `direct`, nếu có cả hai nguồn là `direct_and_inherited`. Hồ sơ tuyến hiển thị cả người quản lý trực tiếp, vai trò hiện tại, số Page/Payout và số tuyến dưới. Khi bàn giao, Page/Payout và các tuyến quản lý liên quan phải chuyển sang successor; tuyến dưới không được tự động nhận quyền ngược lên tuyến trên.
