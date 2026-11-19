@@ -116,7 +116,7 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 | Phân quyền | Không thêm role. Public chỉ tạo đơn qua server; đọc/xử lý hóa đơn vẫn `platform_admin`/`super_admin` kiểm tra server-side. |
 | UI | `/sales` và `/sales-orders`; đã dùng layout một cột ở mobile, bảng admin bọc cuộn ngang. |
 | Tích hợp | Không đổi SePay, domain hay cron. Webhook cập nhật trạng thái hóa đơn cùng trạng thái thanh toán. |
-| Tài liệu | Đã cập nhật API và database; cần ghi kết quả migration/deploy vào runbook sau khi production xác minh. |
+| Tài liệu | Đã cập nhật API và database. Production xác minh ngày 2026-11-19: `profiles.phone` được áp dụng an toàn bằng `ADD COLUMN IF NOT EXISTS` sau khi phát hiện thiếu cột; truy vấn kiểm tra xác nhận cột tồn tại. |
 
 # Impact note — Catalog, mã học viên và đơn 0đ (2026-11-19)
 
