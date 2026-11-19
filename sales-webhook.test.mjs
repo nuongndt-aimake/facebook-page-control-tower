@@ -16,6 +16,7 @@ test('webhook: authentication, exact amount, replay and invoice transition with 
     assert.equal((await call({id:'bad-auth'},'wrong')).status,401);assert.equal(events.length,0);
     const good=await call({id:'event-good',transferType:'in',transferAmount:2850000,code:'FS1234567890'});assert.equal(good.status,200);assert.equal(order.payment_status,'paid');assert.equal(invoice.invoice_status,'aggregate_pending');
     assert.equal((await call({id:'event-good',transferType:'in',transferAmount:2850000,code:'FS1234567890'})).payload.duplicate,true);assert.equal(events.length,1);
+    await call({id:'event-after-paid',transferType:'out',transferAmount:1,code:'FS1234567890'});assert.equal(order.payment_status,'paid');
     order.payment_status='pending_payment';invoice.invoice_status='pending_payment';
     assert.equal((await call({id:'event-short',transferType:'in',transferAmount:1000,code:'FS1234567890'})).payload.processing_status,'amount_mismatch');assert.equal(order.payment_status,'reconciliation_required');assert.equal(invoice.invoice_status,'pending_payment');
   }finally{global.fetch=oldFetch;for(const key of Object.keys(process.env))if(!(key in env))delete process.env[key];Object.assign(process.env,env)}

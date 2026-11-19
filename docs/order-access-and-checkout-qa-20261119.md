@@ -27,3 +27,13 @@ QA: tạo đơn thử được ghi rõ QA, không chuyển tiền thật; kiểm
 - Tiếp tục chức năng đã chốt: theo dõi trạng thái QR mỗi 5 giây qua GET /api/admin/access?endpoint=public-order-status&order_id=... và header x-order-token. Token HMAC gắn order_id, hạn 24 giờ, dùng bí mật server, không lưu bí mật vào client. Response chỉ trả trạng thái/mã/số tiền; không trả PII. 403 nếu sai token, không dựa trên mã đơn dễ chia sẻ để đọc dữ liệu cá nhân. Khi paid, mới trả link quà; checkout không tiết lộ link tải quà trước thanh toán. QR/countdown ẩn khi paid/hủy/hết hạn.
 - Đơn 0 đồng chỉ tài khoản nhân viên trong salesStaffRoles được tạo; không có QR và chờ xác minh staff. Không cấp quyền mới cho người mua. Không thay đổi schema/RLS hoặc thêm function Vercel; các module hỗ trợ nằm ngoài api/.
 - Chưa xác nhận bằng chuyển tiền thật hoặc webhook thật trong phiên này. Đơn test để chờ/hủy, không được bàn giao. Video admin vẫn chưa có URL.
+
+## Hoàn tất kiểm thử và sửa bổ sung
+
+- Đơn đăng nhập FS80B58299A8: 5 page, gốc 7.500.000đ, giảm 10% (750.000đ), phải trả 6.750.000đ. Tự lấy tên/email tài khoản; đã kiểm tra yêu cầu hóa đơn riêng và đủ thông tin trong modal quản lý. Chỉ là yêu cầu chờ, không phát hành hóa đơn thật.
+- Theo dõi trạng thái live: sau khi hủy đơn test trong quản lý, trang QR tự đổi sang Đơn đã hủy và ẩn QR/tải ảnh/đồng hồ. Không đánh dấu paid hoặc hoàn tiền giả.
+- Hai đơn QA được hủy để không đi vào bàn giao. Không xóa lịch sử test. Không chỉnh giá hiện hành hoặc giá tương lai đã có của người dùng.
+- Báo giá public dùng POST /api/checkout với quote_only=true, chỉ đọc và trả tổng trước/sau chiết khấu/mã ưu đãi; không tạo đơn/hóa đơn. UI dùng cùng phép tính server để tránh INHOUSE bị hardcode 10.000đ sai khi mua nhiều page. Các mức 1/2/5/10 và ưu đãi tiền sau chiết khấu có test.
+- Webhook không cho event sai/chi ra đến sau làm tụt đơn paid về cần đối soát. Kiểm thử giả xác nhận trạng thái paid được giữ nguyên; webhook chỉ nhận POST.
+- Test tích hợp API giả: buyer không thấy hóa đơn khác, không thấy quà chưa trả, không sửa được thanh toán; nhân viên read_all xem mọi đơn nhưng không có quyền sửa; khách không có phiên bị 401. Token theo dõi sai/khác đơn/hết hạn bị từ chối.
+- Kiểm thử chưa bao gồm chuyển tiền thật hoặc tình huống hai webhook đến đồng thời. Không khẳng định đã nghiệm thu các trường hợp này.

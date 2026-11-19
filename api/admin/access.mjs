@@ -163,6 +163,7 @@ function safeEqual(left, right) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 async function sepayWebhook(request, response) {
+  if(request.method!=='POST')return send(response,405,{error:'Method not allowed'});
   if (request.method !== "POST") return send(response, 405, { success: false, error: "Method not allowed" });
   const expected = process.env.SEPAY_WEBHOOK_API_KEY;
   const authorization = String(request.headers.authorization || "");
@@ -187,7 +188,7 @@ async function sepayWebhook(request, response) {
   const expired = order?.payment_expires_at && new Date(order.payment_expires_at).getTime() < Date.now();
   const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : expired ? "expired" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
   await db("sales_payment_events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ provider_event_id: providerEventId, order_id: order?.id || null, amount_vnd: Number.isFinite(amount) ? amount : null, processing_status: processingStatus, raw_payload: payload }) });
-  if (order) {
+  if (order && order.payment_status !== 'paid') {
     const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
     await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(update) });
     await syncInvoiceForPayment(order.id, update.payment_status);
@@ -232,8 +233,8 @@ async function publicCheckout(request, response) {
   const buyerEmail = cleanText(signedInUser?.email || account.email || input.buyer_email).toLowerCase();
   const buyerPhone = cleanText(account.phone || signedInUser?.phone || signedInUser?.user_metadata?.phone || signedInUser?.user_metadata?.phone_number || input.buyer_phone, 40);
   const profileUrl = cleanText(input.fulfillment_profile_url, 500);
-  if (!buyerName || !buyerPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail) || !/^https?:\/\//i.test(profileUrl)) return send(response, 400, { error: "Thiếu hoặc sai thông tin đơn hàng" });
-  const invoice = validInvoice(input);
+  if (input.quote_only!==true && (!buyerName || !buyerPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail) || !/^https?:\/\//i.test(profileUrl))) return send(response, 400, { error: "Thiếu hoặc sai thông tin đơn hàng" });
+  const invoice = input.quote_only===true ? {requested:false} : validInvoice(input);
   const products = await db("sales_products?select=id,unit_price_vnd,status,product_type&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
   const configuredUnitPrice = await currentProductPrice(product.id, product.unit_price_vnd);
   const now = new Date();
@@ -248,6 +249,7 @@ async function publicCheckout(request, response) {
   if (promoCodeValue && (!promo || (promo.ends_at && new Date(promo.ends_at) < now))) return send(response, 400, { error: "Mã ưu đãi không hợp lệ hoặc đã hết hạn" });
   const promoDiscount = promo ? Math.min(afterBulkDiscount, promo.discount_type === "percent" ? Math.round(afterBulkDiscount * Number(promo.discount_value) / 100) : Number(promo.discount_value)) : 0;
   const amount = afterBulkDiscount - promoDiscount;
+  if(input.quote_only===true)return send(response,200,{quote:{gross_amount_vnd:grossAmount,discount_percent:discountPercent,discount_amount_vnd:discountAmount,promo_discount_vnd:promoDiscount,amount_vnd:amount}});
   if(amount===0&&!salesStaffRoles.has(account.role))throw Error('Forbidden');
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
   const paymentExpiresAt = amount > 0 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;

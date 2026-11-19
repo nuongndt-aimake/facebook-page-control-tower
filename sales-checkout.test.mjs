@@ -1,0 +1,23 @@
+import test from 'node:test';import assert from 'node:assert/strict';import handler from './api/admin/access.mjs';
+test('server quote tiers, promo after bulk, checkout snapshot and restricted tracking',async()=>{
+  const oldFetch=global.fetch,env={...process.env};Object.assign(process.env,{SUPABASE_URL:'https://checkout-unit.invalid',SUPABASE_SERVICE_ROLE_KEY:'test-secret',SALES_PUBLIC_CHECKOUT_ENABLED:'true'});
+  const writes=[];
+  global.fetch=async(url,opt={})=>{const u=new URL(url),table=u.pathname.split('/').pop();let result=[];
+    if(opt.method==='POST'){const row=JSON.parse(opt.body);writes.push({table,row});result=[{id:'test-order',...row}]}
+    else if(table==='sales_products')result=[{id:'product',sku:'FANPAGE',status:'active',product_type:'fanpage',unit_price_vnd:1500000}];
+    else if(table==='sales_product_prices')result=[{unit_price_vnd:1500000}];
+    else if(table==='sales_discount_tiers'){const q=Number(u.searchParams.get('min_quantity')?.slice(4));result=[{discount_percent:q>=10?15:q>=5?10:q>=2?5:0}]}
+    else if(table==='sales_promo_codes')result=[{code:'QA',discount_type:'fixed',discount_value:100000,gift_download_url:'https://example.com/private-gift'}];
+    else if(table==='sales_orders')result=[{id:'test-order',order_code:'FS1234567890',payment_status:'pending_payment',expected_amount_vnd:2850000,gift_download_url:'https://example.com/private-gift'}];
+    else throw Error('Unexpected call '+url);
+    return new Response(JSON.stringify(result),{status:200});};
+  const call=async(body,endpoint='public-checkout',headers={})=>{let status,payload;await handler({url:'/?endpoint='+endpoint,method:endpoint.startsWith('public-order-status')?'GET':'POST',headers,body},{setHeader(){},status(n){status=n;return this},json(x){payload=x}});return {status,payload}};
+  try{
+    for(const [quantity,amount] of [[1,1500000],[2,2850000],[5,6750000],[10,12750000]]){const q=await call({quote_only:true,quantity});assert.equal(q.status,200);assert.equal(q.payload.quote.amount_vnd,amount)}
+    const promo=await call({quote_only:true,quantity:2,promo_code:'QA'});assert.equal(promo.payload.quote.amount_vnd,2750000);assert.equal(writes.length,0);
+    const created=await call({quantity:2,buyer_name:'QA TEST',buyer_email:'qa@example.com',buyer_phone:'0000000000',fulfillment_profile_url:'https://facebook.com/qa-test'});
+    assert.equal(created.status,201);assert.equal(created.payload.order.amount_vnd,2850000);assert.ok(created.payload.qr_url.includes('amount=2850000'));assert.ok(created.payload.qr_url.includes(created.payload.order.payment_reference));assert.equal(writes.find(x=>x.table==='sales_orders').row.discount_amount_vnd,150000);assert.equal(writes.filter(x=>x.table==='sales_invoice_records').length,1);assert.equal(created.payload.order.gift,null);
+    assert.equal((await call({},'public-order-status&order_id=test-order',{'x-order-token':'forged'})).status,403);
+    const tracked=await call({},'public-order-status&order_id=test-order',{'x-order-token':created.payload.order_status_token});assert.equal(tracked.status,200);assert.equal(tracked.payload.payment_status,'pending_payment');assert.equal(tracked.payload.gift,undefined);assert.equal(tracked.payload.buyer_email,undefined);
+  }finally{global.fetch=oldFetch;for(const key of Object.keys(process.env))if(!(key in env))delete process.env[key];Object.assign(process.env,env)}
+});

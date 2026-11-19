@@ -1,5 +1,7 @@
 # Frontend và UX
 
+Quyền xem đơn và luồng báo giá/QR/theo dõi thanh toán: [ma trận quyền, impact note và kết quả QA](order-access-and-checkout-qa-20261119.md). Quy ước chỉ admin xem đơn **hết hiệu lực 2026-11-19**, thay bằng đơn của mình/phân công hoặc quyền read_all; action quản trị vẫn kiểm tra riêng ở server.
+
 Sửa banner /sales và bổ sung lịch giá admin: [thiết kế, impact note và kiểm thử](sales-banner-and-price-schedule-20261119.md).
 
 Quy ước navigator toàn bộ trang giới thiệu, mua hàng và quản lý: [Đồng bộ navigator 2026-11-19](navigation-unification-20261119.md). Đăng xuất thành công chuyển đến `/analytics#login`. Mọi HTML dùng cùng `auth-nav.js?v=20261119-all-menu`.
