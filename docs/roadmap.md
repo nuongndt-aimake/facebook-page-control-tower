@@ -1,6 +1,6 @@
 # Roadmap triển khai
 
-> **Bổ sung 2026-11-19 — Roadmap nền tảng sản phẩm:** xem [sales-platform-rearchitecture-plan.md](sales-platform-rearchitecture-plan.md). Nhóm Fanpage là ưu tiên triển khai; Skill, khóa học và thuê bao giữ trạng thái `Roadmap`. Module đồng bộ Meta/Facebook được cách ly trong đợt tái cấu trúc catalog.
+> **Bổ sung 2026-11-19 — Roadmap nền tảng sản phẩm:** xem [sales-platform-rearchitecture-plan.md](sales-platform-rearchitecture-plan.md). Nhóm Fanpage là ưu tiên triển khai; Skill, khóa học và thuê bao giữ trạng thái `Roadmap`. Module đồng bộ Meta/Facebook được cách ly trong đợt tái cấu trúc catalog. Gate 1 đang ở mức `Thử nghiệm`, chưa mở bán hoặc thay menu cho người dùng; xem [nhật ký triển khai](sales-platform-implementation-log.md).
 
 Kế hoạch thực thi có dependency và workstream song song được chuẩn hóa tại [implementation-plan.md](implementation-plan.md).
 

@@ -53,6 +53,17 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 - Google Sheet connector chỉ gọi read API; kiểm thử không có request ghi/update.
 - Kiểm thử 390px, 768px, desktop cho kho, đơn, dashboard và menu overlay.
 
+### Gate 1 — migration và transaction kho
+
+Trước khi chuyển Gate 1 sang `Đang dùng`, chạy trong dữ liệu fixture cô lập:
+
+1. Tạo item Fanpage `available`; gọi reserve song song bằng hai mã đơn khác nhau. Chỉ một lời gọi thành công và ledger có một dòng `reserved`.
+2. Gọi release/finalize với mã đơn không trùng mã reserve. Transaction bị từ chối, trạng thái và ledger không đổi.
+3. Finalize `external_sold`. Item không reserve lại được.
+4. Finalize `inhouse_transferred` với Page registry hợp lệ. Có đúng một item kho Inhouse và Page không về kho tổng.
+5. Dùng JWT `authenticated` không phải service role để đọc/ghi bảng Gate 1 hoặc gọi RPC. Tất cả bị từ chối.
+6. Hai `page_assignments` chung Page nộp báo cáo cùng ngày. Kết quả tách biệt; trùng assignment/ngày bị từ chối.
+
 | Vai trò | Đọc Page | Đọc nội dung | Đọc doanh thu | Đọc payout | Sync Page | Quản lý user |
 | --- | --- | --- | --- | --- | --- | --- |
 | viewer | được gán | được gán | không mặc định | không mặc định | không | không |
