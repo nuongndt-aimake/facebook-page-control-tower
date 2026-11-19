@@ -2,6 +2,7 @@ import { accessContext, assertMutableContext, authenticatedUser, canManageSalesI
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
 import { canReadAllSalesOrders, visibleSalesOrders } from '../../sales-order-policy.mjs';
+import {signOrderTracking,verifyOrderTracking} from '../../sales-order-tracking.mjs';
 
 // Manual sync must use the same business timezone as the report filters. Using
 // UTC here makes a Vietnam morning sync fetch yesterday while the UI asks for
@@ -87,7 +88,7 @@ async function salesOrders(request, response, context) {
     if(!all&&ids.size)invoiceRecords.push(...await db(`sales_invoice_records?select=*&order_id=in.(${[...ids].join(',')})`));
     const safeInvoices=invoiceRecords.filter(row=>ids.has(String(row.order_id)));
     const totalsByDay = new Map();
-    for (const row of safeInvoices.filter(row => row.invoice_type === "daily_aggregate")) {
+    for (const row of safeInvoices.filter(row => row.invoice_type === "daily_aggregate" && ['aggregate_pending','aggregated'].includes(row.invoice_status))) {
       const key = `${row.aggregation_date}:${row.invoice_status}`;
       const item = totalsByDay.get(key) || { aggregation_date: row.aggregation_date, invoice_status: row.invoice_status, order_count: 0, expected_amount_vnd: 0 };
       const order = orders.find(order => String(order.id) === String(row.order_id));
@@ -193,7 +194,7 @@ async function sepayWebhook(request, response) {
   }
   return send(response, 200, { success: true, processing_status: processingStatus });
 }
-async function optionalAuthenticatedUser(request) { try { return await authenticatedUser(request); } catch { return null; } }
+async function optionalAuthenticatedUser(request) { return request.headers.authorization ? authenticatedUser(request) : null; }
 function cleanText(value, max = 255) { return String(value || "").trim().slice(0, max); }
 function validInvoice(input) {
   if (!input.invoice_requested) return { requested: false };
@@ -223,8 +224,10 @@ async function publicCheckout(request, response) {
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
   const input = await readBody(request); const quantity = Math.max(1, Math.min(100, Number(input.quantity || 1)));
   const signedInUser = await optionalAuthenticatedUser(request);
-  const profileRows = signedInUser ? await db(`profiles?select=id,email,display_name,phone&id=eq.${encodeURIComponent(signedInUser.id)}&limit=1`) : [];
+  const profileRows = signedInUser ? await db(`profiles?select=id,email,display_name,phone,role,status&id=eq.${encodeURIComponent(signedInUser.id)}&limit=1`) : [];
   const account = profileRows[0] || {};
+  if(['suspended','deleted'].includes(account.status))throw Error('Forbidden');
+  if(!Number.isSafeInteger(quantity))return send(response,400,{error:'Số lượng không hợp lệ'});
   const buyerName = cleanText(account.display_name || signedInUser?.user_metadata?.full_name || input.buyer_name);
   const buyerEmail = cleanText(signedInUser?.email || account.email || input.buyer_email).toLowerCase();
   const buyerPhone = cleanText(account.phone || signedInUser?.phone || signedInUser?.user_metadata?.phone || signedInUser?.user_metadata?.phone_number || input.buyer_phone, 40);
@@ -245,6 +248,7 @@ async function publicCheckout(request, response) {
   if (promoCodeValue && (!promo || (promo.ends_at && new Date(promo.ends_at) < now))) return send(response, 400, { error: "Mã ưu đãi không hợp lệ hoặc đã hết hạn" });
   const promoDiscount = promo ? Math.min(afterBulkDiscount, promo.discount_type === "percent" ? Math.round(afterBulkDiscount * Number(promo.discount_value) / 100) : Number(promo.discount_value)) : 0;
   const amount = afterBulkDiscount - promoDiscount;
+  if(amount===0&&!salesStaffRoles.has(account.role))throw Error('Forbidden');
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
   const paymentExpiresAt = amount > 0 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
   const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: configuredUnitPrice, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_code: promo?.code || null, promo_discount_vnd: promoDiscount, gift_name: promo?.gift_name || null, gift_download_url: promo?.gift_download_url || null, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: amount === 0 ? "pending_staff_verification" : null }) });
@@ -252,7 +256,7 @@ async function publicCheckout(request, response) {
   const invoiceRecord = invoice.requested ? { customer_name: invoice.customer_name, tax_code: invoice.tax_code, billing_address: invoice.billing_address, billing_email: invoice.billing_email } : {};
   await db("sales_invoice_records", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ order_id: rows[0].id, invoice_type: invoice.requested ? "individual" : "daily_aggregate", invoice_status: "pending_payment", aggregation_date: vietnamBusinessDate(), ...invoiceRecord }) });
   const qr = amount > 0 ? `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}` : null;
-  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_discount_vnd: promoDiscount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: rows[0].zero_value_verification_status, gift: promo?.gift_download_url ? { name: promo.gift_name || "Quà tặng", download_url: promo.gift_download_url } : null }, qr_url: qr, qr_download_url: qr ? `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` : null });
+  return send(response, 201, { order_status_token:signOrderTracking(rows[0].id,process.env.SUPABASE_SERVICE_ROLE_KEY), order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_discount_vnd: promoDiscount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: rows[0].zero_value_verification_status, gift: null }, qr_url: qr, qr_download_url: qr ? `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` : null });
 }
 async function publicQrDownload(request, response) {
   if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
@@ -267,6 +271,15 @@ async function publicQrDownload(request, response) {
 export default async function handler(request, response) {
   try {
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
+    if(endpoint==='public-order-status'){
+      if(request.method!=='GET')return send(response,405,{error:'Method not allowed'});
+      const id=new URL(request.url,'http://localhost').searchParams.get('order_id');
+      if(!id||!verifyOrderTracking(request.headers['x-order-token'],id,process.env.SUPABASE_SERVICE_ROLE_KEY))return send(response,403,{error:'Forbidden'});
+      const rows=await db(`sales_orders?select=id,order_code,payment_status,payment_expires_at,expected_amount_vnd,zero_value_verification_status,gift_name,gift_download_url&id=eq.${encodeURIComponent(id)}&limit=1`);
+      if(!rows[0])return send(response,404,{error:'Không tìm thấy đơn'});
+      const order=rows[0];const status=order.payment_status==='pending_payment'&&order.payment_expires_at&&new Date(order.payment_expires_at)<new Date()?'expired':order.payment_status;
+      response.setHeader('Cache-Control','no-store');return send(response,200,{order_code:order.order_code,payment_status:status,amount_vnd:order.expected_amount_vnd,zero_value_verification_status:order.zero_value_verification_status,...(status==='paid'&&order.gift_download_url?{gift:{name:order.gift_name||'Quà tặng',download_url:order.gift_download_url}}:{})});
+    }
     if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
     if (endpoint === "public-checkout") return await publicCheckout(request, response);
     if (endpoint === "public-sales-config") return await publicSalesConfig(request, response);
