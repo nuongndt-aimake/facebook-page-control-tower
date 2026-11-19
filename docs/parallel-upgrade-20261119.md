@@ -38,3 +38,10 @@ Hai phiên PostgreSQL chạy chồng lấp, phiên A giữ lock 8 giây:
 Hai order và invoice QA đã chuyển cancelled sau test, fulfillment luôn cancelled. Giữ event lịch sử với raw_payload.qa=true; không có chuyển tiền/bàn giao/hoá đơn thật. SQL kiểm tra quyền RPC: anon=false, authenticated=false, service_role=true.
 
 Test Node API dùng 20 request Promise.all cùng event và 20 event khác nhau/đơn; chỉ 1 processed. Mock xác nhận API gọi một RPC, kiểm thử PostgreSQL thật ở trên mới là bằng chứng lock/transaction. Test mã sai xác thực, số tiền sai kiểu, bảng đầy đủ cột/escape HTML, ownership và token tiếp tục được chạy.
+
+## Ghi nhận QA giao diện sau phát hành
+
+- Đã thấy giá public 1.500.000đ từ bản giá hiệu lực 2026-11-19 09:47:51 giờ Việt Nam. Bản 3.000.000đ ngày 20 chưa đến hạn; bản 3.000.000đ ngày 19 lúc 00:00 bị thay thế bởi bản 09:47. Không sửa dữ liệu giá của người dùng. Vì vậy số đang thấy giống trước không có nghĩa đang hardcode; response công khai có price_effective_from để đối chiếu.
+- Bảng đơn ban đầu 48 cột, sau bổ sung schema cố định luôn có cả cột phân công khi chưa có người nhận. Toàn bộ cell giữ display table-cell trên mobile; khung bảng có tabindex/role/aria-label cho cuộn bàn phím. Kho bỏ cột tên Page lặp lại.
+- 390px đã kiểm tra panel tap, mở nhóm Tài khoản, aria-current Đơn hàng, đóng khi click ra ngoài. Không tràn trang; bảng cuộn riêng, không cell nào bị ẩn.
+- Runtime tương tác menu dùng một file navigation.js tải bởi auth-nav.js, không duy trì hai bộ listener cũ/mới cùng lúc. CSS chung navigation.css chỉ tác động navigator.

@@ -23,28 +23,6 @@
 (function(){function label(table){const headers=[...table.querySelectorAll('thead th')];const first=table.querySelector('tr');const cells=headers.length?headers:first?[...first.children].filter(x=>x.tagName==='TH'):[];if(!cells.length)return;const labels=cells.map(x=>x.textContent.trim());table.querySelectorAll('tbody tr').forEach(row=>[...row.children].forEach((cell,i)=>{if(cell.tagName==='TD'&&!cell.dataset.label)cell.dataset.label=labels[i]||''}))}function run(){document.querySelectorAll('table').forEach(label)}run();new MutationObserver(run).observe(document.body,{childList:true,subtree:true})})();
 (function(){const size=25,state=new WeakMap();function enhance(table){if(!table.tBodies?.[0]||table.dataset.noPagination==='true')return;const head=table.querySelector('thead tr'),rows=[...table.tBodies[0].rows];if(head){const first=head.firstElementChild,hasIndex=first&&['#','stt','số thứ tự'].includes(first.textContent.trim().toLowerCase());const firstRow=rows[0],rowHasIndex=firstRow?.firstElementChild?.dataset.label==='STT';if(!hasIndex){const th=document.createElement('th');th.textContent='STT';head.insertBefore(th,head.firstElementChild)}if(!rowHasIndex){rows.forEach((row,index)=>{const td=document.createElement('td');td.textContent=String(index+1);td.dataset.label='STT';row.insertBefore(td,row.firstElementChild)})}table.dataset.numbered='true'}const total=Math.ceil(rows.length/size);if(rows.length<=size){rows.forEach(r=>r.style.display='');const oldPager=table.nextElementSibling;if(oldPager?.matches('[data-table-pager]'))oldPager.remove();return}let s=state.get(table)||{page:1};s.page=Math.min(Math.max(1,s.page),total);state.set(table,s);rows.forEach((r,i)=>{r.style.display=i>=((s.page-1)*size)&&i<(s.page*size)?'':'none'});let pager=table.nextElementSibling?.matches('[data-table-pager]')?table.nextElementSibling:null;if(!pager){pager=document.createElement('div');pager.dataset.tablePager='1';pager.className='table-pager';table.insertAdjacentElement('afterend',pager)}pager.innerHTML=`<button ${s.page<=1?'disabled':''}>‹</button><span>Trang ${s.page}/${total} · ${rows.length} dòng</span><button ${s.page>=total?'disabled':''}>›</button>`;const bs=pager.querySelectorAll('button');bs[0].onclick=()=>{s.page--;enhance(table)};bs[1].onclick=()=>{s.page++;enhance(table)}}setInterval(()=>document.querySelectorAll('table').forEach(enhance),800);})();
 
-(()=>{
- const navFor=node=>node?.closest?.('#quick-nav');
- const setGroup=(group,open)=>{group.classList.toggle('group-open',open);group.querySelector('.quick-menu-group-toggle')?.setAttribute('aria-expanded',String(open))};
- const closeGroups=nav=>nav?.querySelectorAll('.quick-menu-group').forEach(group=>setGroup(group,false));
- const setPanel=(nav,open)=>{nav.classList.toggle('menu-open',open);nav.querySelector('.quick-menu-toggle')?.setAttribute('aria-expanded',String(open));if(!open)closeGroups(nav)};
- const openGroup=group=>{const nav=navFor(group);closeGroups(nav);setGroup(group,true)};
- document.addEventListener('click',event=>{
-   const nav=navFor(event.target),panel=event.target.closest?.('.quick-menu-toggle'),toggle=event.target.closest?.('.quick-menu-group-toggle');
-   if(panel){setPanel(nav,!nav.classList.contains('menu-open'));return}
-   if(toggle){const group=toggle.closest('.quick-menu-group'),open=!group.classList.contains('group-open');closeGroups(nav);setGroup(group,open);return}
-   if(event.target.closest?.('.quick-menu-links a')){setPanel(nav,false);return}
-   if(!nav)document.querySelectorAll('#quick-nav').forEach(item=>setPanel(item,false));
- });
- document.addEventListener('pointerover',event=>{if(!matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)').matches)return;const group=event.target.closest?.('.quick-menu-group');if(!group||!group.querySelector('.quick-menu-submenu')||group.contains(event.relatedTarget))return;openGroup(group)});
- document.addEventListener('pointerout',event=>{if(!matchMedia('(min-width:901px) and (hover:hover) and (pointer:fine)').matches)return;const group=event.target.closest?.('.quick-menu-group');if(group&&!group.contains(event.relatedTarget)&&!group.contains(document.activeElement))setGroup(group,false)});
- document.addEventListener('keydown',event=>{
-   const nav=navFor(event.target);if(!nav)return;
-   if(event.key==='Escape'){event.preventDefault();const group=event.target.closest('.quick-menu-group');setPanel(nav,false);(group?.querySelector('.quick-menu-group-toggle')||nav.querySelector('.quick-menu-toggle'))?.focus();return}
-   if(event.key==='ArrowDown'&&event.target.matches('.quick-menu-group-toggle')){event.preventDefault();const group=event.target.closest('.quick-menu-group');openGroup(group);group.querySelector('.quick-menu-submenu a')?.focus()}
- });
- document.addEventListener('focusout',event=>{const nav=navFor(event.target);if(nav)setTimeout(()=>{if(!nav.contains(document.activeElement))setPanel(nav,false)},0)});
- window.addEventListener('resize',()=>document.querySelectorAll('#quick-nav').forEach(nav=>setPanel(nav,false)));
-})();
+(()=>{if(document.querySelector('script[data-common-navigation]'))return;const script=document.createElement('script');script.dataset.commonNavigation='1';script.src='/navigation.js?v=20261119';document.body.append(script)})();
 
 (function(){document.title=document.title.replace(/AI\s*\/?\s*FB\s*MONEY(?:\s*MASTER)?/i,'FACEBOOK MONEY MASTER');document.querySelectorAll('.brand').forEach(node=>{node.setAttribute('aria-label','FACEBOOK MONEY MASTER');node.dataset.brand='FACEBOOK MONEY MASTER'})})();
