@@ -1,5 +1,7 @@
 # Runbook kho Fanpage — Gate 2.1
 
+Bổ sung 2026-11-19: nhập mới bắt buộc Tên Page hiện tại; các mã cũ có nút Cập nhật tên dùng quyền intake và audit server. Bảng giữ từng trường thành một cột, scroll ngang trong khung trên mobile, không tự ẩn cột. Xem [migration và kiểm thử](parallel-upgrade-20261119.md). Luồng nhập kho nhiều bước hiện hữu chưa được chuyển sang RPC transaction trong bản bổ sung này.
+
 - Trạng thái: `Thử nghiệm`
 - Route: `/inventory-fanpages`
 - Cập nhật: 2026-11-19

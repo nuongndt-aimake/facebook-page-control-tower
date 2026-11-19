@@ -1,6 +1,6 @@
 # Nâng cấp webhook, giá, dữ liệu và menu — 2026-11-19
 
-Trạng thái: Đang triển khai. Kế hoạch chia thành các luồng độc lập, tích hợp sau khi hoàn tất kiểm thử từng phần.
+Trạng thái: Đã phát hành production (2d6287e và các bản hoàn thiện 3e493f4/a9d5c1d/5754e88/c9f602b). Kế hoạch chia thành các luồng độc lập; đã kiểm thử từng phần và tích hợp.
 
 | Luồng | Công việc | Phụ thuộc | Nghiệm thu |
 | --- | --- | --- | --- |
@@ -47,3 +47,7 @@ Test Node API dùng 20 request Promise.all cùng event và 20 event khác nhau/�
 - Runtime tương tác menu dùng một file navigation.js tải bởi auth-nav.js, không duy trì hai bộ listener cũ/mới cùng lúc. CSS chung navigation.css chỉ tác động navigator.
 - Các route giới thiệu con (lộ trình/chương trình/chính sách) đánh dấu section Giới thiệu; control/operations/sync cũ đánh dấu nhóm Vận hành. aria-current=page chỉ dùng khi URL liên kết khớp đúng route.
 - QA cuối: bảng đơn 54 cột tại 390/768/1280px, không cột/cell bị ẩn và không tràn document; cuộn bàn phím ArrowRight làm scrollLeft tăng. Mobile mở panel + accordion, Escape và click ngoài đóng đúng; nhóm Tài khoản active và link Đơn hàng aria-current=page. Dropdown desktop bỏ khoảng hở hover giữa nút và submenu.
+- Kho live có 24 cột, trường nhập tên Page và nhóm Vận hành active; 390/768px giữ đủ cột, không tràn trang, cuộn ngang trong khung. Page nhập từ trước có tên trống hiển thị Chưa cập nhật tên Page; dùng Cập nhật tên (quyền intake) để bổ sung, không tự đoán tên hoặc kết nối FB.
+- Test dưới SET LOCAL ROLE service_role gọi RPC thành công trong transaction; ROLLBACK kiểm tra event count=0. Không chỉ chạy RPC dưới postgres để kết luận quyền server.
+- 11 kiểm thử tự động đều đạt. Hai phiên database đã test tranh chấp thật; không có giao dịch ngân hàng thật hoặc cấp/bàn giao quyền lợi thật.
+- Lưu ý còn lại: video admin hiện URL trống; nhập kho vẫn dùng luồng ghi hiện hữu, RPC transaction riêng cho intake là hạng mục Gate 2.1 tiếp theo, chưa được khẳng định hoàn tất trong lần sửa tên/cột này.

@@ -1,5 +1,12 @@
 # API reference
 
+## Cập nhật 2026-11-19: sales
+
+- Webhook `/api/payments/sepay` vẫn POST + Apikey; sau xác thực gọi duy nhất RPC `sales_process_payment_event`. Cùng provider event trả success/duplicate, không ghi thêm; các event khác nhau trên cùng đơn khóa hàng và chỉ một processed. Xem [thiết kế và QA](parallel-upgrade-20261119.md).
+- `/api/sales-config` GET trả giá hiệu lực, `price_effective_from`, các discount_tiers còn hiệu lực và video admin; Cache-Control no-store. POST `/api/checkout` quote_only không ghi đơn, dùng cùng giá/tier server.
+- `/api/admin/access?endpoint=sales_inventory` POST intake yêu cầu `page_name`; POST update_page_name nhận inventory_item_id/page_name, dùng quyền intake, ghi audit. GET vẫn yêu cầu read.
+- Các bảng đầy đủ cột chỉ dùng dữ liệu API đã lọc quyền owner/assignment/read_all; không mở đọc trực tiếp database.
+
 API chạy dưới Vercel Functions trong thư mục `api/`. Các endpoint dùng JSON và trả lỗi theo dạng `{ "error": "..." }`.
 
 ## Kiểu xác thực

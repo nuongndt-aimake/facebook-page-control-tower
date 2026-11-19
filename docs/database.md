@@ -1,5 +1,9 @@
 # Database và migration
 
+## Bổ sung 2026-11-19: webhook atomic và tên Page
+
+Migration `20261119203000_sales_atomic_payment_and_page_name.sql` đã áp dụng production: thêm fanpage_inventory_details.page_name (nullable để tương thích dữ liệu cũ); RPC SECURITY INVOKER chỉ service_role có EXECUTE. Unique provider_event_id + FOR UPDATE theo sales_orders, cập nhật event/order/invoice trong một transaction. Không đổi RLS hay mở quyền anon/authenticated. Xem [kết quả kiểm thử hai phiên](parallel-upgrade-20261119.md).
+
 ## Nhóm bảng hiện có
 
 - Tài sản: `pages`, `businesses`, `meta_connections`, `page_connection_history`.

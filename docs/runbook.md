@@ -1,5 +1,9 @@
 # Runbook vận hành
 
+## Webhook đồng thời — 2026-11-19
+
+Trước deploy API webhook, xác nhận RPC trong migration 20261119203000 có mặt và chỉ service_role EXECUTE. Nếu RPC lỗi, request phải trả lỗi để SePay retry; không đánh dấu thành công bằng một ghi event rời. Khi đối soát, phân biệt processed/duplicate/amount_mismatch/expired/rejected; không tự đổi paid khi gặp event gửi lại. QA concurrency có script `sales-payment-concurrency.sql`; chỉ chạy dữ liệu QA, hủy order/invoice sau test và giữ lịch sử. [Kết quả nghiệm thu](parallel-upgrade-20261119.md).
+
 ## Kiểm tra hằng ngày
 
 ### Khi Sales Platform được bật (Roadmap)
