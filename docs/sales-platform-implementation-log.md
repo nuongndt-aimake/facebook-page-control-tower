@@ -63,7 +63,7 @@
 | API | Thêm endpoint admin nội bộ; không có thay đổi public checkout. |
 | Phân quyền | Quyền tách theo `read`, `intake`, `publish`, `reserve`, `release`, `finalize`; preview bị chặn khi ghi; không thêm role mới. |
 | Database | Chỉ dùng bảng/RPC Gate 1; không thêm migration. |
-| UI/menu | Mô tả **Hết hiệu lực từ 2026-11-19**: endpoint đã có UI `/inventory/fanpages` và menu **Kho Fanpage** trong Vận hành; UI chỉ hiện action theo permission, API vẫn kiểm tra server-side. |
+| UI/menu | Mô tả **Hết hiệu lực từ 2026-11-19**: endpoint đã có UI `/inventory-fanpages` và menu **Kho Fanpage** trong Vận hành; UI chỉ hiện action theo permission, API vẫn kiểm tra server-side. Route thử `/inventory/fanpages` không resolve trên Vercel và đã được thay thế trước phát hành bởi route tĩnh này. |
 | Kiểm thử | Đã chạy syntax/link check UI; còn cần fixture cho reserve đồng thời và negative RBAC trước deploy. |
 
 ## Điều hướng liên khu — giới thiệu, mua hàng, quản lý

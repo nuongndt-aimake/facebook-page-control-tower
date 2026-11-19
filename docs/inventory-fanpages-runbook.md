@@ -1,7 +1,7 @@
 # Runbook kho Fanpage — Gate 2.1
 
 - Trạng thái: `Thử nghiệm`
-- Route: `/inventory/fanpages`
+- Route: `/inventory-fanpages`
 - Cập nhật: 2026-11-19
 
 ## Quyền và thao tác

@@ -71,7 +71,7 @@ Menu này là **target IA**, được đưa vào `auth-nav.js` chỉ tại Gate 
 | Module menu | Route mục tiêu | Ai thấy | Trạng thái |
 | --- | --- | --- | --- |
 | Tổng quan | `/analytics` | theo access context | `Đang dùng` |
-| Catalog & Kho | `/catalog`, `/inventory/fanpages`, `/inventory/inhouse` | sale/inhouse/manager/admin theo scope | `Roadmap` |
+| Catalog & Kho | `/inventory-fanpages` (Gate 2.1), `/catalog`, `/inventory/inhouse` | sale/inhouse/manager/admin theo scope | Kho Fanpage `Thử nghiệm`; phần còn lại `Roadmap`. Route mục tiêu cũ `/inventory/fanpages` không resolve trên Vercel, được thay bằng route tĩnh trước phát hành 2026-11-19. |
 | Đơn hàng & Bàn giao | `/orders`, `/handover` | sale/inhouse/manager/admin | `Roadmap` |
 | Báo cáo vận hành | `/reports/team`, `/reports/pages`, `/reports/content`, `/reports/revenue` | assignment/manager/admin | `Roadmap` + route cũ giữ tương thích |
 | Quyền lợi | `/affiliates`, `/commissions`, `/rank-policies` | CTV, manager, admin theo scope | `Roadmap` |

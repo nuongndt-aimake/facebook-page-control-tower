@@ -18,14 +18,14 @@
 | `/access` | `access.html` | Tài sản, BM và phân quyền |
 | `/account` | `account.html` | Tài khoản và session |
 | `/sales-orders` | `sales-orders.html` | Catalog, đối soát và phân công đơn Fanpage; chỉ `platform_admin`/`super_admin` |
-| `/inventory/fanpages` | `inventory-fanpages.html` | Kho Fanpage: xem mã kho theo quyền `sales_inventory.read`; nhập mã nháp khi có `intake`; mở bán mã nháp khi có `publish` |
+| `/inventory-fanpages` | `inventory-fanpages.html` | Kho Fanpage: xem mã kho theo quyền `sales_inventory.read`; nhập mã nháp khi có `intake`; mở bán mã nháp khi có `publish` |
 | `/sales` | `sales.html` | Trang đặt mua Fanpage công khai theo giao diện **Fanpage Sales V3**: khung thông tin nhận Page và khung thanh toán SePay; tạo QR/mã chuyển khoản riêng, tải QR và đếm ngược 15 phút, không yêu cầu đăng nhập |
 
 Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` và `Kho Fanpage` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
 ## Target IA: Sales Platform
 
-Thiết kế menu/screen cho catalog, kho Fanpage/kho Inhouse, đơn hàng, bàn giao, báo cáo theo nhân sự/Page và cấu hình được quy định tại [sales-platform-design.md](sales-platform-design.md). `/inventory/fanpages` là menu production Gate 2; catalog, kho Inhouse, bàn giao và báo cáo theo nhân sự/Page vẫn là `Roadmap`. Khi triển khai, cập nhật đồng thời `auth-nav.js`, mobile overlay, route table này và module map; không tạo menu riêng trong từng màn hình sales.
+Thiết kế menu/screen cho catalog, kho Fanpage/kho Inhouse, đơn hàng, bàn giao, báo cáo theo nhân sự/Page và cấu hình được quy định tại [sales-platform-design.md](sales-platform-design.md). `/inventory-fanpages` là menu production Gate 2; catalog, kho Inhouse, bàn giao và báo cáo theo nhân sự/Page vẫn là `Roadmap`. Khi triển khai, cập nhật đồng thời `auth-nav.js`, mobile overlay, route table này và module map; không tạo menu riêng trong từng màn hình sales.
 
 ## Quy ước bảng dữ liệu
 

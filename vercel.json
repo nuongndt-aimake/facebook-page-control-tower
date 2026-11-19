@@ -5,7 +5,6 @@
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/sales", "destination": "/sales.html" },
-    { "source": "/inventory/fanpages", "destination": "/inventory-fanpages.html" },
     { "source": "/api/admin/payment-profiles", "destination": "/api/admin/access?endpoint=payout" },
     { "source": "/api/admin/preview", "destination": "/api/admin/access?endpoint=preview" },
     { "source": "/api/admin/sales-orders", "destination": "/api/admin/access?endpoint=sales-orders" },
