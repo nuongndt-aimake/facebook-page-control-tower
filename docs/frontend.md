@@ -22,6 +22,10 @@
 
 Navigator quản trị dùng hai lớp module: `Tổng quan`, `Báo cáo`, `Vận hành`, `Tài khoản`; mỗi lớp chứa các route con. `Đơn hàng` nằm trong `Vận hành`. Nguồn cấu hình là `auth-nav.js`, còn CSS chung ở `system.css`.
 
+## Target IA: Sales Platform (Roadmap)
+
+Thiết kế menu/screen cho catalog, kho Fanpage/kho Inhouse, đơn hàng, bàn giao, báo cáo theo nhân sự/Page và cấu hình được quy định tại [sales-platform-design.md](sales-platform-design.md). Đây chưa phải menu production. Khi triển khai, cập nhật đồng thời `auth-nav.js`, mobile overlay, route table này và module map; không tạo menu riêng trong từng màn hình sales.
+
 ## Quy ước bảng dữ liệu
 
 `auth-nav.js` áp dụng paginator dùng chung cho các bảng HTML có `tbody`: tối đa 25 dòng mỗi trang, có điều hướng trang và tổng số dòng. Bảng được tự động bổ sung cột `STT` nếu chưa có cột đánh số; STT phản ánh thứ tự bản ghi trong tập dữ liệu trước khi phân trang. Màn hình đặc biệt có thể tắt cơ chế này bằng `data-no-pagination="true"` trên bảng.

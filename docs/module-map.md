@@ -22,6 +22,7 @@ Vercel phát hành toàn bộ project theo một deployment nguyên khối. Vì 
 | Content & Post Metrics | Registry bài viết, provenance cộng đồng, yêu cầu refresh, snapshot tương tác | public URLs `/api/posts/*`, thực thi trong `api/analytics` và `api/cron/sync` | `posts`, `post_publications`, `post_sync_requests`, `post_sync_attempts`, `post_metric_snapshots`, `metrics` | Identity, Asset Governance, Sync |
 | Reporting Read Model | Báo cáo Page, nội dung, doanh thu, payout, phân quyền kế thừa | `api/analytics`, `api/report` | snapshots, `metrics`, registry, payout tables | Tất cả module dữ liệu |
 | Public Application | Landing, privacy, terms, application metadata | `api/public/application` + static HTML | Không có dữ liệu nhạy cảm | Không |
+| Sales Platform | Catalog, kho tổng/Inhouse, đơn hàng, entitlement và reporting assignment | command boundary admin hiện hữu mở rộng theo module, không tạo Function theo màn hình | inventory, orders, assignments, daily reports, policy snapshots | Identity, Asset Governance |
 
 ## Luồng dữ liệu chuẩn
 
@@ -38,6 +39,8 @@ Auth/OAuth
 Không cho UI gọi Meta trực tiếp. UI chỉ đọc read model hoặc tạo command có quyền; worker mới gọi Meta và ghi snapshot.
 
 ## Module điều hướng quản trị
+
+Thiết kế Sales Platform mới giữ Meta Connection/Sync là module cách ly. Xem [sales-platform-design.md](sales-platform-design.md) để biết target IA, route và điều kiện đưa vào navigator production.
 
 Menu quản trị là một phần hạ tầng dùng chung, không phải cấu hình riêng của từng màn hình:
 

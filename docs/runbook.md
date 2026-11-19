@@ -2,6 +2,13 @@
 
 ## Kiểm tra hằng ngày
 
+### Khi Sales Platform được bật (Roadmap)
+
+1. Kiểm tra reservation Fanpage sắp hết hạn, đơn payment mismatch và đơn 0đ chờ xác minh.
+2. Đối chiếu ledger kho tổng/kho Inhouse với order và handover audit; không sửa tồn kho thủ công ngoài action có audit.
+3. Kiểm tra báo cáo ngày thiếu/quá hạn theo assignment trước khi chốt hoa hồng.
+4. Kiểm tra import Google Sheet ở trạng thái lỗi/stale; chỉ retry read-only từng nguồn.
+
 1. Xem slot nào đang active.
 2. Kiểm tra `sync_runs` mới nhất.
 3. Nếu dispatcher đang bật, kiểm tra thêm `sync_jobs` ở trạng thái `failed/dead_letter` và `sync_attempts`; có thể tắt nhanh bằng `ENABLE_SYNC_ORCHESTRATOR=false` rồi redeploy.

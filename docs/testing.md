@@ -43,6 +43,16 @@ Mọi liên kết nội bộ phải tồn tại; không link tới `.env`, token
 
 ## Ma trận quyền tối thiểu
 
+## Sales Platform test gate (Roadmap)
+
+- Hai request reserve cùng một mã Page: chỉ một request thành công.
+- Huỷ/hết hạn đơn trả mã Page về đúng kho tổng; transfer Inhouse không tạo lại tồn kho tổng.
+- User không được chỉ định không xác minh được đơn 0đ hoặc xem Page/kho ngoài scope.
+- Hai assignment cùng Page có báo cáo và hoa hồng riêng; tổng Page đúng, tổng nhân sự không lẫn nhau.
+- Manager nhìn thấy direct/inherited theo access context nhưng quyền lợi chưa duyệt không bị cộng vào payout.
+- Google Sheet connector chỉ gọi read API; kiểm thử không có request ghi/update.
+- Kiểm thử 390px, 768px, desktop cho kho, đơn, dashboard và menu overlay.
+
 | Vai trò | Đọc Page | Đọc nội dung | Đọc doanh thu | Đọc payout | Sync Page | Quản lý user |
 | --- | --- | --- | --- | --- | --- | --- |
 | viewer | được gán | được gán | không mặc định | không mặc định | không | không |
