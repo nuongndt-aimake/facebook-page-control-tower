@@ -4,7 +4,7 @@
 (async()=>{
   const client=window.supabase?.createClient?window.__authNavClient||window.supabase.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr'):null;if(client)window.__authNavClient=client;
   let nav=document.querySelector('#quick-nav,.quick-nav');if(!nav){nav=document.createElement('nav');nav.innerHTML='<div></div>';document.body.prepend(nav)}nav.id='quick-nav';nav.classList.add('quick-nav');const wrap=nav.querySelector(':scope>div');if(!wrap)return;
-  if(!document.querySelector('link[href*="system.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='/system.css?v=20261119-all-menu';document.head.append(css)}
+  if(!document.querySelector('link[href*="system.css"]')){const css=document.createElement('link');css.rel='stylesheet';css.href='/system.css?v=20261119-all-menu';document.head.prepend(css)}
   document.querySelectorAll('body > nav.nav,body > nav.tabs[aria-label="Điều hướng hệ thống"]').forEach(legacy=>{legacy.hidden=true;legacy.style.setProperty('display','none','important')});
   const session=client?(await client.auth.getSession()).data.session:null;
   const canonical=[['Giới thiệu',[['/','Giới thiệu']]],['Mua hàng',[['/sales','Mua Fanpage']]],['Tổng quan',[['/analytics','Tổng quan']]],['Báo cáo',[['/report-pages','Page'],['/report-content','Nội dung'],['/report-revenue','Doanh thu']]],['Vận hành',[['/access','Tài sản'],['/inventory-fanpages','Kho Fanpage'],['/groups','Nhóm nội dung'],['/users','Nhân sự'],['/team','Tuyến quản lý'],['/commissions','Hoa hồng'],['/payout','Quyền lợi & Payout'],['/connect-meta','Kết nối Meta']]],...(session?[['Tài khoản',[['/account','Tài khoản'],['/sales-orders','Đơn hàng']]]]:[])];
