@@ -38,6 +38,13 @@ Các bảng mới phải khai báo `thead`/`tbody`, không tự tạo paginator 
 
 `auth-nav.js` là nguồn duy nhất cho navigator. Không tự thêm menu riêng ở từng HTML. Khi thêm route, cập nhật menu, mobile menu, active state và bảng route ở tài liệu này.
 
+### Đồng bộ menu con — 2026-11-19
+
+- **Trạng thái:** `Đang dùng`.
+- `/account` đã bỏ navigator cục bộ và khởi tạo bằng `auth-nav.js`, cùng nguồn với các màn hình con khác.
+- Menu theo phiên: khách thấy **Đăng nhập → Đăng ký**; người đã đăng nhập thấy nhóm **Tài khoản** (Tài khoản, Đơn hàng) và **Đăng xuất** ở cuối. Các mục Báo cáo/Vận hành giữ thứ tự như nhau trên mọi route.
+- **Impact note:** tác động UI/navigator và cache tệp tĩnh ở `/account`; không đổi API, database, RLS, role, cron, SePay, Supabase hoặc DNS. Kiểm thử `/account` ở 390px, 768px, desktop và xác nhận menu không che nội dung.
+
 ## Quy ước UI
 
 - Khu vực thao tác và khu vực dữ liệu/báo cáo phải tách rõ.
