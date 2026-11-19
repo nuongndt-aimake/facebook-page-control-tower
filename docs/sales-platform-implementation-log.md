@@ -5,7 +5,7 @@
 - Trạng thái: `Thử nghiệm`
 - Bắt đầu: 2026-11-19
 - Migration: `supabase/migrations/20261119193000_sales_inventory_and_reporting_foundation.sql`
-- Commit triển khai: `21dac0e` — `feat: add sales inventory foundation`
+- Commit triển khai: `c07dea5` — `feat: add sales inventory foundation` (đã rebase sau các commit sales trên `main`)
 - Phạm vi: dữ liệu và transaction server-side; chưa mở menu, checkout, QR hay bán công khai.
 - Triển khai: đã áp dụng trên Supabase production ngày 2026-11-19; chưa cấp dữ liệu kho hay mở quyền client.
 
