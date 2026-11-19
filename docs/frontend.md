@@ -116,3 +116,5 @@ Mọi route mới phải có điểm neo điều hướng trong navigator chung 
 Cấp/đổi payout trực tiếp tại dòng Page kho Inhouse qua dialog dùng chung; GET/POST inhouse_assets giữ quyền manage_payout và scope Page server-side. Xem [impact note](inhouse-inline-payout-20261119.md).
 
 Bản nối tiếp: [quy trình duyệt thủ công, giới hạn xác minh và thao tác kho gọn](report-verification-and-compact-actions-20261119.md). Người có quyền đối chiếu bằng chứng, không tự duyệt; verified chưa phải duyệt chi. Tổng hợp bao gồm ngày vừa lưu; icon desktop 28px, vùng chạm coarse 44px, payout không bẻ chữ.
+
+2026-11-19: [Menu thao tác kho gọn](inventory-action-menu-20261119.md) thay cụm nút phụ luôn hiển thị bằng popover ⋯. Giữ nút chính, quyền/action server-side không đổi; 47 Node tests pass.
