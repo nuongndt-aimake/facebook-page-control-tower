@@ -62,6 +62,12 @@ Migration `20261119090000_fanpage_sales_line.sql` bổ sung catalog và luồng 
 
 Cả bốn bảng bật RLS và thu hồi toàn bộ quyền `anon`/`authenticated`; chỉ Vercel server dùng service role sau kiểm tra Supabase Auth + RBAC mới được truy cập. Chưa có grant hay policy cho checkout public.
 
+### Chiết khấu và hóa đơn (Đang dùng, 2026-11-19)
+
+Migration `20261119150000_sales_discount_and_invoices.sql` bổ sung `sales_discount_tiers` và `sales_invoice_records`; cả hai bật RLS và không cấp quyền Data API cho `anon`/`authenticated`. Giá đơn lưu `gross_amount_vnd`, `discount_percent`, `discount_amount_vnd` và `expected_amount_vnd`, nên thay đổi bậc giá sau này không làm thay đổi đơn cũ. Mức khởi tạo `fanpage`: 1/2/5/10 page tương ứng 0%/5%/10%/15%.
+
+Mỗi đơn có đúng một `sales_invoice_records`: `individual` giữ tên, MST, địa chỉ, email nhận hóa đơn; `daily_aggregate` được nhóm theo `aggregation_date` (Asia/Ho_Chi_Minh). Chỉ sau khi thanh toán hợp lệ, trạng thái chuyển sang `ready_to_issue` hoặc `aggregate_pending`. Quản trị viên mới có thể đánh dấu đã xuất gộp và hành động được audit. `profiles.phone` là số điện thoại tùy chọn của tài khoản để checkout tự điền; không mở quyền đọc/ghi trực tiếp từ client.
+
 Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.
 
 Phần worker/dispatcher đã được mở có kiểm soát trong production; các slot vẫn do quản trị viên bật/tắt riêng. Khi một slot chạy, job được tạo idempotent vào `sync_jobs`, claim theo concurrency, ghi `sync_attempts` và snapshot chỉ được cập nhật khi request thành công.

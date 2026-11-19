@@ -106,3 +106,14 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 - Migration RPC: `20261101100000_sync_job_claim_rpc.sql`.
 - Worker/dispatcher: đã có code; pilot 5 Page đạt, nhưng chưa bật production hàng loạt.
 
+# Impact note — Sales chiết khấu và hóa đơn (2026-11-19)
+
+| Vùng | Tác động |
+| --- | --- |
+| Chức năng | Checkout hiển thị/áp dụng chiết khấu số lượng, hướng dẫn link Facebook, bảo mật dữ liệu và tùy chọn hóa đơn; tương thích đơn cũ. |
+| API | `/api/checkout` thêm pricing, invoice input và nhận session tùy chọn; admin thêm xác nhận hóa đơn gộp. |
+| Database | Migration `20261119150000_sales_discount_and_invoices.sql` thêm bảng/RLS/index và cột bổ sung an toàn; backfill giá gốc đơn cũ. |
+| Phân quyền | Không thêm role. Public chỉ tạo đơn qua server; đọc/xử lý hóa đơn vẫn `platform_admin`/`super_admin` kiểm tra server-side. |
+| UI | `/sales` và `/sales-orders`; đã dùng layout một cột ở mobile, bảng admin bọc cuộn ngang. |
+| Tích hợp | Không đổi SePay, domain hay cron. Webhook cập nhật trạng thái hóa đơn cùng trạng thái thanh toán. |
+| Tài liệu | Đã cập nhật API và database; cần ghi kết quả migration/deploy vào runbook sau khi production xác minh. |

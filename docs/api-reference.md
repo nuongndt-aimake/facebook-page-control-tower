@@ -43,7 +43,7 @@ Authorization: Bearer <CRON_SECRET>
 | `/api/admin/deals` | `GET/POST` | Quản lý deal và yêu cầu truy cập | Admin |
 | `/api/admin/handover` | `POST` | Bàn giao deal/tài sản theo workflow; bàn giao tài khoản nhân sự dùng `offboard_user` trong `/api/admin/access` | Admin |
 | `/api/admin/sales-orders` | `GET` | Đọc catalog, đơn hàng và phân công bán hàng | `platform_admin` |
-| `/api/admin/sales-orders` | `POST` `assign_order` / `set_payment_status` | Phân công hoặc đối soát thủ công, có audit | `platform_admin` |
+| `/api/admin/sales-orders` | `POST` `assign_order` / `set_payment_status` / `mark_daily_invoice_issued` | Phân công, đối soát hoặc xác nhận đã xuất hóa đơn gộp, có audit | `platform_admin` |
 | `/api/payments/sepay` | `POST` | Nhận webhook SePay, xác thực API key timing-safe, chống trùng theo transaction id và đối soát số tiền | SePay API key |
 | `/api/checkout` | `POST` | Tạo đơn Fanpage public, chốt giá server-side và trả QR SePay theo mã đơn duy nhất | Công khai khi feature flag bật |
 | `/api/admin/send-bm-invite` | `POST` | Gửi lời mời Business | Admin |
@@ -72,7 +72,7 @@ Bàn giao deal dùng endpoint riêng `/api/admin/handover` với các action nh�
 
 Mọi action mới phải được thêm vào bảng này, kiểm tra role ở server và ghi tài liệu request/response.
 
-`POST /api/checkout` chỉ hoạt động khi `SALES_PUBLIC_CHECKOUT_ENABLED=true`. Body gồm `buyer_name`, `buyer_phone`, `buyer_email`, `fulfillment_profile_url`, `quantity` (1–100) và tùy chọn `promo_code`. Server tạo `FS` + 10 ký tự, dùng cùng giá trị cho `order_code` và `payment_reference`, rồi trả QR với đúng `expected_amount_vnd`, đường dẫn tải QR giới hạn tham số, và `payment_expires_at` sau 15 phút. Mã `INHOUSE` chỉ có hiệu lực tại server và chốt mức phải trả 10.000 đ cho đơn đó. Endpoint không trả secret hoặc quyền quản trị.
+`POST /api/checkout` chỉ hoạt động khi `SALES_PUBLIC_CHECKOUT_ENABLED=true`. Body gồm `buyer_name`, `buyer_phone`, `buyer_email`, `fulfillment_profile_url`, `quantity` (1–100), tùy chọn `promo_code`, và tùy chọn `invoice_requested` cùng `invoice_customer_name`, `invoice_tax_code`, `invoice_address`, `invoice_email`. Server tính bậc giá từ `sales_discount_tiers`, lưu giá gốc/chiết khấu/giá phải trả, tạo `FS` + 10 ký tự và QR 15 phút. Khi Bearer Supabase session hợp lệ, tên/email/điện thoại được lấy từ hồ sơ tài khoản (số điện thoại chưa có được lưu sau lần nhập đầu tiên). Hóa đơn riêng bắt buộc đủ bốn trường; đơn không yêu cầu tạo record gộp cuối ngày. Mã `INHOUSE` chỉ có hiệu lực tại server và chốt mức phải trả 10.000 đ. Endpoint không trả secret hoặc quyền quản trị.
 
 Webhook SePay ưu tiên `code`; ở Test Mode, khi không có cấu hình payment-code, nó chỉ nhận mã đơn chính xác dạng `FSXXXXXXXXXX` từ `content`. Transaction id là khóa idempotency, và chỉ giao dịch `in` với số tiền đúng mới chuyển đơn sang `paid`.
 

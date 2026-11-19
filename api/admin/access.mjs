@@ -1,4 +1,4 @@
-import { accessContext, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
+import { accessContext, authenticatedUser, createAdminPreviewToken, db, readBody, send } from "../_lib.mjs";
 import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
 
@@ -50,15 +50,38 @@ async function startPreview(request, response, actor) {
 }
 
 const salesPaymentStates = new Set(["pending_payment", "paid", "reconciliation_required", "expired", "cancelled", "refunded"]);
+const salesAdminRoles = new Set(["platform_admin", "super_admin"]);
+const invoiceStatuses = new Set(["pending_payment", "ready_to_issue", "issued", "aggregate_pending", "aggregated", "cancelled"]);
+function vietnamBusinessDate(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+async function syncInvoiceForPayment(orderId, paymentStatus) {
+  const rows = await db(`sales_invoice_records?select=id,invoice_type,invoice_status&order_id=eq.${encodeURIComponent(orderId)}&limit=1`);
+  const invoice = rows[0];
+  if (!invoice) return;
+  const nextStatus = paymentStatus === "paid" ? (invoice.invoice_type === "individual" ? "ready_to_issue" : "aggregate_pending") : paymentStatus === "cancelled" ? "cancelled" : "pending_payment";
+  if (invoice.invoice_status === "issued" || invoice.invoice_status === "aggregated" || invoice.invoice_status === nextStatus) return;
+  await db(`sales_invoice_records?id=eq.${encodeURIComponent(invoice.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ invoice_status: nextStatus, updated_at: new Date().toISOString() }) });
+}
 async function salesOrders(request, response, context) {
-  if (!(context.profile.role === "platform_admin" || context.profile.role === "super_admin") || context.preview) throw new Error("Forbidden");
+  if (!salesAdminRoles.has(context.profile.role) || context.preview) throw new Error("Forbidden");
   if (request.method === "GET") {
-    const [products, orders, assignments] = await Promise.all([
+    const [products, orders, assignments, invoiceRecords] = await Promise.all([
       db("sales_products?select=*&order=created_at.desc"),
       db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"),
-      db("sales_order_assignments?select=*")
+      db("sales_order_assignments?select=*"),
+      db("sales_invoice_records?select=*&order=created_at.desc&limit=1000")
     ]);
-    return send(response, 200, { products, orders, assignments });
+    const totalsByDay = new Map();
+    for (const row of invoiceRecords.filter(row => row.invoice_type === "daily_aggregate")) {
+      const key = `${row.aggregation_date}:${row.invoice_status}`;
+      const item = totalsByDay.get(key) || { aggregation_date: row.aggregation_date, invoice_status: row.invoice_status, order_count: 0, expected_amount_vnd: 0 };
+      const order = orders.find(order => String(order.id) === String(row.order_id));
+      item.order_count += 1; item.expected_amount_vnd += Number(order?.expected_amount_vnd || 0); totalsByDay.set(key, item);
+    }
+    return send(response, 200, { products, orders, assignments, invoice_records: invoiceRecords, invoice_aggregate_groups: [...totalsByDay.values()].sort((a, b) => String(b.aggregation_date).localeCompare(String(a.aggregation_date))) });
   }
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
   const input = await readBody(request);
@@ -75,8 +98,19 @@ async function salesOrders(request, response, context) {
   if (input.action === "set_payment_status") {
     if (!input.order_id || !salesPaymentStates.has(input.payment_status)) return send(response, 400, { error: "Trạng thái thanh toán không hợp lệ" });
     await db(`sales_orders?id=eq.${encodeURIComponent(input.order_id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ payment_status: input.payment_status, updated_at: new Date().toISOString() }) });
+    await syncInvoiceForPayment(input.order_id, input.payment_status);
     await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "set_sales_payment_status", target_type: "sales_order", target_id: input.order_id, details: { payment_status: input.payment_status, source: "manual_admin" } }) });
     return send(response, 200, { ok: true });
+  }
+  if (input.action === "mark_daily_invoice_issued") {
+    const date = String(input.aggregation_date || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return send(response, 400, { error: "Ngày hóa đơn gộp không hợp lệ" });
+    const rows = await db(`sales_invoice_records?select=id&invoice_type=eq.daily_aggregate&invoice_status=eq.aggregate_pending&aggregation_date=eq.${encodeURIComponent(date)}`);
+    if (!rows.length) return send(response, 404, { error: "Không có đơn đã thanh toán chờ hóa đơn gộp trong ngày này" });
+    const ids = rows.map(row => row.id).map(encodeURIComponent).join(",");
+    await db(`sales_invoice_records?id=in.(${ids})`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ invoice_status: "aggregated", issued_at: new Date().toISOString(), issued_by: context.user.id, issued_note: String(input.issued_note || "Xuất hóa đơn gộp cuối ngày").trim().slice(0, 500), updated_at: new Date().toISOString() }) });
+    await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "mark_sales_daily_invoice_issued", target_type: "sales_invoice_aggregate", target_id: date, details: { aggregation_date: date, invoice_count: rows.length } }) });
+    return send(response, 200, { ok: true, aggregation_date: date, invoice_count: rows.length });
   }
   return send(response, 400, { error: "Action không hỗ trợ" });
 }
@@ -113,21 +147,50 @@ async function sepayWebhook(request, response) {
   if (order) {
     const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
     await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(update) });
+    await syncInvoiceForPayment(order.id, update.payment_status);
   }
   return send(response, 200, { success: true, processing_status: processingStatus });
+}
+async function optionalAuthenticatedUser(request) { try { return await authenticatedUser(request); } catch { return null; } }
+function cleanText(value, max = 255) { return String(value || "").trim().slice(0, max); }
+function validInvoice(input) {
+  if (!input.invoice_requested) return { requested: false };
+  const customerName = cleanText(input.invoice_customer_name);
+  const taxCode = cleanText(input.invoice_tax_code, 32).replace(/\s/g, "").toUpperCase();
+  const billingAddress = cleanText(input.invoice_address, 500);
+  const billingEmail = cleanText(input.invoice_email, 255).toLowerCase();
+  if (customerName.length < 2 || !/^\d{10}(?:-?\d{3})?$/.test(taxCode) || billingAddress.length < 5 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail)) throw new Error("Thông tin xuất hóa đơn chưa hợp lệ");
+  return { requested: true, customer_name: customerName, tax_code: taxCode, billing_address: billingAddress, billing_email: billingEmail };
 }
 async function publicCheckout(request, response) {
   if (String(process.env.SALES_PUBLIC_CHECKOUT_ENABLED).toLowerCase() !== "true") return send(response, 503, { error: "Checkout chưa mở" });
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
   const input = await readBody(request); const quantity = Math.max(1, Math.min(100, Number(input.quantity || 1)));
-  if (!String(input.buyer_name || "").trim() || !String(input.buyer_phone || "").trim() || !String(input.buyer_email || "").trim() || !String(input.fulfillment_profile_url || "").trim()) return send(response, 400, { error: "Thiếu thông tin đơn hàng" });
-  const products = await db("sales_products?select=id,unit_price_vnd,status&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
-  const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE"; const amount = inhouse ? 10000 : Number(product.unit_price_vnd) * quantity;
+  const signedInUser = await optionalAuthenticatedUser(request);
+  const profileRows = signedInUser ? await db(`profiles?select=id,email,display_name,phone&id=eq.${encodeURIComponent(signedInUser.id)}&limit=1`) : [];
+  const account = profileRows[0] || {};
+  const buyerName = cleanText(account.display_name || signedInUser?.user_metadata?.full_name || input.buyer_name);
+  const buyerEmail = cleanText(signedInUser?.email || account.email || input.buyer_email).toLowerCase();
+  const buyerPhone = cleanText(account.phone || signedInUser?.phone || signedInUser?.user_metadata?.phone || signedInUser?.user_metadata?.phone_number || input.buyer_phone, 40);
+  const profileUrl = cleanText(input.fulfillment_profile_url, 500);
+  if (!buyerName || !buyerPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail) || !/^https?:\/\//i.test(profileUrl)) return send(response, 400, { error: "Thiếu hoặc sai thông tin đơn hàng" });
+  const invoice = validInvoice(input);
+  const products = await db("sales_products?select=id,unit_price_vnd,status,product_type&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
+  const now = new Date();
+  const tiers = await db(`sales_discount_tiers?select=min_quantity,discount_percent&product_type=eq.${encodeURIComponent(product.product_type)}&is_active=eq.true&min_quantity=lte.${quantity}&effective_from=lte.${encodeURIComponent(now.toISOString())}&order=min_quantity.desc&limit=1`);
+  const grossAmount = Number(product.unit_price_vnd) * quantity;
+  const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE";
+  const discountPercent = inhouse ? 0 : Number(tiers[0]?.discount_percent || 0);
+  const discountAmount = inhouse ? 0 : Math.round(grossAmount * discountPercent / 100);
+  const amount = inhouse ? 10000 : grossAmount - discountAmount;
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
   const paymentExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_name: String(input.buyer_name).trim(), buyer_phone: String(input.buyer_phone).trim(), buyer_email: String(input.buyer_email).trim(), fulfillment_profile_url: String(input.fulfillment_profile_url).trim(), quantity, unit_price_vnd: product.unit_price_vnd, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }) });
+  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: product.unit_price_vnd, gross_amount_vnd: inhouse ? amount : grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }) });
+  if (signedInUser && !account.phone) await db(`profiles?id=eq.${encodeURIComponent(signedInUser.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ phone: buyerPhone, updated_at: new Date().toISOString() }) });
+  const invoiceRecord = invoice.requested ? { customer_name: invoice.customer_name, tax_code: invoice.tax_code, billing_address: invoice.billing_address, billing_email: invoice.billing_email } : {};
+  await db("sales_invoice_records", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ order_id: rows[0].id, invoice_type: invoice.requested ? "individual" : "daily_aggregate", invoice_status: "pending_payment", aggregation_date: vietnamBusinessDate(), ...invoiceRecord }) });
   const qr = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
-  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }, qr_url: qr, qr_download_url: `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` });
+  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: inhouse ? amount : grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, payment_reference: reference, payment_expires_at: paymentExpiresAt }, qr_url: qr, qr_download_url: `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` });
 }
 async function publicQrDownload(request, response) {
   if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
