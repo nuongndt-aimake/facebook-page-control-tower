@@ -68,6 +68,8 @@ Migration `20261119150000_sales_discount_and_invoices.sql` bổ sung `sales_disc
 
 Mỗi đơn có đúng một `sales_invoice_records`: `individual` giữ tên, MST, địa chỉ, email nhận hóa đơn; `daily_aggregate` được nhóm theo `aggregation_date` (Asia/Ho_Chi_Minh). Chỉ sau khi thanh toán hợp lệ, trạng thái chuyển sang `ready_to_issue` hoặc `aggregate_pending`. Quản trị viên mới có thể đánh dấu đã xuất gộp và hành động được audit. `profiles.phone` là số điện thoại tùy chọn của tài khoản để checkout tự điền; không mở quyền đọc/ghi trực tiếp từ client.
 
+Migration `20261119170000_sales_catalog_promotions_and_zero_orders.sql` thêm cấu hình admin: `sales_settings` (video hướng dẫn), `sales_product_prices` (giá theo thời điểm) và `sales_promo_codes` (giảm giá/quà tặng mã học viên). Cả ba bảng RLS bật và không có quyền client trực tiếp. Đơn giá 0 mang trạng thái xác minh nhân viên, không có QR và có audit người xác minh.
+
 Migration `20261101150000_daily_snapshot_foundation.sql` đã được apply production. Ba bảng snapshot có RLS bật, khóa duy nhất theo Page/bài/ngày và lưu trạng thái `ok`, `empty`, `permission_error` hoặc `not_available`; pilot Page `1217277164808495` đã ghi được snapshot Page với 4 metric rows và không có request lỗi. Ba slot `06:00`, `14:00`, `22:00` đã được seed nhưng đang `inactive` để không bật đồng bộ hàng loạt ngoài ý muốn.
 
 Phần worker/dispatcher đã được mở có kiểm soát trong production; các slot vẫn do quản trị viên bật/tắt riêng. Khi một slot chạy, job được tạo idempotent vào `sync_jobs`, claim theo concurrency, ghi `sync_attempts` và snapshot chỉ được cập nhật khi request thành công.

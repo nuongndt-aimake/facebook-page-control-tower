@@ -51,6 +51,7 @@ async function startPreview(request, response, actor) {
 
 const salesPaymentStates = new Set(["pending_payment", "paid", "reconciliation_required", "expired", "cancelled", "refunded"]);
 const salesAdminRoles = new Set(["platform_admin", "super_admin"]);
+const salesStaffRoles = new Set(["operator", "manager", "platform_admin", "super_admin"]);
 const invoiceStatuses = new Set(["pending_payment", "ready_to_issue", "issued", "aggregate_pending", "aggregated", "cancelled"]);
 function vietnamBusinessDate(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
@@ -66,13 +67,16 @@ async function syncInvoiceForPayment(orderId, paymentStatus) {
   await db(`sales_invoice_records?id=eq.${encodeURIComponent(invoice.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ invoice_status: nextStatus, updated_at: new Date().toISOString() }) });
 }
 async function salesOrders(request, response, context) {
-  if (!salesAdminRoles.has(context.profile.role) || context.preview) throw new Error("Forbidden");
+  if (!salesStaffRoles.has(context.profile.role) || context.preview) throw new Error("Forbidden");
   if (request.method === "GET") {
-    const [products, orders, assignments, invoiceRecords] = await Promise.all([
+    const [products, orders, assignments, invoiceRecords, prices, promoCodes, settings] = await Promise.all([
       db("sales_products?select=*&order=created_at.desc"),
       db("sales_orders?select=*,product:sales_products(id,sku,name,product_type)&order=created_at.desc&limit=500"),
       db("sales_order_assignments?select=*"),
-      db("sales_invoice_records?select=*&order=created_at.desc&limit=1000")
+      db("sales_invoice_records?select=*&order=created_at.desc&limit=1000"),
+      salesAdminRoles.has(context.profile.role) ? db("sales_product_prices?select=*&order=effective_from.desc") : Promise.resolve([]),
+      salesAdminRoles.has(context.profile.role) ? db("sales_promo_codes?select=*&order=created_at.desc") : Promise.resolve([]),
+      salesAdminRoles.has(context.profile.role) ? db("sales_settings?select=*") : Promise.resolve([])
     ]);
     const totalsByDay = new Map();
     for (const row of invoiceRecords.filter(row => row.invoice_type === "daily_aggregate")) {
@@ -81,10 +85,39 @@ async function salesOrders(request, response, context) {
       const order = orders.find(order => String(order.id) === String(row.order_id));
       item.order_count += 1; item.expected_amount_vnd += Number(order?.expected_amount_vnd || 0); totalsByDay.set(key, item);
     }
-    return send(response, 200, { products, orders, assignments, invoice_records: invoiceRecords, invoice_aggregate_groups: [...totalsByDay.values()].sort((a, b) => String(b.aggregation_date).localeCompare(String(a.aggregation_date))) });
+    const staffOrderIds = new Set(assignments.filter(row => String(row.assignee_user_id) === String(context.user.id)).map(row => String(row.order_id)));
+    return send(response, 200, { products, orders: salesAdminRoles.has(context.profile.role) ? orders : orders.filter(row => staffOrderIds.has(String(row.id))), assignments, invoice_records: invoiceRecords, prices, promo_codes: promoCodes, settings, invoice_aggregate_groups: [...totalsByDay.values()].sort((a, b) => String(b.aggregation_date).localeCompare(String(a.aggregation_date))) });
   }
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
   const input = await readBody(request);
+  if (input.action === "verify_zero_value_order") {
+    if (!input.order_id) return send(response, 400, { error: "Thiếu order_id" });
+    const rows = await db(`sales_orders?select=id,expected_amount_vnd,zero_value_verification_status& id=eq.${encodeURIComponent(input.order_id)}&limit=1`.replace("& id", "&id"));
+    const order = rows[0];
+    if (!order || Number(order.expected_amount_vnd) !== 0 || order.zero_value_verification_status !== "pending_staff_verification") return send(response, 400, { error: "Đơn không ở trạng thái chờ xác minh miễn phí" });
+    if (!salesAdminRoles.has(context.profile.role)) { const assignment = await db(`sales_order_assignments?select=order_id&order_id=eq.${encodeURIComponent(order.id)}&assignee_user_id=eq.${encodeURIComponent(context.user.id)}&limit=1`); if (!assignment[0]) throw new Error("Forbidden"); }
+    await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ payment_status: "paid", paid_at: new Date().toISOString(), zero_value_verification_status: "verified", zero_value_verified_by: context.user.id, zero_value_verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }) });
+    await syncInvoiceForPayment(order.id, "paid");
+    await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "verify_zero_value_sales_order", target_type: "sales_order", target_id: order.id, details: {} }) });
+    return send(response, 200, { ok: true });
+  }
+  if (!salesAdminRoles.has(context.profile.role)) throw new Error("Forbidden");
+  if (input.action === "save_sales_setting") {
+    const key = cleanText(input.setting_key, 80); if (key !== "profile_link_help_video") return send(response, 400, { error: "Cấu hình không hợp lệ" });
+    const url = cleanText(input.url, 500); if (url && !/^https:\/\//i.test(url)) return send(response, 400, { error: "Video cần URL HTTPS" });
+    await db("sales_settings?on_conflict=setting_key", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ setting_key: key, setting_value: { url }, updated_by: context.user.id, updated_at: new Date().toISOString() }) }); return send(response, 200, { ok: true });
+  }
+  if (input.action === "set_product_price") {
+    const amount = Number(input.unit_price_vnd); if (!input.product_id || !Number.isSafeInteger(amount) || amount < 0) return send(response, 400, { error: "Giá sản phẩm không hợp lệ" });
+    await db("sales_product_prices", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ product_id: input.product_id, unit_price_vnd: amount, effective_from: input.effective_from || new Date().toISOString(), created_by: context.user.id }) }); return send(response, 200, { ok: true });
+  }
+  if (input.action === "upsert_promo_code") {
+    const code = cleanText(input.code, 64).toUpperCase(); const value = Number(input.discount_value);
+    if (!/^[A-Z0-9_-]{3,64}$/.test(code) || !["fixed", "percent"].includes(input.discount_type) || !Number.isSafeInteger(value) || value < 0 || (input.discount_type === "percent" && value > 100)) return send(response, 400, { error: "Mã hoặc mức ưu đãi không hợp lệ" });
+    const giftUrl = cleanText(input.gift_download_url, 500); if (giftUrl && !/^https:\/\//i.test(giftUrl)) return send(response, 400, { error: "Link quà tặng cần URL HTTPS" });
+    await db("sales_promo_codes?on_conflict=code", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ code, code_type: input.code_type === "student_referral" ? "student_referral" : "promotion", discount_type: input.discount_type, discount_value: value, gift_name: cleanText(input.gift_name, 255) || null, gift_download_url: giftUrl || null, starts_at: input.starts_at || new Date().toISOString(), ends_at: input.ends_at || null, is_active: input.is_active !== false, created_by: context.user.id, updated_at: new Date().toISOString() }) });
+    return send(response, 200, { ok: true });
+  }
   if (input.action === "assign_order") {
     if (!input.order_id || !input.assignee_user_id) return send(response, 400, { error: "order_id và assignee_user_id là bắt buộc" });
     const assignees = await db(`profiles?select=id,status&id=eq.${encodeURIComponent(input.assignee_user_id)}&limit=1`);
@@ -162,6 +195,20 @@ function validInvoice(input) {
   if (customerName.length < 2 || !/^\d{10}(?:-?\d{3})?$/.test(taxCode) || billingAddress.length < 5 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingEmail)) throw new Error("Thông tin xuất hóa đơn chưa hợp lệ");
   return { requested: true, customer_name: customerName, tax_code: taxCode, billing_address: billingAddress, billing_email: billingEmail };
 }
+async function currentProductPrice(productId, fallback) {
+  const now = encodeURIComponent(new Date().toISOString());
+  const rows = await db(`sales_product_prices?select=unit_price_vnd&product_id=eq.${encodeURIComponent(productId)}&effective_from=lte.${now}&order=effective_from.desc&limit=1`);
+  return Number(rows[0]?.unit_price_vnd ?? fallback);
+}
+async function publicSalesConfig(request, response) {
+  if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
+  const [products, settings] = await Promise.all([
+    db("sales_products?select=id,sku,name,product_type,description,status,unit_price_vnd&status=eq.active&order=created_at.asc"),
+    db("sales_settings?select=setting_key,setting_value&setting_key=eq.profile_link_help_video&limit=1")
+  ]);
+  const priced = await Promise.all(products.map(async product => ({ ...product, unit_price_vnd: await currentProductPrice(product.id, product.unit_price_vnd) })));
+  return send(response, 200, { products: priced, profile_link_help_video_url: settings[0]?.setting_value?.url || "" });
+}
 async function publicCheckout(request, response) {
   if (String(process.env.SALES_PUBLIC_CHECKOUT_ENABLED).toLowerCase() !== "true") return send(response, 503, { error: "Checkout chưa mở" });
   if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
@@ -176,21 +223,27 @@ async function publicCheckout(request, response) {
   if (!buyerName || !buyerPhone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail) || !/^https?:\/\//i.test(profileUrl)) return send(response, 400, { error: "Thiếu hoặc sai thông tin đơn hàng" });
   const invoice = validInvoice(input);
   const products = await db("sales_products?select=id,unit_price_vnd,status,product_type&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
+  const configuredUnitPrice = await currentProductPrice(product.id, product.unit_price_vnd);
   const now = new Date();
   const tiers = await db(`sales_discount_tiers?select=min_quantity,discount_percent&product_type=eq.${encodeURIComponent(product.product_type)}&is_active=eq.true&min_quantity=lte.${quantity}&effective_from=lte.${encodeURIComponent(now.toISOString())}&order=min_quantity.desc&limit=1`);
-  const grossAmount = Number(product.unit_price_vnd) * quantity;
-  const inhouse = String(input.promo_code || "").trim().toUpperCase() === "INHOUSE";
-  const discountPercent = inhouse ? 0 : Number(tiers[0]?.discount_percent || 0);
-  const discountAmount = inhouse ? 0 : Math.round(grossAmount * discountPercent / 100);
-  const amount = inhouse ? 10000 : grossAmount - discountAmount;
+  const grossAmount = configuredUnitPrice * quantity;
+  const discountPercent = Number(tiers[0]?.discount_percent || 0);
+  const discountAmount = Math.round(grossAmount * discountPercent / 100);
+  const afterBulkDiscount = grossAmount - discountAmount;
+  const promoCodeValue = cleanText(input.promo_code, 64).toUpperCase();
+  const promoRows = promoCodeValue ? await db(`sales_promo_codes?select=*&code=eq.${encodeURIComponent(promoCodeValue)}&is_active=eq.true&starts_at=lte.${encodeURIComponent(now.toISOString())}&order=created_at.desc&limit=1`) : [];
+  const promo = promoRows[0];
+  if (promoCodeValue && (!promo || (promo.ends_at && new Date(promo.ends_at) < now))) return send(response, 400, { error: "Mã ưu đãi không hợp lệ hoặc đã hết hạn" });
+  const promoDiscount = promo ? Math.min(afterBulkDiscount, promo.discount_type === "percent" ? Math.round(afterBulkDiscount * Number(promo.discount_value) / 100) : Number(promo.discount_value)) : 0;
+  const amount = afterBulkDiscount - promoDiscount;
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
-  const paymentExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: product.unit_price_vnd, gross_amount_vnd: inhouse ? amount : grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt }) });
+  const paymentExpiresAt = amount > 0 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
+  const rows = await db("sales_orders", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ order_code: orderCode, product_id: product.id, buyer_user_id: signedInUser?.id || null, buyer_name: buyerName, buyer_phone: buyerPhone, buyer_email: buyerEmail, fulfillment_profile_url: profileUrl, quantity, unit_price_vnd: configuredUnitPrice, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_code: promo?.code || null, promo_discount_vnd: promoDiscount, gift_name: promo?.gift_name || null, gift_download_url: promo?.gift_download_url || null, expected_amount_vnd: amount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: amount === 0 ? "pending_staff_verification" : null }) });
   if (signedInUser && !account.phone) await db(`profiles?id=eq.${encodeURIComponent(signedInUser.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ phone: buyerPhone, updated_at: new Date().toISOString() }) });
   const invoiceRecord = invoice.requested ? { customer_name: invoice.customer_name, tax_code: invoice.tax_code, billing_address: invoice.billing_address, billing_email: invoice.billing_email } : {};
   await db("sales_invoice_records", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ order_id: rows[0].id, invoice_type: invoice.requested ? "individual" : "daily_aggregate", invoice_status: "pending_payment", aggregation_date: vietnamBusinessDate(), ...invoiceRecord }) });
-  const qr = `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}`;
-  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: inhouse ? amount : grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, payment_reference: reference, payment_expires_at: paymentExpiresAt }, qr_url: qr, qr_download_url: `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` });
+  const qr = amount > 0 ? `https://qr.sepay.vn/img?bank=MBBank&acc=VQRQANSMJ6468&amount=${amount}&des=${encodeURIComponent(reference)}` : null;
+  return send(response, 201, { order: { id: rows[0].id, order_code: orderCode, amount_vnd: amount, gross_amount_vnd: grossAmount, discount_percent: discountPercent, discount_amount_vnd: discountAmount, promo_discount_vnd: promoDiscount, payment_reference: reference, payment_expires_at: paymentExpiresAt, zero_value_verification_status: rows[0].zero_value_verification_status, gift: promo?.gift_download_url ? { name: promo.gift_name || "Quà tặng", download_url: promo.gift_download_url } : null }, qr_url: qr, qr_download_url: qr ? `/api/checkout/qr?amount=${amount}&reference=${encodeURIComponent(reference)}` : null });
 }
 async function publicQrDownload(request, response) {
   if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
@@ -207,6 +260,7 @@ export default async function handler(request, response) {
     const endpoint = new URL(request.url, "http://localhost").searchParams.get("endpoint");
     if (endpoint === "sepay-webhook") return await sepayWebhook(request, response);
     if (endpoint === "public-checkout") return await publicCheckout(request, response);
+    if (endpoint === "public-sales-config") return await publicSalesConfig(request, response);
     if (endpoint === "public-qr-download") return await publicQrDownload(request, response);
     const context = await accessContext(request);
     if (endpoint === "preview") return await startPreview(request, response, context);

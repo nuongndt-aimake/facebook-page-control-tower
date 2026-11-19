@@ -117,3 +117,12 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 | UI | `/sales` và `/sales-orders`; đã dùng layout một cột ở mobile, bảng admin bọc cuộn ngang. |
 | Tích hợp | Không đổi SePay, domain hay cron. Webhook cập nhật trạng thái hóa đơn cùng trạng thái thanh toán. |
 | Tài liệu | Đã cập nhật API và database; cần ghi kết quả migration/deploy vào runbook sau khi production xác minh. |
+
+# Impact note — Catalog, mã học viên và đơn 0đ (2026-11-19)
+
+| Vùng | Tác động |
+| --- | --- |
+| Chức năng | Video hướng dẫn, giá theo thời điểm, mã ưu đãi sau chiết khấu và quà tặng đều do admin cấu hình. |
+| API/DB | Thêm `/api/sales-config`, cấu hình admin qua sales-orders, migration `20261119170000_sales_catalog_promotions_and_zero_orders.sql`. |
+| Phân quyền | Không thêm role: admin cấu hình; `operator`/`manager` chỉ xác minh đơn 0đ đã được phân công, kiểm tra server-side và audit. |
+| UI/Tích hợp | `/sales` đọc giá/video từ server; đơn 0đ không gọi SePay. Không đổi domain, SePay hay cron. |
