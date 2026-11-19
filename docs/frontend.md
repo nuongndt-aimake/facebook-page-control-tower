@@ -1,5 +1,7 @@
 # Frontend và UX
 
+Quy ước navigator toàn bộ trang giới thiệu, mua hàng và quản lý: [Đồng bộ navigator 2026-11-19](navigation-unification-20261119.md). Đăng xuất thành công chuyển đến `/analytics#login`. Mọi HTML dùng cùng `auth-nav.js?v=20261119-all-menu`.
+
 ## Các màn hình chính
 
 | Route | File | Mục đích |

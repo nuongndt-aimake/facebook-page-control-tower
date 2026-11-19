@@ -19,7 +19,7 @@
     </section>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1"></script>
-  <script src="/auth-nav.js?v=20261119-account-nav"></script>
+
   <script>
     const sb=supabase.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr');
     const $=selector=>document.querySelector(selector);
@@ -40,5 +40,5 @@
       $('#status').textContent='Đã đăng nhập';$('#app').classList.remove('hidden');
     })().catch(error=>{console.error('Không thể tải tài khoản',error);$('#status').textContent='Không thể tải tài khoản. Vui lòng thử lại.'});
   </script>
-</body>
+<script src="/auth-nav.js?v=20261119-all-menu"></script></body>
 </html>
