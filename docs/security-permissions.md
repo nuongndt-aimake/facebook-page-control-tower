@@ -1,5 +1,7 @@
 # Auth, RBAC và admin preview
 
+Tổng quan báo cáo mới dùng nguyên scope server của content_reports, không tạo đường đọc Meta hoặc scope read_all ở client. Chỉ tài khoản đăng nhập mới đọc được dữ liệu trong phạm vi vai trò; UI không có thao tác đồng bộ. [Chi tiết](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Phạm vi Page bắt buộc
 
 Admin xem tất cả; manager xem trực tiếp và toàn tuyến; operator/analyst/viewer/CTV chỉ trực tiếp. SQL helpers + API kiểm tra cả thao tác, dữ liệu danh sách, ledger và payout; `read_reports_all` non-admin không còn mở vượt tuyến (**Hết hiệu lực quy tắc cũ**). Quyền intake/assign/manage_payout vẫn bắt buộc. Chỉ người được giao tự nộp; quản lý có verify_reports mới duyệt tuyến, không tự duyệt. Contacts chỉ tự sửa qua RPC atomic; thông tin phone/Facebook của người khác chỉ trả cho chức năng giao người được cấp quyền. [Ma trận đầy đủ](inventory-assignment-profile-20261119.md).
@@ -66,3 +68,7 @@ Tuyến trên chỉ thấy dữ liệu tuyến dưới khi có membership active
 
 Luồng khởi tạo phải đi từ nút **Xem trước** trên đúng dòng tài khoản ở `/users`. Nút gửi trực tiếp `user_id` và `user_email` tới endpoint (không suy diễn ID từ nội dung hiển thị), lưu token vào session storage và cookie 15 phút, rồi chuyển tới `/analytics?preview=1`. Nút không xuất hiện cho chính tài khoản quản trị viên đang đăng nhập; tài khoản `suspended`/`deleted` bị từ chối. Khi đang preview, banner cố định cho phép thoát và xóa cả token trong storage/cookie. Banner có vùng đệm cuối trang để không che bảng hoặc danh sách trên desktop/mobile; hai lớp banner global/runtime tự loại trùng.
 
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).

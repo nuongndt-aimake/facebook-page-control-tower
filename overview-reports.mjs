@@ -1,0 +1,25 @@
+import {overviewReportModel,overviewDateRange} from './overview-report-model.mjs';
+import {formatReportTotals} from './report-money.mjs';
+const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),number=v=>new Intl.NumberFormat('vi-VN').format(Number(v||0));
+const table=(labels,rows)=>'<table class="operations-table overview-table"><thead><tr>'+labels.map(label=>'<th>'+esc(label)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map((value,i)=>'<td data-label="'+esc(labels[i])+'">'+value+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+async function start(){
+ const client=window.__authNavClient||supabase.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr'),session=(await client.auth.getSession()).data.session;
+ if(!session){$('#overview-status').textContent='Vui lòng đăng nhập để xem Tổng quan báo cáo.';$('#overview-login').hidden=false;return}
+ $('#overview-app').hidden=false;const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const selectPeriod=period=>{const range=overviewDateRange(period,today);$('#overview-start').value=range.start;$('#overview-end').value=range.end;document.querySelectorAll('[data-overview-period]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.overviewPeriod===period)))};
+ selectPeriod('week');$('#overview-start').max=today;$('#overview-end').max=today;let busy=false;
+ async function load(){if(busy)return;const start=$('#overview-start').value,end=$('#overview-end').value;if(!start||!end||start>end||end>today){$('#overview-status').textContent='Chọn khoảng ngày hợp lệ, không sau hôm nay.';return}busy=true;$('#overview-load').disabled=true;$('#overview-status').textContent='Đang đọc báo cáo vận hành…';
+  try{const params=new URLSearchParams({endpoint:'content_reports',start,end,day:end}),response=await fetch('/api/admin/access?'+params,{cache:'no-store',headers:{Authorization:'Bearer '+session.access_token}}),data=await response.json();if(!response.ok)throw Error(data.error||'Không thể tải báo cáo');const model=overviewReportModel(data),s=model.summary;
+   $('#overview-kpis').innerHTML=[['Page đang vận hành',number(model.page_count)],['Phân công đang hoạt động',number(model.assignment_count)],['Bài đăng báo cáo',number(s.reported.posts)],['Doanh thu báo cáo',formatReportTotals(s.by_currency)],['Doanh thu đã duyệt',formatReportTotals(s.by_currency,'verified_revenue_amount')],['Chưa nộp ngày '+data.day,number(model.missing.length)]].map(([label,value])=>'<article class="operations-stat"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></article>').join('');
+   $('#overview-empty').hidden=model.report_count>0;
+   $('#overview-days').innerHTML=model.by_day.length?table(['Ngày số liệu','Bài đăng','Doanh thu báo cáo','Doanh thu đã duyệt'],model.by_day.map(row=>[esc(row.date),number(row.reported.posts),esc(formatReportTotals(row.by_currency)),esc(formatReportTotals(row.by_currency,'verified_revenue_amount'))])):'Chưa có báo cáo hợp lệ trong kỳ.';
+   const group=(rows,person)=>rows.length?table([person?'Nhân sự':'Fanpage','Bài đăng','Doanh thu báo cáo','Doanh thu đã duyệt','Tiền hiện tại gần nhất'],rows.map(row=>[esc(row.name)+'<br><small>'+esc(person?({own:'Của bạn',direct:'Tuyến trực tiếp',inherited:'Tuyến gián tiếp',authorized:'Trong phạm vi quản trị'}[row.relationship]||''):row.id)+'</small>',number(row.posts),esc(formatReportTotals(row.by_currency)),esc(formatReportTotals(row.by_currency,'verified_revenue_amount')),esc(formatReportTotals(row.by_currency,'cumulative_amount'))])):'Chưa có báo cáo hợp lệ trong kỳ.';
+   $('#overview-people').innerHTML=group(model.by_person,true);$('#overview-pages').innerHTML=group(model.by_page,false);
+   $('#overview-missing-title').textContent='Phân công chưa nộp ngày '+data.day;$('#overview-missing').innerHTML=model.missing.length?table(['Nhân sự','Fanpage'],model.missing.map(row=>[esc(row.person_name),esc(row.page_name)+'<br><small>'+esc(row.page_id)+'</small>'])):'Không có phân công thiếu báo cáo ngày này.';
+   $('#overview-status').textContent='Số liệu '+data.start+' → '+data.end+' · '+model.report_count+' báo cáo hợp lệ · Đã tải '+new Date().toLocaleTimeString('vi-VN');
+  }catch(error){$('#overview-status').textContent=error.message}finally{busy=false;$('#overview-load').disabled=false}
+ }
+ $('#overview-form').onsubmit=event=>{event.preventDefault();load()};for(const button of document.querySelectorAll('[data-overview-period]'))button.onclick=()=>{if(busy)return;selectPeriod(button.dataset.overviewPeriod);load()};for(const input of [$('#overview-start'),$('#overview-end')])input.onchange=()=>document.querySelectorAll('[data-overview-period]').forEach(button=>button.setAttribute('aria-pressed','false'));
+ await load();
+}
+start().catch(()=>{$('#overview-status').textContent='Không thể tải Tổng quan. Vui lòng tải lại trang.'});

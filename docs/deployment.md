@@ -1,5 +1,7 @@
 # Triển khai Vercel và Supabase
 
+Tổng quan báo cáo 2026-11-19: deploy HTML/runtime/model/CSS và bỏ widget lặp trên `/analytics`, không env/domain/cron/database. Xác minh public HTML không còn runtime Meta và module mới chỉ đọc reports; Preview trước production. [Phạm vi](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Báo cáo USD, payout, tài khoản và phạm vi Page
 
 Kết quả: commit chức năng `6d9ab96` production success, Vercel `9m1Yk1oYh2S328taA4BdLLkWPxVF` (Preview `BS46hWFXoWert7LD5f83uJGCvgp5`). Migration history có cả `20261119232000` và `20261119233000`. HTTP smoke 8 trang/module public đều 200 đúng marker mới, không redirect đăng nhập Vercel; API hồ sơ không session trả 401. Handler harness trên DB thật xác nhận 149 Page/phân công hiện hành và fields contacts, không tạo báo cáo/payout/contacts giả. Payout thực tế vẫn 0, cần người được cấp quyền thiết lập trước khi nộp báo cáo. Lưới báo cáo được loại khỏi tự thêm STT/phân trang chung ở bản chốt cùng tài liệu này.
@@ -144,3 +146,7 @@ Nếu liên kết Vercel với GitHub, không commit `.env`; nếu deploy thủ 
 | API/DB | Thêm `/api/sales-config`, cấu hình admin qua sales-orders, migration `20261119170000_sales_catalog_promotions_and_zero_orders.sql`. |
 | Phân quyền | Không thêm role: admin cấu hình; `operator`/`manager` chỉ xác minh đơn 0đ đã được phân công, kiểm tra server-side và audit. |
 | UI/Tích hợp | `/sales` đọc giá/video từ server; đơn 0đ không gọi SePay. Không đổi domain, SePay hay cron. |
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).

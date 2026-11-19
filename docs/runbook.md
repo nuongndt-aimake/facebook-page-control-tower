@@ -1,5 +1,7 @@
 # Runbook vận hành
 
+Tổng quan: vào `/analytics`, chọn kỳ rồi Xem/làm mới báo cáo. Dữ liệu đến từ báo cáo ngày; thiếu số liệu thì kiểm tra phân công, payout, ngày nộp và trạng thái duyệt tại `/daily-reports`. Không dùng đồng bộ Meta để làm mới Tổng quan. [Hướng dẫn thay nguồn](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Thiết lập trước khi báo cáo
 
 Người có manage_payout chọn/tạo hồ sơ USD trong Thiết lập payout của Page; hồ sơ xuất hiện tại `/payout`. Chưa cung cấp mã payout thì giữ trạng thái Chưa thiết lập và chặn nộp, không tạo hồ sơ giả. Nhân sự bổ sung phone/Profile Facebook tại `/account`, sau đó mở lại cửa sổ giao người để lấy dữ liệu mới. Tài khoản đếm lại từ Inhouse hiện hành, dữ liệu đồng bộ cũ không còn tính. Báo cáo ngày nhập USD và lưu riêng từng phân công; kiểm tra dòng lỗi trước khi rời ngày. [Chi tiết](daily-report-matrix-20261119.md) · [Phân quyền/giao người](inventory-assignment-profile-20261119.md).
@@ -74,3 +76,9 @@ Việc chọn người tiếp quản và chuyển assignment nhân sự dùng ac
 6. Webhook Live là #73924, chỉ tiền vào MBBank `****0268`, URL `https://money.aiecom.vn/api/payments/sepay`. Khóa chỉ tồn tại ở SePay và Vercel Production Secret; không reveal, chép vào ticket hoặc commit.
 7. Callback thử là kiểm tra kết nối, không phải xác minh luồng tiền. Trước một giao dịch thật đầu tiên, theo dõi đơn tạo mới trong `/sales-orders`, đối chiếu đúng `payment_reference`, số tiền và một event `processed`.
 
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).
+
+Cấp/đổi payout trực tiếp tại dòng Page kho Inhouse qua dialog dùng chung; GET/POST inhouse_assets giữ quyền manage_payout và scope Page server-side. Xem [impact note](inhouse-inline-payout-20261119.md).

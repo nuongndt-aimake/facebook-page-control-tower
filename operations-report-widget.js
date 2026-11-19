@@ -1,4 +1,5 @@
 (async()=>{
+ if(['/analytics','/analytics.html'].includes(location.pathname))return;
  if(!['/analytics','/analytics.html','/report-pages','/report-pages.html','/report-content','/report-content.html','/report-revenue','/report-revenue.html'].includes(location.pathname)||document.querySelector('#operations-report-widget'))return;
  const client=window.__authNavClient||window.supabase?.createClient('https://tlcjcqqnfjrqsoiaalfk.supabase.co','sb_publishable_Q05ypFa4Ele00vyzy5X9Rw_tBWEJuvr');if(!client)return;const session=(await client.auth.getSession()).data.session;if(!session)return;
  const {formatReportTotals}=await import('/report-money.mjs');

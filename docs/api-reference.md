@@ -1,5 +1,7 @@
 # API reference
 
+Tổng quan `/analytics` chỉ gọi GET `content_reports` với `start/end/day` qua access context hiện có, không gọi `/api/analytics` hoặc API sync. Không thêm endpoint ghi/quyền; scope admin-all/manager-branch/staff-direct giữ nguyên. [Thay nguồn Tổng quan](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Báo cáo USD, payout và hồ sơ hiện hành
 
 - `content_reports` POST submit: `assignment_id`, `report_date`, `published_post_count`, `currency:"USD"`, `revenue_amount`, `cumulative_amount`; chỉ chính người được giao nộp. Yêu cầu payout USD đang hoạt động; thiếu payout trả 409. Lưu snapshot payout và revision. `_vnd` giữ tương thích VND cũ, không chứa USD.
@@ -136,3 +138,7 @@ Kết quả phải cho biết `since`, `until`, số Page, số bài, số metri
 3. Dùng `encodeURIComponent` khi tạo PostgREST filter.
 4. Các thao tác lặp phải idempotent bằng conflict key hoặc run/job key.
 5. Lỗi quyền trả `401/403`; lỗi dữ liệu đầu vào trả `400`; lỗi upstream/database trả `500` kèm log server.
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).

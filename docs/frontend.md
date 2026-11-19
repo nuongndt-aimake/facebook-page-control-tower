@@ -1,5 +1,9 @@
 # Frontend và UX
 
+## 2026-11-19 — Tổng quan chuyển hoàn toàn sang báo cáo
+
+`/analytics` nạp `overview-reports.mjs`/model/CSS, chỉ GET content_reports. KPI/bảng theo ngày/nhân sự/Page/thiếu báo cáo, preset kỳ, empty/error/auth. Không còn runtime Meta, Chart.js hoặc Đồng bộ lại; widget báo cáo phụ không chèn lặp ở route này. Bảng chuyển thẻ <=1000px, KPI 3/2/1 cột. [Impact note và lịch sử](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Lưới báo cáo và Inhouse/tài khoản
 
 `daily-report-grid.mjs` + CSS: chọn ngày, ba chỉ số USD, payout và lưu các dòng thay đổi; Page tuyến dưới hiện người báo cáo và chỉ đọc. Tổng hợp/widget dùng currency riêng. Inhouse dùng `inventory-inhouse-screen.mjs`, bộ lọc và `inventory-assignment.mjs`: tìm người, Page ID/link/copy, Profile Facebook và sửa tên nội bộ. Script `inventory-inhouse.js` cũ **Hết hiệu lực** ngày 2026-11-19 cho route này, thay bằng module mới; không còn được HTML nạp. Tài khoản có phone/Facebook, số Page/phân công/payout lấy kho hiện hành. Checkout lấy link hồ sơ đã lưu. [Luồng báo cáo](daily-report-matrix-20261119.md) · [Luồng tài khoản/giao người](inventory-assignment-profile-20261119.md).
@@ -104,3 +108,9 @@ Quy ước **Hết hiệu lực từ 2026-11-19**: `/sales` chỉ là liên kế
 | Responsive | Kiểm thử bắt buộc tại 390px, 768px và desktop trước khi phát hành. |
 
 Mọi route mới phải có điểm neo điều hướng trong navigator chung hoặc nút hành động từ màn hình nghiệp vụ liên quan. Route không có điểm neo được xem là chưa hoàn tất nghiệm thu.
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).
+
+Cấp/đổi payout trực tiếp tại dòng Page kho Inhouse qua dialog dùng chung; GET/POST inhouse_assets giữ quyền manage_payout và scope Page server-side. Xem [impact note](inhouse-inline-payout-20261119.md).

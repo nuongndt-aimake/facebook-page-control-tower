@@ -1,5 +1,7 @@
 # Database và migration
 
+Thay nguồn Tổng quan 2026-11-19: không migration hoặc sửa dữ liệu; đọc content_assignment_daily_reports cùng phạm vi assignments/users/pages qua API operations hiện hành. Không trộn dữ liệu Meta vào tổng hợp. [Impact note](overview-report-source-20261119.md).
+
 ## 2026-11-19 — USD/payout và liên hệ/phạm vi Page
 
 Áp dụng cùng transaction: `20261119232000_report_currency_page_payout.sql`, `20261119233000_profile_contacts_and_page_scope.sql`. Tiền báo cáo có currency/generic amount; dữ liệu VND cũ giữ nguyên. `page_payout_assignments` PK Page + history, payout snapshot trên report; không tự chọn quan hệ cũ mơ hồ. Helpers scope và RPC contacts/rename/account assets đều SECURITY INVOKER/service-only, RLS cho bảng mới. Account chỉ đếm Inhouse không-retired trong phạm vi, không sửa/xóa grants lịch sử. [Thiết kế/QA](inventory-assignment-profile-20261119.md).
@@ -107,3 +109,7 @@ Migration `20261101090000_sync_orchestration_foundation.sql` đã được apply
 - Khi mở Data API cho client phải thêm grant và policy có điều kiện theo `auth.uid()`; không dùng `TO authenticated` đơn độc.
 - Trước migration lớn phải backup và có rollback note.
 
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).

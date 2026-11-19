@@ -1,5 +1,7 @@
 # Kiểm thử và nghiệm thu
 
+Tổng quan 2026-11-19: `overview-reports.test.mjs` kiểm tra nguồn report thay metrics cũ, hai người cùng Page, rejected không cộng, currency riêng, luỹ kế mới nhất, kỳ qua tháng/năm và route không nạp sync/runtime Meta. Quyền API được phủ bởi page-scope-api.test.mjs; CSS 390/768/desktop dùng card/table và KPI 1/2/3 cột. [Biên bản](overview-report-source-20261119.md).
+
 ## 2026-11-19 — Bản báo cáo USD và tài khoản/phạm vi Page
 
 Production: 8 URL trang/module đúng bản mới trả 200, API hồ sơ không phiên trả 401; hai migration đã có history. Kiểm tra server handler với dữ liệu production (chỉ mock Auth user lookup, không ghi dữ liệu giả) xác nhận account source `inhouse_current`, 149 Page/149 phân công/149 trực tiếp, fields phone/Facebook và 149 assignment báo cáo của chính người đó. Bộ tự thêm STT/phân trang chung không áp dụng cho lưới có ô nhập.
@@ -110,3 +112,9 @@ Kiểm tra ít nhất 390px, 768px và desktop:
 - Dữ liệu rỗng bị trình bày như request thành công.
 - Người không có payout access thấy số tiền.
 - Token/secret xuất hiện trong HTML, response hoặc log.
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).
+
+Cấp/đổi payout trực tiếp tại dòng Page kho Inhouse qua dialog dùng chung; GET/POST inhouse_assets giữ quyền manage_payout và scope Page server-side. Xem [impact note](inhouse-inline-payout-20261119.md).

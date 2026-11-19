@@ -28,3 +28,7 @@ Nghiệm thu: 40 test Node; SQL currency/payout 15, hồi quy vận hành 17, h�
 ## Lịch sử thay thế
 
 Form nộp báo cáo một Page tại một thời điểm hết hiệu lực khi bản lưới phát hành; thay bằng lưới trực tiếp. Dữ liệu, bằng chứng và revision cũ không bị xóa.
+
+## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
+
+Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).
