@@ -5,7 +5,7 @@ test('server quote tiers, promo after bulk, checkout snapshot and restricted tra
   global.fetch=async(url,opt={})=>{const u=new URL(url),table=u.pathname.split('/').pop();let result=[];
     if(opt.method==='POST'){const row=JSON.parse(opt.body);writes.push({table,row});result=[{id:'test-order',...row}]}
     else if(table==='sales_products')result=[{id:'product',sku:'FANPAGE',status:'active',product_type:'fanpage',unit_price_vnd:1500000}];
-    else if(table==='sales_product_prices')result=[{unit_price_vnd:1500000}];
+    else if(table==='sales_product_prices'){assert.ok(u.searchParams.get('effective_from').startsWith('lte.'));assert.equal(u.searchParams.get('order'),'effective_from.desc');result=[{unit_price_vnd:1500000,effective_from:'2026-01-01T00:00:00Z'}]}
     else if(table==='sales_discount_tiers'){const q=Number(u.searchParams.get('min_quantity')?.slice(4));result=[{discount_percent:q>=10?15:q>=5?10:q>=2?5:0}]}
     else if(table==='sales_promo_codes')result=[{code:'QA',discount_type:'fixed',discount_value:100000,gift_download_url:'https://example.com/private-gift'}];
     else if(table==='sales_orders')result=[{id:'test-order',order_code:'FS1234567890',payment_status:'pending_payment',expected_amount_vnd:2850000,gift_download_url:'https://example.com/private-gift'}];

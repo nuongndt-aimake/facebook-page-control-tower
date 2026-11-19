@@ -175,25 +175,12 @@ async function sepayWebhook(request, response) {
   const payload = await readBody(request);
   const providerEventId = String(payload.id || payload.referenceCode || "");
   if (!providerEventId) return send(response, 400, { success: false, error: "Missing transaction id" });
-  const existing = await db(`sales_payment_events?select=id&provider_event_id=eq.${encodeURIComponent(providerEventId)}&limit=1`);
-  if (existing.length) return send(response, 200, { success: true, duplicate: true });
-  const amount = Number(payload.transferAmount || 0);
-  // SePay supplies `code` when a payment-code rule is configured. Test Mode
-  // may only provide transfer content, so safely recognise our exact order
-  // reference there as well. This does not match partial or arbitrary text.
-  const contentReference = String(payload.content || "").match(/\bFS[A-Z0-9]{10}\b/i)?.[0] || "";
-  const reference = String(payload.code || contentReference).trim().toUpperCase();
-  const found = reference ? await db(`sales_orders?select=id,expected_amount_vnd,payment_status,payment_expires_at&payment_reference=eq.${encodeURIComponent(reference)}&limit=1`) : [];
-  const order = found[0];
-  const expired = order?.payment_expires_at && new Date(order.payment_expires_at).getTime() < Date.now();
-  const processingStatus = payload.transferType !== "in" ? "rejected" : !order ? "unmatched" : expired ? "expired" : amount !== Number(order.expected_amount_vnd) ? "amount_mismatch" : "processed";
-  await db("sales_payment_events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ provider_event_id: providerEventId, order_id: order?.id || null, amount_vnd: Number.isFinite(amount) ? amount : null, processing_status: processingStatus, raw_payload: payload }) });
-  if (order && order.payment_status !== 'paid') {
-    const update = processingStatus === "processed" ? { payment_status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() } : { payment_status: "reconciliation_required", updated_at: new Date().toISOString() };
-    await db(`sales_orders?id=eq.${encodeURIComponent(order.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(update) });
-    await syncInvoiceForPayment(order.id, update.payment_status);
-  }
-  return send(response, 200, { success: true, processing_status: processingStatus });
+  const amount=Number(payload.transferAmount);
+  if(!Number.isSafeInteger(amount)||amount<0)return send(response,400,{success:false,error:'Invalid transfer amount'});
+  const contentReference=String(payload.content||'').match(/\bFS[A-Z0-9]{10}\b/i)?.[0]||'';
+  const reference=String(payload.code||contentReference).trim().toUpperCase();
+  const result=await db('rpc/sales_process_payment_event',{method:'POST',body:JSON.stringify({p_provider_event_id:providerEventId,p_reference:reference,p_amount:amount,p_transfer_type:String(payload.transferType||''),p_payload:payload})});
+  return send(response,200,result);
 }
 async function optionalAuthenticatedUser(request) { return request.headers.authorization ? authenticatedUser(request) : null; }
 function cleanText(value, max = 255) { return String(value || "").trim().slice(0, max); }
@@ -207,9 +194,12 @@ function validInvoice(input) {
   return { requested: true, customer_name: customerName, tax_code: taxCode, billing_address: billingAddress, billing_email: billingEmail };
 }
 async function currentProductPrice(productId, fallback) {
+  return (await currentProductPriceRecord(productId,fallback)).unit_price_vnd;
+}
+async function currentProductPriceRecord(productId,fallback){
   const now = encodeURIComponent(new Date().toISOString());
-  const rows = await db(`sales_product_prices?select=unit_price_vnd&product_id=eq.${encodeURIComponent(productId)}&effective_from=lte.${now}&order=effective_from.desc&limit=1`);
-  return Number(rows[0]?.unit_price_vnd ?? fallback);
+  const rows = await db(`sales_product_prices?select=unit_price_vnd,effective_from&product_id=eq.${encodeURIComponent(productId)}&effective_from=lte.${now}&order=effective_from.desc&limit=1`);
+  return {unit_price_vnd:Number(rows[0]?.unit_price_vnd??fallback),price_effective_from:rows[0]?.effective_from||null};
 }
 async function publicSalesConfig(request, response) {
   if (request.method !== "GET") return send(response, 405, { error: "Method not allowed" });
@@ -217,8 +207,11 @@ async function publicSalesConfig(request, response) {
     db("sales_products?select=id,sku,name,product_type,description,status,unit_price_vnd&status=eq.active&order=created_at.asc"),
     db("sales_settings?select=setting_key,setting_value&setting_key=eq.profile_link_help_video&limit=1")
   ]);
-  const priced = await Promise.all(products.map(async product => ({ ...product, unit_price_vnd: await currentProductPrice(product.id, product.unit_price_vnd) })));
-  return send(response, 200, { products: priced, profile_link_help_video_url: settings[0]?.setting_value?.url || "" });
+  const priced = await Promise.all(products.map(async product => ({ ...product,...await currentProductPriceRecord(product.id, product.unit_price_vnd) })));
+  const now=encodeURIComponent(new Date().toISOString());
+  const discount_tiers=await db(`sales_discount_tiers?select=product_type,min_quantity,discount_percent&is_active=eq.true&effective_from=lte.${now}&or=(effective_until.is.null,effective_until.gt.${now})&order=min_quantity.asc`);
+  response.setHeader('Cache-Control','no-store');
+  return send(response, 200, { products: priced, discount_tiers, profile_link_help_video_url: settings[0]?.setting_value?.url || "" });
 }
 async function publicCheckout(request, response) {
   if (String(process.env.SALES_PUBLIC_CHECKOUT_ENABLED).toLowerCase() !== "true") return send(response, 503, { error: "Checkout chưa mở" });
@@ -238,7 +231,7 @@ async function publicCheckout(request, response) {
   const products = await db("sales_products?select=id,unit_price_vnd,status,product_type&sku=eq.FANPAGE&limit=1"); const product = products[0]; if (!product || product.status !== "active") return send(response, 503, { error: "Sản phẩm tạm ngưng" });
   const configuredUnitPrice = await currentProductPrice(product.id, product.unit_price_vnd);
   const now = new Date();
-  const tiers = await db(`sales_discount_tiers?select=min_quantity,discount_percent&product_type=eq.${encodeURIComponent(product.product_type)}&is_active=eq.true&min_quantity=lte.${quantity}&effective_from=lte.${encodeURIComponent(now.toISOString())}&order=min_quantity.desc&limit=1`);
+  const tiers = await db(`sales_discount_tiers?select=min_quantity,discount_percent&product_type=eq.${encodeURIComponent(product.product_type)}&is_active=eq.true&min_quantity=lte.${quantity}&effective_from=lte.${encodeURIComponent(now.toISOString())}&or=(effective_until.is.null,effective_until.gt.${encodeURIComponent(now.toISOString())})&order=min_quantity.desc&limit=1`);
   const grossAmount = configuredUnitPrice * quantity;
   const discountPercent = Number(tiers[0]?.discount_percent || 0);
   const discountAmount = Math.round(grossAmount * discountPercent / 100);
@@ -249,7 +242,7 @@ async function publicCheckout(request, response) {
   if (promoCodeValue && (!promo || (promo.ends_at && new Date(promo.ends_at) < now))) return send(response, 400, { error: "Mã ưu đãi không hợp lệ hoặc đã hết hạn" });
   const promoDiscount = promo ? Math.min(afterBulkDiscount, promo.discount_type === "percent" ? Math.round(afterBulkDiscount * Number(promo.discount_value) / 100) : Number(promo.discount_value)) : 0;
   const amount = afterBulkDiscount - promoDiscount;
-  if(input.quote_only===true)return send(response,200,{quote:{gross_amount_vnd:grossAmount,discount_percent:discountPercent,discount_amount_vnd:discountAmount,promo_discount_vnd:promoDiscount,amount_vnd:amount}});
+  if(input.quote_only===true){response.setHeader('Cache-Control','no-store');return send(response,200,{quote:{unit_price_vnd:configuredUnitPrice,gross_amount_vnd:grossAmount,discount_percent:discountPercent,discount_amount_vnd:discountAmount,promo_discount_vnd:promoDiscount,amount_vnd:amount}})}
   if(amount===0&&!salesStaffRoles.has(account.role))throw Error('Forbidden');
   const orderCode = `FS${crypto.randomBytes(5).toString("hex").toUpperCase()}`; const reference = orderCode;
   const paymentExpiresAt = amount > 0 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
@@ -299,13 +292,20 @@ export default async function handler(request, response) {
       if (request.method !== "POST") return send(response, 405, { error: "Method not allowed" });
       assertMutableContext(context);
       const body = await readBody(request), action = String(body.action || ""), itemId = String(body.inventory_item_id || ""), orderRef = String(body.order_ref || "");
-      allow(action);
+      allow(action==='update_page_name'?'intake':action);
+      if(action==='update_page_name'){
+        const name=cleanText(body.page_name,255);if(!itemId||!name)return send(response,400,{error:'Thiếu mã kho hoặc tên Page'});
+        const updated=await db(`fanpage_inventory_details?inventory_item_id=eq.${encodeURIComponent(itemId)}&select=inventory_item_id,page_name`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({page_name:name,updated_at:new Date().toISOString()})});
+        if(!updated.length)return send(response,404,{error:'Không tìm thấy mã kho'});
+        await db('admin_audit_logs',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({actor_user_id:context.user.id,action:'inventory_update_page_name',target_type:'sales_inventory_item',target_id:itemId,details:{page_name:name}})});
+        return send(response,200,{ok:true});
+      }
       if (action === "intake") {
-        const productId = String(body.product_id || ""), facebookPageId = String(body.facebook_page_id || ""), pageLink = String(body.page_link || "");
-        if (!productId || !facebookPageId || !/^https?:\/\//i.test(pageLink)) return send(response, 400, { error: "product_id, facebook_page_id và page_link hợp lệ là bắt buộc" });
+        const productId = String(body.product_id || ""), facebookPageId = String(body.facebook_page_id || "").trim(), pageLink = String(body.page_link || ""), pageName=cleanText(body.page_name,255);
+        if (!productId || !facebookPageId || !pageName || !/^https?:\/\//i.test(pageLink)) return send(response, 400, { error: "Sản phẩm, tên Page, ID Page và link hợp lệ là bắt buộc" });
         const code = `FPINV-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
         const rows = await db("sales_inventory_items?select=*&limit=1", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ product_id: productId, inventory_code: code, status: "draft", purchase_cost_vnd: body.purchase_cost_vnd == null ? null : Math.max(0, Number(body.purchase_cost_vnd)), created_by: context.user.id }) });
-        const item = rows[0]; await db("fanpage_inventory_details", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ inventory_item_id: item.id, facebook_page_id: facebookPageId, page_link: pageLink, current_admin_reference: body.current_admin_reference || null, current_bm_reference: body.current_bm_reference || null, intake_note: body.intake_note || null }) });
+        const item = rows[0]; await db("fanpage_inventory_details", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ inventory_item_id: item.id, page_name:pageName, facebook_page_id: facebookPageId, page_link: pageLink, current_admin_reference: body.current_admin_reference || null, current_bm_reference: body.current_bm_reference || null, intake_note: body.intake_note || null }) });
         await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "sales_inventory_intake", target_type: "sales_inventory_item", target_id: item.id, details: { inventory_code: code } }) }); return send(response, 201, { item, inventory_code: code });
       }
       if (!itemId) return send(response, 400, { error: "inventory_item_id là bắt buộc" });
