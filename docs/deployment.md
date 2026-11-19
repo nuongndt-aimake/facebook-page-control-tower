@@ -2,6 +2,8 @@
 
 ## 2026-11-19 — Báo cáo USD, payout, tài khoản và phạm vi Page
 
+Kết quả: commit chức năng `6d9ab96` production success, Vercel `9m1Yk1oYh2S328taA4BdLLkWPxVF` (Preview `BS46hWFXoWert7LD5f83uJGCvgp5`). Migration history có cả `20261119232000` và `20261119233000`. HTTP smoke 8 trang/module public đều 200 đúng marker mới, không redirect đăng nhập Vercel; API hồ sơ không session trả 401. Handler harness trên DB thật xác nhận 149 Page/phân công hiện hành và fields contacts, không tạo báo cáo/payout/contacts giả. Payout thực tế vẫn 0, cần người được cấp quyền thiết lập trước khi nộp báo cáo. Lưới báo cáo được loại khỏi tự thêm STT/phân trang chung ở bản chốt cùng tài liệu này.
+
 Phát hành toàn bộ thay đổi cùng đợt, gồm cả form contacts và thống kê tài khoản mới; không treo phần tài khoản. Migrations `20261119232000` và `20261119233000` áp dụng cùng transaction sau 44 SQL checks, kiểm tra schema cache/RPC rồi Git Preview → production trên dự án `aimake/facebook-page-control-tower`, domain `money.aiecom.vn`. Không đổi env/DNS/SePay/cron, không chuyển tiền thật. [Báo cáo/payout](daily-report-matrix-20261119.md) · [Hồ sơ/phạm vi Page](inventory-assignment-profile-20261119.md).
 
 ## 2026-11-19 — Import hàng loạt / giá vốn

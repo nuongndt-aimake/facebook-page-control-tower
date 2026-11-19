@@ -2,6 +2,8 @@
 
 ## 2026-11-19 — Bản báo cáo USD và tài khoản/phạm vi Page
 
+Production: 8 URL trang/module đúng bản mới trả 200, API hồ sơ không phiên trả 401; hai migration đã có history. Kiểm tra server handler với dữ liệu production (chỉ mock Auth user lookup, không ghi dữ liệu giả) xác nhận account source `inhouse_current`, 149 Page/149 phân công/149 trực tiếp, fields phone/Facebook và 149 assignment báo cáo của chính người đó. Bộ tự thêm STT/phân trang chung không áp dụng cho lưới có ô nhập.
+
 40 test Node pass. SQL rollback: 15 checks currency/payout + 17 hồi quy vận hành + 12 hồ sơ/phạm vi/account = 44 pass. Kiểm tra ownership, khóa verified, retry, tiền không hữu hạn, payout history/snapshot, admin-all/manager-branch/staff-direct và account loại Page cũ. CUA đã xem lưới USD ở 390/768/1280px, modal payout, tìm Inhouse không dấu 1/4 và bộ lọc/mobile. CUA kiểm tra tiếp modal giao người bị công cụ dừng do không xác định URL đủ chắc chắn; không coi phần đó đã nghiệm thu trực tiếp. Các tương tác tìm/copy/rename/contacts có unit/SQL và sẽ đối chiếu API khi phát hành. [Phạm vi nghiệm thu](inventory-assignment-profile-20261119.md).
 
 ## 2026-11-19 — Nhập hàng loạt / nhiều người cầm

@@ -1,6 +1,6 @@
 # Báo cáo ngày dạng lưới theo Page — 2026-11-19
 
-Trạng thái: Đã có code và kiểm thử, đang phát hành cùng hồ sơ/phạm vi Page.
+Trạng thái: Đã phát hành production, bản chức năng `6d9ab96`, Vercel success (`9m1Yk1oYh2S328taA4BdLLkWPxVF`). Migration đã áp dụng; tài khoản/báo cáo được đối chiếu trên database thật. Bản chốt loại lưới nhập khỏi bộ tự thêm STT/phân trang chung bằng `data-no-pagination`, giữ cấu trúc cột/ô nhập ổn định.
 
 Nghiệm thu: 40 test Node; SQL currency/payout 15, hồi quy vận hành 17, hồ sơ/phạm vi/account 12 (44 tổng) pass trong rollback. CUA lưới USD 390/768/1280px và modal payout đạt quan sát; nhập thử trước thay đổi tiền tệ đã kiểm tra lưu dòng/lưu dòng thay đổi. Phiên CUA kết thúc bởi công cụ kiểm tra URL; không dùng nó làm chứng cứ cho toàn bộ modal giao người sau đó. Payout production hiện chưa có hồ sơ: phải cấu hình mã thực tế trước báo cáo, không tạo giả.
 

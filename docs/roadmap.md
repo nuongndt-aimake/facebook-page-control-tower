@@ -1,6 +1,6 @@
 # Roadmap triển khai
 
-Đợt USD/payout + tài khoản/giao người/phạm vi Page đang phát hành đầy đủ: [báo cáo](daily-report-matrix-20261119.md), [hồ sơ và Inhouse](inventory-assignment-profile-20261119.md). Tài khoản không dùng số Page đồng bộ cũ; phone/Facebook cùng đợt. Hoa hồng tự động/tỷ giá và Google Sheet không tự mở rộng theo thay đổi tiền tệ này.
+Đợt USD/payout + tài khoản/giao người/phạm vi Page đã phát hành đầy đủ (`6d9ab96`, Vercel production success): [báo cáo](daily-report-matrix-20261119.md), [hồ sơ và Inhouse](inventory-assignment-profile-20261119.md). Tài khoản không dùng số Page đồng bộ cũ; phone/Facebook cùng đợt. Hoa hồng tự động/tỷ giá và Google Sheet không tự mở rộng theo thay đổi tiền tệ này.
 
 Đợt 2026-11-19: nhập hàng loạt CSV/TSV, giá vốn 149 Page và nhân sự cùng bảng đã có code/migration/QA; đang phát hành. [Phạm vi và trạng thái](inventory-bulk-and-inline-assignees-20261119.md). Hoa hồng/Sheets/nhóm 2–4 vẫn theo roadmap riêng.
 

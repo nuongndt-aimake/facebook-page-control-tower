@@ -1,6 +1,6 @@
 # Giao nhân sự, hồ sơ dùng chung và lọc Inhouse — 2026-11-19
 
-Trạng thái: Đã có code và kiểm thử, đang phát hành đầy đủ cùng báo cáo USD/payout.
+Trạng thái: Đã phát hành đầy đủ production, bản chức năng `6d9ab96`, Vercel success. Hai migration đã áp dụng. Server handler trên database thật trả account_assets nguồn `inhouse_current`: 149 Page / 149 phân công / 149 trực tiếp / 0 payout cho tài khoản được yêu cầu; có trường phone/Facebook. Không còn lấy chỉ số Page cũ cho Tài khoản.
 
 Kiểm thử: 40 test Node toàn dự án; SQL scope/contact/account 12 checks, kèm 32 hồi quy báo cáo/payout/vận hành. Tìm kiếm Inhouse không dấu cho kết quả đúng 1/4 trong fixture, đã quan sát mobile/desktop. Modal giao người/contacts/đổi tên được kiểm tra logic và SQL; lần kiểm tra CUA tiếp theo bị công cụ dừng do không xác định URL đủ chắc chắn, chưa coi là đã kiểm tra trực tiếp mọi tương tác UI. Không giữ dữ liệu fixture trên production.
 
