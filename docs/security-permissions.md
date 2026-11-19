@@ -20,9 +20,19 @@ Quyền cần tách theo domain:
 - quản lý nhân sự;
 - cấp quyền tài chính.
 
-## Sales Platform — trạng thái Roadmap
+## Sales Platform — kho Fanpage Gate 2 (`Thử nghiệm`)
 
-Các permission mục tiêu gồm `sales_inventory`, `inhouse_fulfillment`, `affiliate`, `content_contributor` và policy/configuration scope. Chúng không có hiệu lực tại UI/API cho đến khi role matrix, access context, RLS, migration và negative tests cùng được phát hành. Quy tắc: nhân viên chỉ xác minh đơn 0đ/hoàn tất bàn giao của đơn hoặc Page được chỉ định; manager chỉ có visibility kế thừa, không tự phát sinh quyền lợi tài chính.
+Permission `sales_inventory` đã có hiệu lực server-side cho API kho, lưu trong `profiles.permissions.sales_inventory` dưới dạng danh sách thao tác. `platform_admin` và `super_admin` có toàn quyền; các role khác chỉ có đúng thao tác được cấp. Không suy quyền từ việc ẩn/hiện nút UI.
+
+| Permission | Tác dụng |
+| --- | --- |
+| `read` | Xem danh sách kho và trạng thái Inhouse. |
+| `intake` | Nhập Page ở trạng thái nháp. |
+| `publish` | Đưa mã nháp thành hàng sẵn sàng bán. |
+| `reserve` / `release` | Giữ hoặc nhả mã theo mã đơn, qua RPC khóa hàng. |
+| `finalize` | Hoàn tất bán ngoài hoặc chuyển Inhouse, qua RPC khóa hàng. |
+
+Các scope còn lại `inhouse_fulfillment`, `affiliate`, `content_contributor` và policy/configuration vẫn là `Roadmap`. Nhân viên chỉ xác minh đơn 0đ/hoàn tất bàn giao của đơn hoặc Page được chỉ định; manager chỉ có visibility kế thừa, không tự phát sinh quyền lợi tài chính.
 
 ## Kế thừa tuyến quản lý
 

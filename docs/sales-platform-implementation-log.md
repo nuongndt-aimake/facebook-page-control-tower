@@ -54,14 +54,14 @@
 
 - Trạng thái: `Thử nghiệm`
 - API: `GET/POST /api/admin/sales-inventory`
-- Quyền: chỉ `platform_admin`; kiểm tra trên server, không dựa vào nút UI.
+- Quyền: RBAC chủ động trong `profiles.permissions.sales_inventory`; kiểm tra trên server, không dựa vào nút UI. `platform_admin`/`super_admin` có toàn quyền mặc định.
 - Chức năng: xem kho; nhập nháp Page; mở bán mã nháp; gọi RPC reserve/release/finalize có khoá hàng; ghi `admin_audit_logs`.
 - Lưu ý: nhập kho hiện là luồng nhiều ghi bản ghi; chỉ mở bán được sau khi có đầy đủ chi tiết Page. Gate 2.1 sẽ chuyển thao tác nhập kho vào một RPC transaction trước khi cấp cho vai trò nhân viên sale.
 
 | Vùng | Tác động Gate 2 |
 | --- | --- |
 | API | Thêm endpoint admin nội bộ; không có thay đổi public checkout. |
-| Phân quyền | `platform_admin` được kiểm tra server-side; preview bị chặn khi ghi; chưa thêm role mới. |
+| Phân quyền | Quyền tách theo `read`, `intake`, `publish`, `reserve`, `release`, `finalize`; preview bị chặn khi ghi; không thêm role mới. |
 | Database | Chỉ dùng bảng/RPC Gate 1; không thêm migration. |
 | UI/menu | Chưa thêm menu để không lộ endpoint thử nghiệm. |
 | Kiểm thử | Đã chạy `node --check`; còn cần fixture cho reserve đồng thời và negative RBAC trước deploy. |

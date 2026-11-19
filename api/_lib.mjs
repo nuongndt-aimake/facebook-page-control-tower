@@ -67,12 +67,12 @@ function readAdminPreviewToken(token, actorId) {
   return data;
 }
 async function profileForUser(user) {
-  let rows = await db(`profiles?select=id,email,display_name,phone,role,status&id=eq.${encodeURIComponent(user.id)}&limit=1`);
+  let rows = await db(`profiles?select=id,email,display_name,phone,role,status,permissions&id=eq.${encodeURIComponent(user.id)}&limit=1`);
   if (!rows.length) {
     const configured = (process.env.PLATFORM_ADMIN_EMAIL || "").trim().toLowerCase();
     const role = configured && user.email?.toLowerCase() === configured ? "platform_admin" : "viewer";
     await db("profiles?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: user.id, email: user.email || null, display_name: user.user_metadata?.full_name || user.email || null, phone: user.phone || user.user_metadata?.phone || user.user_metadata?.phone_number || null, role }) });
-    rows = [{ id: user.id, email: user.email, display_name: user.user_metadata?.full_name || user.email, phone: user.phone || user.user_metadata?.phone || user.user_metadata?.phone_number || null, role, status: "active" }];
+    rows = [{ id: user.id, email: user.email, display_name: user.user_metadata?.full_name || user.email, phone: user.phone || user.user_metadata?.phone || user.user_metadata?.phone_number || null, role, status: "active", permissions: {} }];
   }
   return rows[0];
 }
@@ -137,6 +137,19 @@ export function assertMutableContext(context) {
 export async function requirePlatformAdmin(request) {
   const context = await accessContext(request);
   if (context.profile.role !== "platform_admin") throw new Error("Forbidden");
+  return context;
+}
+
+const SALES_INVENTORY_ACTIONS = new Set(["read", "intake", "publish", "reserve", "release", "finalize"]);
+export function canManageSalesInventory(context, action) {
+  if (!SALES_INVENTORY_ACTIONS.has(action)) return false;
+  if (["platform_admin", "super_admin"].includes(context?.profile?.role)) return true;
+  const granted = context?.profile?.permissions?.sales_inventory;
+  if (granted === true || granted === "*") return true;
+  return Array.isArray(granted) && (granted.includes("*") || granted.includes(action));
+}
+export function requireSalesInventoryPermission(context, action) {
+  if (!canManageSalesInventory(context, action)) throw new Error("Forbidden");
   return context;
 }
 

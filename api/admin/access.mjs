@@ -494,6 +494,19 @@ export default async function handler(request, response) {
         await db(`profiles?id=eq.${encodeURIComponent(userId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ role: body.role, updated_at: new Date().toISOString() }) });
         return send(response, 200, { ok: true });
       }
+      if (body.action === "set_sales_inventory_permissions") {
+        if (!["platform_admin", "super_admin"].includes(context.profile.role)) throw new Error("Forbidden");
+        const userId = String(body.user_id || "");
+        const allowed = new Set(["read", "intake", "publish", "reserve", "release", "finalize"]);
+        const permissions = [...new Set((Array.isArray(body.permissions) ? body.permissions : []).map(String))].filter(item => allowed.has(item));
+        if (!userId) return send(response, 400, { error: "user_id là bắt buộc" });
+        const rows = await db(`profiles?select=permissions&id=eq.${encodeURIComponent(userId)}&limit=1`);
+        if (!rows[0]) return send(response, 404, { error: "Không tìm thấy tài khoản" });
+        const nextPermissions = { ...(rows[0].permissions || {}), sales_inventory: permissions };
+        await db(`profiles?id=eq.${encodeURIComponent(userId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ permissions: nextPermissions, updated_at: new Date().toISOString() }) });
+        await db("admin_audit_logs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_user_id: context.user.id, action: "set_sales_inventory_permissions", target_type: "profile", target_id: userId, details: { permissions } }) });
+        return send(response, 200, { ok: true, user_id: userId, permissions });
+      }
       if (body.action === "delete_user") {
         const userId = String(body.user_id || "");
         if (!userId) return send(response, 400, { error: "user_id là bắt buộc" });

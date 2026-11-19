@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { assertMutableContext, db, readBody, requirePlatformAdmin, send } from "../_lib.mjs";
+import { accessContext, assertMutableContext, db, readBody, requireSalesInventoryPermission, send } from "../_lib.mjs";
 
 const states = new Set(["draft", "available", "reserved", "external_sold", "inhouse_transferred", "cancelled"]);
 const text = (value, length = 500) => String(value || "").trim().slice(0, length);
@@ -12,8 +12,9 @@ async function audit(context, action, targetId, details = {}) {
 
 export default async function handler(request, response) {
   try {
-    const context = await requirePlatformAdmin(request);
+    const context = await accessContext(request);
     if (request.method === "GET") {
+      requireSalesInventoryPermission(context, "read");
       const [items, details, inhouse, products] = await Promise.all([
         db("sales_inventory_items?select=*&order=created_at.desc&limit=500"),
         db("fanpage_inventory_details?select=*&limit=500"),
@@ -26,6 +27,7 @@ export default async function handler(request, response) {
     assertMutableContext(context);
     const body = await readBody(request);
     if (body.action === "intake") {
+      requireSalesInventoryPermission(context, "intake");
       const productId = text(body.product_id, 80), facebookPageId = text(body.facebook_page_id, 80), pageLink = text(body.page_link, 1000);
       if (!productId || !facebookPageId || !/^https?:\/\//i.test(pageLink)) return send(response, 400, { error: "product_id, facebook_page_id và page_link hợp lệ là bắt buộc" });
       const inventoryCode = `FPINV-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
@@ -41,6 +43,7 @@ export default async function handler(request, response) {
     const itemId = text(body.inventory_item_id, 80);
     if (!itemId) return send(response, 400, { error: "inventory_item_id là bắt buộc" });
     if (body.action === "publish") {
+      requireSalesInventoryPermission(context, "publish");
       const rows = await db(`sales_inventory_items?id=eq.${encodeURIComponent(itemId)}&status=eq.draft&select=*`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "available", updated_at: new Date().toISOString() }) });
       if (!rows[0]) return send(response, 409, { error: "Chỉ mã kho ở trạng thái nháp mới có thể mở bán" });
       await db("sales_inventory_ledger", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ inventory_item_id: itemId, action: "published", from_status: "draft", to_status: "available", actor_user_id: context.user.id }) });
@@ -48,6 +51,7 @@ export default async function handler(request, response) {
       return send(response, 200, { item: rows[0] });
     }
     if (!["reserve", "release", "finalize"].includes(body.action)) return send(response, 400, { error: "action không hợp lệ" });
+    requireSalesInventoryPermission(context, body.action);
     const orderRef = text(body.order_ref, 120);
     if (!orderRef) return send(response, 400, { error: "order_ref là bắt buộc" });
     const rpc = body.action === "reserve" ? "sales_reserve_inventory_item" : body.action === "release" ? "sales_release_inventory_reservation" : "sales_finalize_inventory_item";
