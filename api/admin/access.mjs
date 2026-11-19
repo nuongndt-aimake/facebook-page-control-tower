@@ -3,6 +3,7 @@ import { runSync, runOrchestratedSync, runPostSync } from "../cron/sync.mjs";
 import crypto from "node:crypto";
 import {inventoryService,inventoryFailure,inventoryScopes} from '../../sales-inventory-service.mjs';
 import {operationsService} from '../../operations-service.mjs';
+import {pageResourceService} from '../../page-resource-service.mjs';
 import {canOperate} from '../../operations-policy.mjs';
 import { canReadAllSalesOrders, visibleSalesOrders } from '../../sales-order-policy.mjs';
 import {signOrderTracking,verifyOrderTracking} from '../../sales-order-tracking.mjs';
@@ -295,6 +296,7 @@ export default async function handler(request, response) {
     if (endpoint === "public-sales-config") return await publicSalesConfig(request, response);
     if (endpoint === "public-qr-download") return await publicQrDownload(request, response);
     const context = await accessContext(request);
+    if(endpoint==='page_resources')return pageResourceService(request,response,context);
     if(endpoint==='sales-discount-history'){if(!salesAdminRoles.has(context.profile.role))throw Error('Forbidden');if(request.method!=='GET')return send(response,405,{error:'Method not allowed'});response.setHeader('Cache-Control','no-store');return send(response,200,{tiers:await db('sales_discount_tiers?select=*&order=product_type.asc,min_quantity.asc,effective_from.desc&limit=1000')})}
     if(['inhouse_assets','content_reports','operations_permissions'].includes(endpoint))return operationsService(request,response,context,endpoint);
     if (endpoint === "preview") return await startPreview(request, response, context);

@@ -58,3 +58,6 @@ html,body{overflow-x:hidden}
   .quick-account #auth-logout{width:100%!important;justify-content:flex-start!important}
 }
 @media(min-width:681px) and (max-width:900px){.filters{grid-template-columns:minmax(150px,1fr) minmax(190px,1.2fr) minmax(140px,auto)!important}.filters>label{display:block}.filters>label select{display:block;margin-top:5px}}
+
+/* Fixed shared menu replaces overflow-sensitive sticky, 2026-11-19. */
+#quick-nav.quick-nav{position:fixed!important;inset:0 0 auto!important;width:100%!important;z-index:6500!important;overflow:visible!important}.quick-nav-spacer{height:var(--quick-nav-height,58px);flex:none;pointer-events:none}html{scroll-padding-top:calc(var(--quick-nav-height,58px) + 12px)}

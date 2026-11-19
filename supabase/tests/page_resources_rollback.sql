@@ -1,0 +1,42 @@
+create temporary table resource_checks(label text primary key);
+do $$
+declare a uuid;u uuid;v uuid;one uuid;two uuid;r jsonb;failed boolean;w uuid:=gen_random_uuid();
+begin
+ select id into a from public.profiles where email like 'qa-usd-admin-%@example.invalid' limit 1;
+ select id into u from public.profiles where email like 'qa-usd-one-%@example.invalid' limit 1;
+ select id into v from public.profiles where email like 'qa-usd-two-%@example.invalid' limit 1;
+ select id into one from public.page_assignments where page_id='990019232001' and user_id=u and status='active';
+ select id into two from public.page_assignments where page_id='990019232001' and user_id=v and status='active';
+ if a is null or one is null then raise exception 'Missing currency fixture';end if;
+ if public.page_resource_can_read(u,'990019232001','image') then raise exception 'Legacy assignment inherited resource access';end if;insert into resource_checks values('old assignments receive no implicit resource grants');
+ perform public.page_resource_command('configure',a,jsonb_build_object('page_id','990019232001','sources',jsonb_build_object('image','https://docs.google.com/spreadsheets/d/IMAGEfixture123/edit#gid=0','video','https://docs.google.com/spreadsheets/d/VIDEOfixture123/edit#gid=42')));
+ if (select count(*) from public.page_resource_sources where page_id='990019232001')<>2 then raise exception 'Missing source';end if;insert into resource_checks values('exactly two source kinds per Page');
+ failed:=false;begin perform public.page_resource_command('configure',u,'{"page_id":"990019232001","sources":{}}');exception when raise_exception then if sqlerrm='Forbidden' then failed:=true;else raise;end if;end;if not failed then raise exception 'Staff configured source';end if;insert into resource_checks values('staff cannot configure or self grant');
+ perform public.page_resource_command('grant',a,jsonb_build_object('page_id','990019232001','assignment_id',one,'resource_kinds',jsonb_build_array('image')));
+ perform public.page_resource_command('grant',a,jsonb_build_object('page_id','990019232001','assignment_id',two,'resource_kinds',jsonb_build_array('video')));
+ r:=public.page_resource_command('get',u,'{"page_id":"990019232001"}');if jsonb_array_length(r->'sources')<>1 or r->'sources'->0->>'kind'<>'image' or r::text like '%VIDEOfixture%' or (r->>'manage')::boolean then raise exception 'Image user saw video';end if;insert into resource_checks values('image assignee sees only image source URL');
+ r:=public.page_resource_command('get',v,'{"page_id":"990019232001"}');if jsonb_array_length(r->'sources')<>1 or r->'sources'->0->>'kind'<>'video' or r::text like '%IMAGEfixture%' then raise exception 'Video user saw image';end if;insert into resource_checks values('video assignee sees only video source URL');
+ r:=public.page_resource_command('get',a,'{"page_id":"990019232001"}');if not (r->>'manage')::boolean or jsonb_array_length(r->'sources')<>2 then raise exception 'Admin read failed';end if;insert into resource_checks values('administrator manages both sources');
+ failed:=false;begin perform public.page_resource_command('get',u,'{"page_id":"foreign-page"}');exception when raise_exception then if sqlerrm='Forbidden' then failed:=true;else raise;end if;end;if not failed then raise exception 'Foreign page allowed';end if;insert into resource_checks values('foreign Page denied');
+ perform public.page_resource_command('grant',a,jsonb_build_object('page_id','990019232001','assignment_id',one,'resource_kinds','[]'::jsonb));if public.page_resource_can_read(u,'990019232001','image') then raise exception 'Revoked access survives';end if;insert into resource_checks values('revocation takes effect immediately');
+ update public.page_assignments set status='ended' where id=two;if public.page_resource_can_read(v,'990019232001','video') then raise exception 'Ended assignment reads resources';end if;update public.page_assignments set status='active' where id=two;insert into resource_checks values('ended assignment loses resource access');
+ failed:=false;begin perform public.page_resource_command('configure',a,'{"page_id":"990019232001","sources":{"image":"https://evil.invalid/"}}');exception when check_violation then failed:=true;end;if not failed then raise exception 'Non Google URL accepted';end if;insert into resource_checks values('database rejects non Google URL');
+ if has_table_privilege('authenticated','public.page_resource_sources','select') or has_table_privilege('authenticated','public.page_resource_grants','select') or has_function_privilege('authenticated','public.page_resource_command(text,uuid,jsonb)','execute') or not(select relrowsecurity from pg_class where oid='public.page_resource_sources'::regclass) then raise exception 'Client direct access';end if;insert into resource_checks values('RLS and service only RPC prevent direct browser access');
+ update public.profiles set role='manager',permissions='{"sales_inventory":["assign_inhouse"]}' where id=u;
+ if not public.page_resource_can_manage(u,'990019232001') or public.page_resource_can_manage(u,'foreign-page') then raise exception 'Manager scope bypass';end if;insert into resource_checks values('delegated manager remains within Page scope');
+ insert into auth.users(id,email) values(w,'qa-resources-'||w||'@example.invalid');insert into public.profiles(id,email,role,status,permissions) values(w,'qa-resources-'||w||'@example.invalid','viewer','active','{}');
+ r:=public.page_resource_command('assign',a,jsonb_build_object('inventory_item_id',(select inventory_item_id from public.inhouse_page_inventory where page_id='990019232001'),'user_id',w,'resource_kinds',jsonb_build_array('image','video')));
+ if not public.page_resource_can_read(w,'990019232001','image') or not public.page_resource_can_read(w,'990019232001','video') then raise exception 'Atomic assignment incomplete';end if;insert into resource_checks values('assignment and both resource grants committed together');
+ if not exists(select 1 from public.admin_audit_logs where actor_user_id=a and action='page_resources_assign' and details->>'google_access_changed'='false') then raise exception 'Missing access audit';end if;insert into resource_checks values('audit records that Google permissions are unchanged');
+end $$;
+create function pg_temp.qa_resource_fail_audit() returns trigger language plpgsql as $$begin if new.action='page_resources_assign' then raise exception 'QA resource audit failure';end if;return new;end $$;
+create trigger qa_resource_fail_audit before insert on public.admin_audit_logs for each row execute function pg_temp.qa_resource_fail_audit();
+do $$declare a uuid;w uuid:=gen_random_uuid();failed boolean;begin
+ select id into a from public.profiles where email like 'qa-usd-admin-%@example.invalid' limit 1;
+ insert into auth.users(id,email) values(w,'qa-resources-rollback-'||w||'@example.invalid');insert into public.profiles(id,email,role,status,permissions) values(w,'qa-resources-rollback-'||w||'@example.invalid','viewer','active','{}');
+ begin perform public.page_resource_command('assign',a,jsonb_build_object('inventory_item_id',(select inventory_item_id from public.inhouse_page_inventory where page_id='990019232001'),'user_id',w,'resource_kinds',jsonb_build_array('image')));exception when raise_exception then if sqlerrm='QA resource audit failure' then failed:=true;else raise;end if;end;
+ if not failed or exists(select 1 from public.page_assignments where page_id='990019232001' and user_id=w) or exists(select 1 from public.page_access where page_id='990019232001' and user_id=w) then raise exception 'Assignment side effect survived rollback';end if;
+ insert into resource_checks values('audit failure rolls back Page assignment access and resource grants together');
+end $$;
+drop trigger qa_resource_fail_audit on public.admin_audit_logs;
+select label as passed from resource_checks order by label;

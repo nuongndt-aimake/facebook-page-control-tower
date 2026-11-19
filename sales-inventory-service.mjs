@@ -53,8 +53,9 @@ export async function inventoryService(request,response,context,endpoint){
   }
   if(request.method!=='POST')return send(response,405,{error:'Method not allowed'});
   assertMutableContext(context);const input=await readBody(request),action=String(input.action||'');
-  const scope={intake_batch:'intake',update_page_name:'intake',release_order:'release',cancel_order:'release',create_inhouse_order:'finalize',verify_zero:'finalize',allocate:'reserve',start_handover:'finalize'}[action]||action;
+  const scope={assign_resources:'assign_inhouse',intake_batch:'intake',update_page_name:'intake',release_order:'release',cancel_order:'release',create_inhouse_order:'finalize',verify_zero:'finalize',allocate:'reserve',start_handover:'finalize'}[action]||action;
   allow(scope);
+  if(action==='assign_resources'){const result=await db('rpc/page_resource_command',{method:'POST',body:JSON.stringify({p_action:'assign',p_actor:context.user.id,p_input:input})});return send(response,200,result)}
   if(['publish','update_page_name','assign_inhouse','writeoff'].includes(action)){if(!uuid(input.inventory_item_id))return send(response,400,{error:'Mã kho không hợp lệ'});if(await db('rpc/operations_inventory_visible',{method:'POST',body:JSON.stringify({p_actor:context.user.id,p_item:input.inventory_item_id})})!==true)throw Error('Forbidden')}
   if(!['intake_batch','intake','publish','update_page_name','reserve','release','release_order','cancel_order','finalize','assign_inhouse','create_inhouse_order','verify_zero','writeoff','allocate','start_handover','warranty'].includes(action))return send(response,400,{error:'Thao tác không hợp lệ'});
   if(action==='intake_batch'&&(!uuid(input.request_id)||!uuid(input.product_id)||!Array.isArray(input.pages)||input.pages.length<1||input.pages.length>500))return send(response,400,{error:'Chọn sản phẩm, mã lượt nhập và từ 1 đến 500 Page hợp lệ'});

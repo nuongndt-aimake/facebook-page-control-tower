@@ -122,3 +122,5 @@ Cấp/đổi payout trực tiếp tại dòng Page kho Inhouse qua dialog dùng 
 Bản nối tiếp: [quy trình duyệt thủ công, giới hạn xác minh và thao tác kho gọn](report-verification-and-compact-actions-20261119.md). Người có quyền đối chiếu bằng chứng, không tự duyệt; verified chưa phải duyệt chi. Tổng hợp bao gồm ngày vừa lưu; icon desktop 28px, vùng chạm coarse 44px, payout không bẻ chữ.
 
 2026-11-19: [Menu thao tác kho gọn](inventory-action-menu-20261119.md) thay cụm nút phụ luôn hiển thị bằng popover ⋯. Giữ nút chính, quyền/action server-side không đổi; 47 Node tests pass.
+
+2026-11-19: [Hai kho tài nguyên và menu ghim](page-resource-warehouses-20261119.md). Nguồn ảnh/video theo Page; grants theo assignment, quyền assign_inhouse hiện có + scope; Google riêng tư yêu cầu quyền/duyệt email theo tài khoản cá nhân, không service account hay tự đổi chia sẻ. Migration 20261119235000, API page_resources và assign_resources, menu fixed có spacer. 51 Node/59 SQL checks pass; file Google thật chờ URL do quản lý thiết lập.

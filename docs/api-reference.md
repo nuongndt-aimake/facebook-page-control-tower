@@ -142,3 +142,5 @@ Kết quả phải cho biết `since`, `until`, số Page, số bài, số metri
 ## Bổ sung ngày 2026-11-19 — báo cáo trước, payout sau
 
 Đang dùng trong bản sửa cùng migration `20261119234000_allow_reporting_pending_payout.sql`: nhân sự trực tiếp được nhập/lưu báo cáo USD khi chưa có payout phù hợp. UI cảnh báo cần bổ sung; API trả `payout_pending=true` và giữ snapshot NULL. Khi sửa báo cáo chưa có snapshot, chỉ gắn payout hiện hành active cùng currency. Snapshot đã có và báo cáo đã duyệt không tự đổi. Quy tắc bắt buộc payout trước nộp báo cáo tại migration `20261119232000` Hết hiệu lực ngày 2026-11-19; giữ mô tả cũ để tra lịch sử. Không đổi RBAC, RLS, domain hay cron. Xem [impact note](report-entry-pending-payout-20261119.md).
+
+2026-11-19: [Hai kho tài nguyên và menu ghim](page-resource-warehouses-20261119.md). Nguồn ảnh/video theo Page; grants theo assignment, quyền assign_inhouse hiện có + scope; Google riêng tư yêu cầu quyền/duyệt email theo tài khoản cá nhân, không service account hay tự đổi chia sẻ. Migration 20261119235000, API page_resources và assign_resources, menu fixed có spacer. 51 Node/59 SQL checks pass; file Google thật chờ URL do quản lý thiết lập.

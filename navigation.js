@@ -1,4 +1,6 @@
 (()=>{
+ const pinNavigation=()=>{const nav=document.querySelector('#quick-nav');if(!nav||nav.dataset.pinned)return;nav.dataset.pinned='1';const spacer=document.createElement('div');spacer.className='quick-nav-spacer';spacer.setAttribute('aria-hidden','true');nav.after(spacer);const measure=()=>{const height=Math.ceil(nav.getBoundingClientRect().height);spacer.style.height=height+'px';document.documentElement.style.setProperty('--quick-nav-height',height+'px')};measure();new ResizeObserver(measure).observe(nav);window.addEventListener('resize',measure)};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pinNavigation,{once:true});else pinNavigation();
  const navFor=node=>node?.closest?.('#quick-nav');
  const setGroup=(group,open)=>{group.classList.toggle('group-open',open);group.querySelector('.quick-menu-group-toggle')?.setAttribute('aria-expanded',String(open))};
  const closeGroups=nav=>nav?.querySelectorAll('.quick-menu-group').forEach(group=>setGroup(group,false));
