@@ -1,5 +1,7 @@
 # Tài liệu dành cho lập trình viên mới
 
+Bản phát hành mới nhất: [Kho transaction, checkout giữ hàng và bán ngoài/Inhouse — Gate 2.2](inventory-fulfillment-release-20261119.md), đã ở production. Bao gồm impact note, ma trận quyền, API, UI, kiểm thử và phụ thuộc chưa triển khai.
+
 Đọc theo thứ tự:
 
 1. `project-structure.md` — vị trí mã nguồn.

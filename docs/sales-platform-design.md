@@ -1,5 +1,9 @@
 # Thiết kế sản phẩm, giao diện và luồng vận hành Sales Platform
 
+## Cập nhật trạng thái Gate 2.2 — 2026-11-19
+
+Đã đưa lên production phần kho Page, checkout giữ kho, bàn giao ngoài/Inhouse, Page registry từ kho và chỉ định nhân sự. Xem [thiết kế chi tiết, luồng, ma trận quyền và nghiệm thu](inventory-fulfillment-release-20261119.md). Mô tả “chưa thay đổi route/menu production” dưới đây **Hết hiệu lực với phạm vi Gate 2.2** từ commit `4669201`; các nhóm sản phẩm 2–4, báo cáo/hoa hồng/Sheets chưa triển khai vẫn Roadmap. Không đổi kiến trúc đã chốt hoặc tự gộp quyền lợi quản lý.
+
 **Trạng thái:** `Roadmap` — thiết kế đã chốt, chưa thay đổi route/menu production.  
 **Phụ thuộc:** [Kế hoạch tái cấu trúc](sales-platform-rearchitecture-plan.md), [RBAC](security-permissions.md), [Frontend](frontend.md).
 

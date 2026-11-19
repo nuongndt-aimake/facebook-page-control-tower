@@ -1,6 +1,6 @@
 # Nhập kho atomic, bán ngoài và Inhouse — 2026-11-19
 
-Trạng thái: migration đã áp dụng và kiểm thử database đạt; đang nghiệm thu giao diện/deployment. Kế thừa thiết kế Sales Platform, không kết nối Meta.
+Trạng thái: **Đã phát hành production** trên `https://money.aiecom.vn`, commit triển khai `4669201`, Vercel `dpl_CxA7vGGBtvpNdrvEMx4tuPHXkvy4` READY. Kế thừa thiết kế Sales Platform, không kết nối Meta.
 
 ## Impact note và phạm vi phát hành
 
@@ -38,8 +38,6 @@ Inhouse yêu cầu đơn 0đ đã verified; bán ngoài yêu cầu đơn paid. C
 
 SQL transaction rollback cho trùng Page ID, lỗi giữa intake và cuối audit; reserve cùng mã; sai đơn/khác sản phẩm/quá số lượng; finalize chưa trả tiền; chốt trùng; transfer tạo Page sai; manager assignment sai target. Dữ liệu QA phải tách nhãn và không mở bán/bàn giao thật. Test API mock âm quyền và test DB dưới service_role. Không chỉnh quyền hay dữ liệu nhân viên thật để kiểm thử.
 
-## Hạng mục kế thừa/chờ quyết định
-
 ## Kết quả kiểm thử 2026-11-19
 
 - `supabase/tests/inventory_fulfillment_rollback.sql`: 21 kiểm tra đạt trên Supabase production trong transaction rồi rollback. Dùng identity, sản phẩm, Page và đơn QA riêng. Trùng ID có số 0 đầu, lỗi chèn detail giữa chừng, ledger/audit không dở dang; checkout thiếu hàng không sinh đơn; paid/zero verification; bán ngoài; Inhouse tạo registry một lần; assignment idempotent; quyền client/RPC bị chặn.
@@ -49,6 +47,8 @@ SQL transaction rollback cho trùng Page ID, lỗi giữa intake và cuối audi
 - Bổ sung DB: nhân viên có scope nhưng chưa được giao đơn bị chặn; được giao thì giữ mã idempotent; thu hồi scope có hiệu lực ngay; giữ batch có mã sau lỗi rollback mã trước.
 - Responsive đã kiểm tra 390×844, 768×1024 và 1440×960 bằng dữ liệu giao diện QA cục bộ. Form/button 42px, menu active Kho Inhouse và hộp phân công mở được, bảng cuộn trong khung. Phát hiện và sửa xung đột CSS mobile ép cột kho quá hẹp; không còn ép cuộn ngang toàn trang. Fixture này không phải giao dịch thật.
 - Phát hiện và sửa SQL biến `order_id` trùng tên cột trước khi API mới được deploy. Sửa gán người phụ trách không làm lùi đơn đã in_progress/completed về assigned.
+- Nghiệm thu qua API production với login thật của các tài khoản QA riêng: 17 kiểm tra đạt (anon/viewer bị chặn, admin nhập/mở bán/chống trùng, tạo đơn Inhouse 0đ, người mua thấy đơn mình nhưng không ghi kho, giữ/xác minh/chốt/chốt trùng, giao người vận hành, đọc kho/ledger, người mua khác không thấy đơn). Đã dọn toàn bộ tài khoản, Page, sản phẩm, kho, đơn và dữ liệu phụ QA; không chuyển tiền hoặc cấp quyền Facebook thật.
+- `/inventory-inhouse`, `/inventory-fanpages`, `/sales-orders` trả HTTP 200 tại domain chính, không bị đăng nhập Vercel/404. Đồng bộ sửa CSS cột tối thiểu cho cả bảng đơn và bảng kho.
 
 ## API và tương thích
 
@@ -59,5 +59,7 @@ RPC `sales_checkout_create` thay chuỗi ghi checkout rời rạc. RPC `sales_in
 ## Vận hành và phục hồi
 
 Deploy migration trước API; nếu API lỗi rollback code nhưng giữ schema additive. Không bật lại RPC ghi cũ vì bỏ qua chốt paid/phạm vi đơn. Không xóa lịch sử ledger/đơn thật để hoàn tác nghiệp vụ. Dùng đối soát khi đã bán; thao tác trả mã chỉ trên reserved, có lý do. Chưa tự giải phóng theo TTL hoặc cron vì chưa chốt chính sách.
+
+## Hạng mục kế thừa/chờ quyết định
 
 Tự hết reservation bằng cron vẫn chờ chính sách thời hạn/release đã ghi trong thiết kế; không tự đặt TTL hoặc bật job. Báo cáo ngày/hoa hồng/Sheet có schema nền; chưa tự đặt đơn giá hoa hồng hoặc kết nối Google khi chưa chốt nguồn/quyền. Các nhóm sản phẩm 2–4 tiếp tục chờ nâng cấp.

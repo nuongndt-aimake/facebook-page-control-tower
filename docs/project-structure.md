@@ -1,5 +1,7 @@
 # Cấu trúc dự án
 
+Gate 2.2: `sales-inventory-service.mjs` dùng chung server cho ba endpoint kho trong `api/admin/access.mjs`; `fulfillment-ui.js`, `inventory-ledger.js`, `inventory-inhouse.html/js` là UI. `supabase/tests/inventory_fulfillment_rollback.sql` là bộ QA rollback, không phải migration hoặc cron. Xem [release](inventory-fulfillment-release-20261119.md).
+
 Các route HTML hiện vẫn nằm ở root để giữ URL production tương thích. Không tự ý chuyển chúng vào thư mục khác nếu chưa thêm rewrite tương ứng.
 
 ```text

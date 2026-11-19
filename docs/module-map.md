@@ -1,5 +1,7 @@
 # Bản đồ module và ranh giới triển khai
 
+Gate 2.2: Vận hành → `/inventory-fanpages` nhập/mở bán/lịch sử; `/inventory-inhouse` kho nội bộ và phân công. Tài khoản → `/sales-orders` → Kho & bàn giao. Tất cả dùng navigator chung, auth context và scope server; không thêm app/domain. Chi tiết [luồng và quyền](inventory-fulfillment-release-20261119.md).
+
 ## Nguyên tắc
 
 Vercel phát hành toàn bộ project theo một deployment nguyên khối. Vì vậy module hóa không có nghĩa là mỗi màn hình tạo một Function riêng. Mỗi module phải có:

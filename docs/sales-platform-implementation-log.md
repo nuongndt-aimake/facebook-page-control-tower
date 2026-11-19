@@ -2,7 +2,7 @@
 
 ## Gate 2.2 — 2026-11-19
 
-Nhập kho transaction/normalized Page ID; checkout giữ kho atomic; panel giữ/trả/chốt theo đơn; kho Inhouse + tạo đơn 0đ + chỉ định người vận hành; lịch sử mã kho. Migration đã apply; 21 kiểm thử DB rollback, hai tình huống đồng thời và 12 kiểm thử ứng dụng đạt. Đang nghiệm thu UI/deploy. Xem [impact note, API, quyền và phụ thuộc](inventory-fulfillment-release-20261119.md). Không đổi tiền/secret/DNS/Meta.
+Nhập kho transaction/normalized Page ID; checkout giữ kho atomic; panel giữ/trả/chốt theo đơn; kho Inhouse + tạo đơn 0đ + chỉ định người vận hành; lịch sử mã kho. Migration đã apply; 21 kiểm thử DB rollback, hai tình huống đồng thời và 12 kiểm thử ứng dụng đạt. Đã phát hành production và nghiệm thu API thật. Xem [impact note, API, quyền và phụ thuộc](inventory-fulfillment-release-20261119.md). Không đổi tiền/secret/DNS/Meta.
 
 ## Gate 1 — nền dữ liệu, kiểm soát kho và báo cáo
 
