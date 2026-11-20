@@ -97,6 +97,11 @@ Trước khi chuyển Gate 1 sang `Đang dùng`, chạy trong dữ liệu fixtur
 
 ## Responsive QA
 
+### Route đăng nhập — 2026-11-20
+
+- Kiểm tra `GET /login` trả trang Analytics thay vì `404 NOT_FOUND`.
+- Kiểm tra nút đăng nhập khi chưa có phiên dùng `/analytics#login`.
+
 Kiểm tra ít nhất 390px, 768px và desktop:
 
 - menu mở được và nổi trên nội dung (`z-index` đúng);
@@ -124,3 +129,5 @@ Bản nối tiếp: [quy trình duyệt thủ công, giới hạn xác minh và 
 2026-11-19: [Menu thao tác kho gọn](inventory-action-menu-20261119.md) thay cụm nút phụ luôn hiển thị bằng popover ⋯. Giữ nút chính, quyền/action server-side không đổi; 47 Node tests pass.
 
 2026-11-19: [Hai kho tài nguyên và menu ghim](page-resource-warehouses-20261119.md). Nguồn ảnh/video theo Page; grants theo assignment, quyền assign_inhouse hiện có + scope; Google riêng tư yêu cầu quyền/duyệt email theo tài khoản cá nhân, không service account hay tự đổi chia sẻ. Migration 20261119235000, API page_resources và assign_resources, menu fixed có spacer. 51 Node/59 SQL checks pass; file Google thật chờ URL do quản lý thiết lập.
+
+[Điểm tạm dừng và đối chiếu kế hoạch](project-status-and-next-gate-20261119.md): /access → Tài khoản / Tài sản được giao; giữ route và auth/RBAC/data-scope hiện có. Không migration, không đổi env/domain/cron; yêu cầu bàn giao theo đầu vào đơn chỉ ghi kế hoạch, chưa triển khai. Phân biệt không có quyền vào (401/403) với được vào nhưng dữ liệu trong phạm vi/đang trống.
