@@ -66,7 +66,7 @@ Không dùng URL preview làm callback production lâu dài.
 
 ## Hotfix route đăng nhập — 2026-11-20
 
-`vercel.json` rewrite `/login` về `/analytics.html` để bảo toàn bookmark/link cũ. Không đổi Supabase Auth callback, domain, biến môi trường hoặc quyền truy cập.
+`login.html` giữ `/login` như route tương thích và chuyển về `/analytics#login` để bảo toàn bookmark/link cũ. Không đổi Supabase Auth callback, domain, biến môi trường hoặc quyền truy cập.
 
 ## Quy trình phát hành
 

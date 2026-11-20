@@ -30,7 +30,7 @@ Quy ước navigator toàn bộ trang giới thiệu, mua hàng và quản lý: 
 
 ## Hotfix route đăng nhập — 2026-11-20
 
-`/login` được giữ làm route tương thích và rewrite về `/analytics.html`; các liên kết mới dùng `/analytics#login`. Quy tắc cũ dùng `/login` không xóa khỏi lịch sử vì bookmark đã phát hành vẫn cần hoạt động.
+`/login` được giữ làm route tương thích và chuyển về `/analytics#login`; các liên kết mới dùng trực tiếp `/analytics#login`. Quy tắc cũ dùng `/login` không xóa khỏi lịch sử vì bookmark đã phát hành vẫn cần hoạt động.
 
 ## Các màn hình chính
 
