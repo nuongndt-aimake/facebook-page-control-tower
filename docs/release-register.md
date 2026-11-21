@@ -15,6 +15,7 @@
 
 | Ngày | SHA | Vercel production | Phạm vi | Database/RBAC | Kiểm thử/bằng chứng |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-21 | `7b46483` | `dpl_9PDnzQUKXbLLtN7c1xZRMk72uJVY` — READY | Bổ sung bằng chứng QA live cho menu/Kho Fanpage vào C-07 control plan và testing guide. | Không đổi schema, API, RLS, capability hoặc dữ liệu nghiệp vụ. | 390×844, 768×1024, 1440×1000: `scrollWidth = clientWidth`; nav fixed, mobile/tablet Menu và desktop nav ngang đúng; `node --test` 51/51 pass. |
 | 2026-11-21 | `f65a3ea` | `dpl_49rYNpJTEWUbLkEZhrfuga8DCL4U` — READY | Đồng bộ menu: `/access` đổi tên **Tài sản được giao**, thuộc nhóm Tài khoản; 34 điểm vào dùng `auth-nav.js?v=20261121-account-assets`; chuẩn hóa chỉ mục tài liệu/lịch sử. | Không đổi schema, RPC, RLS, capability hoặc scope dữ liệu. | `node --check auth-nav.js`, `node --test`: 51/51 pass; `git diff --check` pass. |
 | 2026-11-21 | `be356f9` | `dpl_EjEhQQnAyZxYLRhTZ9ES3djJyQhE` — READY | Ghi nhận drift migration production vào control plan. | Chỉ tài liệu. Query production xác minh `profile_self_save(uuid,jsonb)` tồn tại nhưng một số version không nằm migration history. | Đối chiếu trực tiếp `supabase_migrations.schema_migrations` trên project đúng. |
 | 2026-11-21 | `a9521c7` | `dpl_3o7Rrf8fzBPSPtu3CrxQ6gvAxF4j` — READY | Thiết lập control plan C-01…C-07. | Chỉ tài liệu. | Review impact note và kiểm tra Vercel READY. |
