@@ -136,7 +136,7 @@ export function assertMutableContext(context) {
 
 export async function requirePlatformAdmin(request) {
   const context = await accessContext(request);
-  if (context.profile.role !== "platform_admin") throw new Error("Forbidden");
+  if (!["platform_admin", "super_admin"].includes(context.profile.role)) throw new Error("Forbidden");
   return context;
 }
 

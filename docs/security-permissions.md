@@ -27,6 +27,10 @@ Gate 2.2: thêm capability `sales_inventory.assign_inhouse`, không thêm role. 
 
 ## Quyền
 
+### Điều chỉnh RBAC — 2026-11-21
+
+`requirePlatformAdmin` là guard server-side cho các entry point quản trị cấp nền tảng. Từ release sau ghi chú này, guard chấp nhận cả `platform_admin` và `super_admin`; trước đó `super_admin` bị từ chối sai ở OAuth Meta dù quy ước role là toàn quyền. Đây không mở quyền cho role khác, không đổi scope Page, không đổi token Meta và không thay RLS. Các API đặc thù vẫn phải kiểm tra capability/scope riêng; quyền `super_admin` không được mô phỏng bằng chỉ hiện menu.
+
 Quyền cần tách theo domain:
 
 - xem Page;
