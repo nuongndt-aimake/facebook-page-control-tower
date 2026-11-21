@@ -33,7 +33,7 @@ Khóa một nguồn sự thật trước khi mở rộng nghiệp vụ: mọi tu
 | C-03 | Nhiều tài liệu modified/untracked đang được dùng như chỉ mục nhưng chưa commit | Mở | Chia thành: tài liệu hiện hành, lịch sử, bản nháp; review rồi commit theo nhóm | Không còn trạng thái “đang dùng” chỉ tồn tại local |
 | C-04 | Định nghĩa capability chưa nối đủ tới API, RPC, permission và test âm quyền | Mở | Tạo ma trận module × route × action × API/RPC × scope × role/capability | Mỗi thao tác quản trị/kho/tài chính có server-side check và test denied |
 | C-05 | Luồng đơn → bàn giao khách chưa dùng đúng snapshot người nhận từ đơn | Mở | Tái dùng UI giao Page nhưng khóa nguồn người nhận là order snapshot | Test buyer/guest/assignee/admin, hàng đủ/thiếu/lỗi/đổi Page |
-| C-06 | Nhiều claim về migration production chưa có sổ xác minh tập trung | Mở | Đối chiếu migration history đúng project và tạo migration verification register | Có timestamp/ID xác minh, không công khai secret |
+| C-06 | Nhiều claim về migration production chưa có sổ xác minh tập trung | `Blocked` — phát hiện drift | Đối chiếu migration history đúng project, fingerprint schema/RPC và lập kế hoạch reconcile additive; không ghi history hoặc chạy lại SQL mù quáng | Có timestamp/ID xác minh, schema semantic checks và kế hoạch phục hồi đã review |
 | C-07 | Tình trạng “đã test responsive” chủ yếu fixture, chưa có evidence live cho màn vừa đổi | Mở | Checklist 390/768/desktop cho từng release UI và ảnh/biên bản QA | Không overlap/menu chìm/bảng tràn toàn trang |
 
 ## Capability backlog sau khi khóa C-01 đến C-04
@@ -60,3 +60,13 @@ Không bắt đầu hạng mục mới nếu một trong các điều kiện sau
 - Giá nhập, giá bán, mức hoa hồng, TTL reservation, lựa chọn nhà cung cấp hóa đơn và thông tin Google sharing đều phải do quản lý chốt/cấu hình; không dùng giá của một lô cũ để suy ra lô mới.
 - “Đơn paid”, callback 200 hoặc test webhook không mặc định đồng nghĩa giao dịch tiền thật đã được đối soát hoàn tất.
 - Thấy menu không tạo quyền; thấy một route trống không đồng nghĩa bị từ chối quyền.
+
+## Phát hiện xác minh C-06 — 2026-11-21
+
+Đã truy vấn trực tiếp `supabase_migrations.schema_migrations` trên production `tlcjcqqnfjrqsoiaalfk` với 18 version sales/profile có trong repository.
+
+- Có history: `20261119210000`, `20261119215000`, `20261119220000`, `20261119223000`, `20261119224000`, `20261119230000`, `20261119231000`, `20261119232000`, `20261119233000`, `20261119234000`, `20261119235000`.
+- Không có history trong truy vấn: `20261119090000`, `20261119113000`, `20261119150000`, `20261119170000`, `20261119193000`, `20261119203000`, `20261120103000`.
+- `public.profile_self_save(uuid,jsonb)` đã được xác minh tồn tại; migration `20261120103000` vì vậy là DDL đã áp dụng ngoài migration history.
+
+**Quy tắc phục hồi:** không được insert thủ công migration history chỉ để làm bảng sạch, không được chạy lại các migration thiếu vì có thể tạo duplicate/conflict. Bước tiếp theo là lập danh sách object/cột/RPC từng migration thiếu, kiểm tra semantic trên production, sau đó tạo migration reconciliation chỉ additive/idempotent nếu thực sự cần.
