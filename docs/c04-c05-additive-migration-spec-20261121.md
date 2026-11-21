@@ -1,13 +1,15 @@
 # Specification migration additive C-04/C-05
 
-> **Trạng thái: Sẵn sàng tạo migration, chưa apply.** Ngày: 2026-11-21.
+> **Trạng thái: Pha A đã generate local, chưa apply.** Ngày: 2026-11-21.
 > Căn cứ: [fingerprint production](production-schema-fingerprint-20261121.md), [mô hình quyền](authorization-model-and-c04-matrix-20261121.md), [vai trò vận hành](member-operating-roles-20261121.md).
 
 ## Ranh giới release
 
 Release này chỉ xử lý Fanpage group 1 và quyền/vòng đời liên quan. Không đụng Meta sync, chia sẻ Google, SePay secret, nhóm Skill/khóa học/thuê bao hoặc chuyển tiền thật.
 
-Không chạy lại migration cũ thiếu history. Tạo migration **mới**, additive/idempotent bằng Supabase CLI (`supabase migration new`) khi CLI khả dụng; không tự đặt tên/timestamp file bằng tay.
+Không chạy lại migration cũ thiếu history. Migration **mới** `20261121050200_authorization_branch_fulfillment_foundation.sql` đã được tạo bằng Supabase CLI (`supabase migration new`), chỉ tồn tại local/Git và chưa apply production.
+
+Kiểm tra hiện có: `git diff --check` và 51 Node tests pass. SQL rollback test `supabase/tests/authorization_branch_foundation_rollback.sql` đã được thêm nhưng **chưa chạy** vì local Supabase database/CLI workflow chưa được khởi tạo; không dùng production làm nơi thử DDL.
 
 ## Pha A — nhánh sản phẩm và grant tường minh
 
@@ -71,6 +73,6 @@ Không chạy lại migration cũ thiếu history. Tạo migration **mới**, ad
 
 1. Cài/khôi phục Supabase CLI hoặc dùng workflow migration được quản trị chấp thuận; generate migration file.
 2. Chạy schema preflight đúng project `tlcjcqqnfjrqsoiaalfk`; review advisor/security.
-3. Commit migration + API + UI + Node/SQL tests + docs trong cùng release.
+3. Chạy SQL rollback test trên local/staging; review kết quả, rồi commit migration + API + UI + Node/SQL tests + docs trong cùng release.
 4. Apply production một lần; chạy semantic postflight và test denied; ghi SHA/deployment/migration vào release register.
 5. Bật UI capability/branch sau khi dữ liệu/backfill verification đạt; không mở quyền chỉ để tránh màn hình trống.
