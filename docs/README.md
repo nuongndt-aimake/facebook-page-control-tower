@@ -28,6 +28,7 @@ Bản phát hành mới nhất: [Kho transaction, checkout giữ hàng và bán 
 20. `module-map.md` — bản đồ module nghiệp vụ, Function boundary và quy trình phát hành an toàn.
 21. `authorization-model-and-c04-matrix-20261121.md` — mô hình quyền hai lớp, matrix C-04, các mâu thuẫn và gate triển khai RBAC.
 22. `member-operating-roles-20261121.md` — catalog vai trò vận hành, pack capability, RACI và các quyết định phân quyền cần chốt.
+23. `production-schema-fingerprint-20261121.md` — drift migration production, bằng chứng semantic và gate migration an toàn.
 
 ## Quy tắc quan trọng
 
