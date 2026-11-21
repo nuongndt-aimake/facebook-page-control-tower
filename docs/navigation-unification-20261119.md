@@ -29,3 +29,5 @@ Hết hiệu lực từ 2026-11-19: menu riêng theo HTML và đăng xuất bằ
 - Kiểm tra cú pháp navigator, mở trang giới thiệu, mua hàng và quản lý trên 390px, 768px và desktop; kiểm tra mở/đóng menu và không tràn ngang.
 - Kiểm tra phiên đăng nhập, vị trí nhóm Tài khoản/Đăng xuất; bấm Đăng xuất và xác nhận URL `/analytics#login` cùng trạng thái khách.
 - Khi thêm route: phải tải cùng navigator, giữ kiểm tra quyền ở server, cập nhật route table/tài liệu và kiểm tra responsive.
+
+`/access` thuộc nhóm **Tài khoản**, nhãn **Tài sản được giao**. Lịch sử quyết định ở [snapshot điểm tạm dừng](project-status-and-next-gate-20261119.md); trạng thái/điều kiện release hiện hành ở [kế hoạch chấn chỉnh](reconciliation-control-plan-20261121.md).

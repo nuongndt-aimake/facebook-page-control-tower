@@ -125,4 +125,4 @@ Bản nối tiếp: [quy trình duyệt thủ công, giới hạn xác minh và 
 
 2026-11-19: [Hai kho tài nguyên và menu ghim](page-resource-warehouses-20261119.md). Nguồn ảnh/video theo Page; grants theo assignment, quyền assign_inhouse hiện có + scope; Google riêng tư yêu cầu quyền/duyệt email theo tài khoản cá nhân, không service account hay tự đổi chia sẻ. Migration 20261119235000, API page_resources và assign_resources, menu fixed có spacer. 51 Node/59 SQL checks pass; file Google thật chờ URL do quản lý thiết lập.
 
-[Điểm tạm dừng và đối chiếu kế hoạch](project-status-and-next-gate-20261119.md): /access → Tài khoản / Tài sản được giao; giữ route và auth/RBAC/data-scope hiện có. Không migration, không đổi env/domain/cron; yêu cầu bàn giao theo đầu vào đơn chỉ ghi kế hoạch, chưa triển khai. Phân biệt không có quyền vào (401/403) với được vào nhưng dữ liệu trong phạm vi/đang trống.
+Lịch sử `/access` → Tài khoản / Tài sản được giao được giữ tại [snapshot điểm tạm dừng](project-status-and-next-gate-20261119.md). Trạng thái triển khai hiện hành và điều kiện release xem [kế hoạch chấn chỉnh](reconciliation-control-plan-20261121.md).

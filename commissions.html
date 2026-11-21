@@ -25,7 +25,7 @@ function openModal(){const {pages,users}=maps();$('#page').innerHTML=(data.pages
 async function load(){data=await api('/api/admin/access');render();$('#status').textContent='Đã tải dữ liệu hoa hồng';$('#app').classList.remove('hidden')}
 $('#open-create').onclick=openModal;$('#close').onclick=$('#cancel').onclick=()=>$('#modal').classList.remove('open');$('#search').oninput=render;$('#status-filter').onchange=render;$('#refresh').onclick=()=>load().catch(e=>$('#status').textContent=e.message);$('#save').onclick=async()=>{try{const p=Number($('#percent').value);if(!$('#page').value||!$('#user').value||!Number.isFinite(p)||p<0||p>100)throw Error('Chọn Page, người nhận và tỷ lệ từ 0 đến 100%.');await api('/api/admin/access',{method:'POST',body:JSON.stringify({action:'set_commission',page_id:$('#page').value,user_id:$('#user').value,share_percent:p,effective_from:$('#from').value,effective_until:$('#until').value||null,status:$('#new-status').value,note:$('#note').value.trim()||null})});$('#modal').classList.remove('open');await load()}catch(e){$('#status').textContent=e.message}};
 (async()=>{try{const x=await sb.auth.getSession();session=x.data.session;if(!session)throw Error('Hãy đăng nhập Google trước.');const p=await api('/api/auth/profile');if(!['platform_admin','super_admin'].includes(p.profile.role))throw Error('Chỉ quản trị viên cấp cao được quản lý hoa hồng.');await load()}catch(e){$('#status').textContent=e.message}})();
-</script><script src="/auth-nav.js?v=20261119-all-menu"></script></body></html>
+</script><script src="/auth-nav.js?v=20261121-account-assets"></script></body></html>
 
 
 

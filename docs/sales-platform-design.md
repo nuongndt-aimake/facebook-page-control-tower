@@ -1,3 +1,4 @@
+> **Nguồn trạng thái hiện hành:** [Kế hoạch chấn chỉnh tính nhất quán và kiểm soát](reconciliation-control-plan-20261121.md). Snapshot `8ba970c` trong [đối chiếu điểm tạm dừng](project-status-and-next-gate-20261119.md) là lịch sử, không phải baseline release hiện hành.
 # Thiết kế sản phẩm, giao diện và luồng vận hành Sales Platform
 
 ## Cập nhật trạng thái Gate 2.2 — 2026-11-19

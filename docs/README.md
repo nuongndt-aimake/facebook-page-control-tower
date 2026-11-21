@@ -1,3 +1,4 @@
+> **Nguồn trạng thái hiện hành:** [Kế hoạch chấn chỉnh tính nhất quán và kiểm soát](reconciliation-control-plan-20261121.md). Snapshot `8ba970c` trong [đối chiếu điểm tạm dừng](project-status-and-next-gate-20261119.md) là lịch sử, không phải baseline release hiện hành.
 # Tài liệu dành cho lập trình viên mới
 
 Bản phát hành mới nhất: [Kho transaction, checkout giữ hàng và bán ngoài/Inhouse — Gate 2.2](inventory-fulfillment-release-20261119.md), đã ở production. Bao gồm impact note, ma trận quyền, API, UI, kiểm thử và phụ thuộc chưa triển khai.

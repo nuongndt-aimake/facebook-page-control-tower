@@ -1,3 +1,4 @@
+> **Nguồn trạng thái hiện hành:** [Kế hoạch chấn chỉnh tính nhất quán và kiểm soát](reconciliation-control-plan-20261121.md). Snapshot `8ba970c` trong [đối chiếu điểm tạm dừng](project-status-and-next-gate-20261119.md) là lịch sử, không phải baseline release hiện hành.
 # Roadmap triển khai
 
 Đợt USD/payout + tài khoản/giao người/phạm vi Page đã phát hành đầy đủ (`6d9ab96`, Vercel production success): [báo cáo](daily-report-matrix-20261119.md), [hồ sơ và Inhouse](inventory-assignment-profile-20261119.md). Tài khoản không dùng số Page đồng bộ cũ; phone/Facebook cùng đợt. Hoa hồng tự động/tỷ giá và Google Sheet không tự mở rộng theo thay đổi tiền tệ này.

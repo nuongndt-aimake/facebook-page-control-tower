@@ -28,9 +28,9 @@ Khóa một nguồn sự thật trước khi mở rộng nghiệp vụ: mọi tu
 
 | ID | Lệch/thiếu chặt chẽ | Trạng thái | Cách khắc phục | Điều kiện đóng |
 | --- | --- | --- | --- | --- |
-| C-01 | Baseline tài liệu còn `8ba970c`, trong khi production hiện là `43a700e` | Mở | Lập release register, backfill ba release gần nhất và migration verified | Một tài liệu ghi rõ SHA, deployment, DB verification, ngày và phạm vi |
-| C-02 | `/access` và `auth-nav.js` đã sửa local nhưng chưa ở Git/Vercel, còn tài liệu mô tả như đã dùng | Mở | Tách thành release riêng; rà responsive/RBAC menu; commit/deploy hoặc hoàn nguyên có chủ đích | Code, docs, production cùng một trạng thái |
-| C-03 | Nhiều tài liệu modified/untracked đang được dùng như chỉ mục nhưng chưa commit | Mở | Chia thành: tài liệu hiện hành, lịch sử, bản nháp; review rồi commit theo nhóm | Không còn trạng thái “đang dùng” chỉ tồn tại local |
+| C-01 | Baseline tài liệu còn `8ba970c`, trong khi production đã có các release mới hơn | Đang xử lý | Đã tách snapshot lịch sử; còn cần release/capability register có kiểm chứng deployment và DB | Một tài liệu ghi rõ SHA, deployment, DB verification, ngày và phạm vi |
+| C-02 | `/access` và `auth-nav.js` đã sửa local nhưng chưa ở Git/Vercel, còn tài liệu mô tả như đã dùng | Đang xử lý | Đã thống nhất `/access` thuộc Tài khoản với nhãn **Tài sản được giao**; phát hành phải cache-bust toàn bộ màn hình dùng menu chung | Code, docs, production cùng một trạng thái |
+| C-03 | Nhiều tài liệu modified/untracked đang được dùng như chỉ mục nhưng chưa commit | Đang xử lý | Đã gắn các chỉ mục bị ảnh hưởng với control plan và chuyển snapshot 8ba thành lịch sử; chờ review/commit release này | Không còn trạng thái “đang dùng” chỉ tồn tại local |
 | C-04 | Định nghĩa capability chưa nối đủ tới API, RPC, permission và test âm quyền | Mở | Tạo ma trận module × route × action × API/RPC × scope × role/capability | Mỗi thao tác quản trị/kho/tài chính có server-side check và test denied |
 | C-05 | Luồng đơn → bàn giao khách chưa dùng đúng snapshot người nhận từ đơn | Mở | Tái dùng UI giao Page nhưng khóa nguồn người nhận là order snapshot | Test buyer/guest/assignee/admin, hàng đủ/thiếu/lỗi/đổi Page |
 | C-06 | Nhiều claim về migration production chưa có sổ xác minh tập trung | `Blocked` — phát hiện drift | Đối chiếu migration history đúng project, fingerprint schema/RPC và lập kế hoạch reconcile additive; không ghi history hoặc chạy lại SQL mù quáng | Có timestamp/ID xác minh, schema semantic checks và kế hoạch phục hồi đã review |
