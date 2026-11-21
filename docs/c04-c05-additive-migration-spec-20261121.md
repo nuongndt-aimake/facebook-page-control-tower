@@ -33,6 +33,8 @@ Kiểm tra hiện có: `git diff --check` và 51 Node tests pass. SQL rollback t
 
 ## Pha B — vòng đời kho và giao từng Page
 
+**Foundation local/Git (chưa apply):** `20261121061434_per_page_delivery_states.sql` bổ sung `delivery_state`, timestamps, note/evidence/actor và service-only `sales_order_delivery_summary(uuid)`. Nó chỉ backfill semantic legacy an toàn (`reserved → allocated`, `external_sold`/`inhouse_transferred → delivered`), không đổi RPC cũ, không đổi tồn kho và không bật Data API cho client. Test rollback tương ứng: `supabase/tests/per_page_delivery_states_rollback.sql`.
+
 ### Mô hình aggregate kiểm thử trước khi đổi database
 
 `order-delivery-state.mjs` là mô hình thuần, có test hồi quy, dùng để khóa semantics trước khi RPC/schema được thay thế. Nó chuẩn hóa trạng thái legacy `reserved` thành `allocated`, `external_sold`/`inhouse_transferred` thành `delivered`; `released`/`replaced` không được tính như Page đang giao.
