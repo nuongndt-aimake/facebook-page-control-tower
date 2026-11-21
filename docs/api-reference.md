@@ -7,7 +7,7 @@ Tổng quan `/analytics` chỉ gọi GET `content_reports` với `start/end/day`
 - `content_reports` POST submit: `assignment_id`, `report_date`, `published_post_count`, `currency:"USD"`, `revenue_amount`, `cumulative_amount`; chỉ chính người được giao nộp. Yêu cầu payout USD đang hoạt động; thiếu payout trả 409. Lưu snapshot payout và revision. `_vnd` giữ tương thích VND cũ, không chứa USD.
 - GET báo cáo trả các phân công trong phạm vi vai trò cùng `payout_links`, `payout_profiles` tối thiểu (không có số tài khoản). Admin tất cả, manager tuyến quản lý, nhân viên/CTV trực tiếp; scope chức năng không bỏ qua phạm vi này.
 - `inhouse_assets` POST `save_payout` tạo/chọn hồ sơ chung và cập nhật đúng một payout hiện hành/Page; `assign` và `update_page_name` kiểm tra scope + Page phía server. Kho/Inhouse cũng dùng cùng kiểm tra phạm vi.
-- `GET /api/auth/profile?include=account_assets` trả thống kê từ kho Inhouse hiện hành, loại Page/grant đồng bộ cũ. `PATCH /api/auth/profile` chỉ nhận `{phone,facebook_profile_url}` cho chính session; cấm quyền/role/ID, preview chỉ đọc. RPC cập nhật và audit atomic.
+- `GET /api/auth/profile?include=account_assets` trả thống kê từ kho Inhouse hiện hành, loại Page/grant đồng bộ cũ. `PATCH /api/auth/profile` chỉ nhận `{display_name,phone,facebook_profile_url}` cho chính session; email, quyền/role/ID bị cấm, preview chỉ đọc. RPC cập nhật và audit atomic. [Chi tiết](profile-display-name-20261120.md).
 
 [Thiết kế báo cáo/payout](daily-report-matrix-20261119.md) · [Hồ sơ, giao người và phạm vi Page](inventory-assignment-profile-20261119.md).
 
