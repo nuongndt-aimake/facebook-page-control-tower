@@ -34,8 +34,8 @@ Các capability gợi ý chuẩn hóa:
 | `identity` | `users.read`, `users.manage`, `roles.grant` | Đọc/quản trị hồ sơ, cấp quyền — không thay email đăng nhập của người khác |
 | `organization` | `reporting_lines.manage`, `assignments.manage` | Quản lý tuyến và chỉ định tài sản |
 | `catalog` | `products.manage`, `price_schedule.manage`, `discount_schedule.manage`, `promo.manage` | Cấu hình sản phẩm/giá/chiết khấu/mã; cần lịch hiệu lực |
-| `sales_orders` | `read_all`, `assign`, `payment_reconcile`, `invoice.manage` | Xem toàn bộ, phân công, đối soát, xử lý hóa đơn |
-| `sales_inventory` | `read`, `intake`, `publish`, `reserve`, `release`, `finalize`, `assign_inhouse`, `writeoff`, `warranty` | Kho Fanpage; từng action tách riêng |
+| `sales_orders` | `read_all`, `assign`, `verify_zero`, `payment_reconcile`, `invoice.manage` | Xem toàn bộ, phân công, duyệt đơn 0đ, đối soát, xử lý hóa đơn |
+| `sales_inventory` | `read`, `intake`, `publish`, `reserve`, `release`, `finalize`, `assign_inhouse`, `writeoff`, `warranty`, `retire` | Kho Fanpage; từng action tách riêng và luôn gắn product branch |
 | `sales_operations` | `manage_payout`, `read_reports_all`, `verify_reports` | Payout và báo cáo vận hành |
 | `integrations` | `sepay.manage`, `google_resources.manage`, `meta.manage` | Bí mật/cấu hình tích hợp chỉ server-side |
 | `finance` | `commission_policy.manage`, `commission.approve`, `payout.approve` | Chính sách và duyệt chi, chưa đồng nghĩa chuyển tiền |
@@ -61,7 +61,7 @@ Nguồn scope hợp lệ hiện có: `buyer_user_id`, `sales_order_assignments`,
 
 | Tài sản | Chủ thể scope chính | Action nhạy cảm | Quy tắc bắt buộc |
 | --- | --- | --- | --- |
-| Fanpage kho tổng | item/ledger + product | nhập, publish, reserve, release, writeoff, warranty | capability kho + transaction/RPC + trạng thái tồn kho; không dựa vào Page Inhouse |
+| Fanpage kho tổng | item/ledger + product branch | nhập, publish, reserve, release, writeoff, warranty, retire | capability kho + branch scope + transaction/RPC + trạng thái tồn kho; không dựa vào Page Inhouse |
 | Fanpage Inhouse | Page assignment/resource grant | giao người, sửa tên, report, payout, mở Sheet | direct/managed assignment + capability theo action; link Sheet không mở sharing Google |
 | Đơn hàng | buyer/guest tracking/assignee/read_all | phân bổ, xác minh 0đ, bắt đầu/cấp xong bàn giao, bảo hành | scope đơn độc lập scope Page; guest không thành nhân sự |
 | Payout/tài chính | payment profile access + Page liên kết | xem chi tiết, gắn payout, duyệt/chi | tách dữ liệu tài khoản ngân hàng, nguyên tắc maker-checker |
@@ -89,7 +89,7 @@ Nguồn scope hợp lệ hiện có: `buyer_user_id`, `sales_order_assignments`,
 3. **`read_all` không là quyền quản lý:** nó chỉ mở đọc toàn bộ đơn; không được suy ra approve, reserve, finalize, payout hay invoice.
 4. **Scope manager cần tách read/write:** manager nhìn tuyến dưới không mặc định sửa/duyệt; đặc biệt không tự duyệt báo cáo/hoa hồng của bản thân.
 5. **Một Page có nhiều người:** assignment phải có `assignment_role`, hiệu lực, người giao và kết thúc; kết quả/hưởng hoa hồng theo assignment-person-day, không theo Page chung.
-6. **Nhạy cảm tài chính cần maker-checker:** người tạo giá/chiết khấu/mã/điều chỉnh payout hoặc writeoff không được là người duyệt cùng bản ghi; `super_admin` break-glass phải có lý do/audit.
+6. **Nhạy cảm tài chính cần maker-checker:** người tạo giá/chiết khấu/mã/điều chỉnh payout hoặc writeoff không được là người duyệt cùng bản ghi; ngoại lệ `platform_admin`/`super_admin` được tự làm nhưng phải có audit/reason.
 7. **Không dùng client claim:** email, `user_metadata`, hidden buttons, query `user_id`, hoặc link Google không phải bằng chứng quyền.
 
 ## 6. Lộ trình triển khai không gây vỡ quyền hiện hữu
