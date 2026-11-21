@@ -28,14 +28,35 @@ Truy vấn chỉ đọc trên đúng production kiểm tra 14 object/cột/funct
 
 Kiểm tra quyền bổ sung xác nhận các bảng sales representative có `relrowsecurity = true` và `authenticated_select = false`; các function nội bộ được kiểm tra không cấp EXECUTE cho `authenticated`. Điều này phù hợp với kiến trúc API server/service-role hiện tại, không phải chứng cứ cho phép client gọi trực tiếp RPC.
 
+## Fingerprint bổ sung — RLS, constraint, index và RPC
+
+Đợt kiểm tra chỉ đọc tiếp theo xác nhận thêm 10/10 bảng hiện diện và đều bật RLS:
+
+`assignment_sheet_sources`, `commission_policy_versions`, `content_assignment_daily_reports`, `content_report_commission_results`, `inhouse_page_inventory`, `sales_inventory_ledger`, `sales_inventory_writeoffs`, `sales_order_assignments`, `sales_order_inventory_items`, `sales_payment_events`.
+
+Mỗi bảng đều có constraint/index hiện hữu; `pg_policies` trả 0 policy cho nhóm này. Đây là trạng thái hợp lệ trong kiến trúc hiện tại vì các bảng cũng không grant select cho `authenticated`; truy cập đi qua API server/service-role, không phải dấu hiệu cần thêm policy client một cách máy móc.
+
+Chín RPC lõi đã xác minh signature và privilege:
+
+- `content_report_command(text,uuid,jsonb)`
+- `operations_allowed(uuid,text,text)`
+- `profile_self_save(uuid,jsonb)`
+- `sales_checkout_create(jsonb,jsonb)`
+- `sales_inventory_command(text,uuid,jsonb)`
+- `sales_order_allocate(uuid,jsonb)`
+- `sales_order_finish(uuid,jsonb)`
+- `sales_order_warranty(uuid,jsonb)`
+- `sales_process_payment_event(text,text,bigint,text,jsonb)`
+
+Tất cả đều `SECURITY INVOKER`; `anon` và `authenticated` không có EXECUTE, còn `service_role` có EXECUTE. Đây là baseline bắt buộc giữ nguyên khi bổ sung RPC mới.
+
 ## Giới hạn fingerprint hiện tại
 
 Fingerprint này chưa thay thế các kiểm tra trước DDL mới sau đây:
 
-1. Hash/body/signature chính xác của từng function và trigger.
-2. RLS policy, index, constraint và grant của mọi bảng liên quan.
-3. Các object phụ từ migration nền: `sales_order_assignments`, `sales_payment_events`, ledger/report/commission, cũng như dữ liệu tương thích.
-4. Tương thích giữa schema hiện hữu và policy mới về product branch, grant expiry, `verify_zero`, `withdrawn`/`expired`/`retired`, giao từng Page.
+1. Hash/body chính xác của function/trigger sẽ bị thay đổi trong migration mới.
+2. Dữ liệu tương thích thật (đơn/ledger/report cũ) phải có preflight riêng theo migration.
+3. Tương thích giữa schema hiện hữu và policy mới về product branch, grant expiry, `verify_zero`, `withdrawn`/`expired`/`retired`, giao từng Page.
 
 ## Cảnh báo chọn đúng project
 
