@@ -97,6 +97,10 @@ Trước khi chuyển Gate 1 sang `Đang dùng`, chạy trong dữ liệu fixtur
 
 ## Responsive QA
 
+### Bằng chứng production — Kho Fanpage, 2026-11-21
+
+Đã kiểm tra read-only deployment `https://money.aiecom.vn/inventory-fanpages` bằng Chrome đã đăng nhập, có viewport override tạm thời và reset sau khi xong. Kết quả: 390 × 844, 768 × 1024 và 1440 × 1000 đều không có tràn ngang toàn trang (`scrollWidth = clientWidth`); `nav` fixed cao 59px. 390px/768px mở được Menu; 1440px hiển thị navigation ngang và ẩn nút Menu. Phạm vi và giới hạn đầy đủ tại [C-07 control plan](reconciliation-control-plan-20261121.md#bằng-chứng-c-07--kho-fanpage-2026-11-21).
+
 ### Route đăng nhập — 2026-11-20
 
 - Kiểm tra `GET /login` trả trang Analytics thay vì `404 NOT_FOUND`.

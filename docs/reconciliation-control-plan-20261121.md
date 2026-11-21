@@ -34,7 +34,7 @@ Khóa một nguồn sự thật trước khi mở rộng nghiệp vụ: mọi tu
 | C-04 | Định nghĩa capability chưa nối đủ tới API, RPC, permission và test âm quyền | Pha A local-only | Đã có model/catalog/rule và migration `20261121050200` tạo bằng CLI, chưa apply; cần SQL rollback + API/UI/deny-test trước release | Mỗi thao tác quản trị/kho/tài chính có server-side check và test denied |
 | C-05 | Luồng đơn → bàn giao khách chưa dùng đúng snapshot người nhận từ đơn | Đã chốt thiết kế, chưa triển khai | Tái dùng UI giao Page nhưng khóa nguồn người nhận là order snapshot; giao ngoài hệ thống theo **từng Page**, hỗ trợ debt/partial delivery | Test buyer/guest/assignee/admin, hàng đủ/thiếu/lỗi/đổi Page và partial delivery |
 | C-06 | Nhiều claim về migration production chưa có sổ xác minh tập trung | Đã đóng baseline — 2026-11-21 | Đã fingerprint 24/24 object representative/phụ, RLS/grant/RPC trên đúng production; xem [bằng chứng/schema gate](production-schema-fingerprint-20261121.md). Mỗi migration mới vẫn cần preflight semantic riêng. | Có timestamp/ID xác minh, schema semantic checks và kế hoạch phục hồi đã review |
-| C-07 | Tình trạng “đã test responsive” chủ yếu fixture, chưa có evidence live cho màn vừa đổi | Mở | Checklist 390/768/desktop cho từng release UI và ảnh/biên bản QA | Không overlap/menu chìm/bảng tràn toàn trang |
+| C-07 | Tình trạng “đã test responsive” chủ yếu fixture, chưa có evidence live cho màn vừa đổi | Đang triển khai — đã có bằng chứng live `/inventory-fanpages` ngày 2026-11-21 | Checklist 390/768/desktop cho từng release UI và biên bản QA; tiếp tục với các màn thay đổi khác | Không overlap/menu chìm/bảng tràn toàn trang |
 
 ## Capability backlog sau khi khóa C-01 đến C-04
 
@@ -54,6 +54,18 @@ Không bắt đầu hạng mục mới nếu một trong các điều kiện sau
 - migration/API/UI/docs/test chưa xuất hiện trong cùng release;
 - ca denied, retry/concurrency khi liên quan kho/thanh toán chưa có test;
 - QA 390px, 768px và desktop chưa có bằng chứng.
+
+## Bằng chứng C-07 — Kho Fanpage, 2026-11-21
+
+Kiểm tra read-only trên deployment production `https://money.aiecom.vn/inventory-fanpages`, trong phiên đã đăng nhập, với viewport override tạm thời rồi đã reset:
+
+| Breakpoint | Kết quả quan sát | Kết luận |
+| --- | --- | --- |
+| 390 × 844 | Header `nav` fixed 59px; nút **Menu** mở panel; chiều rộng tài liệu 375px bằng client width 375px | Không tràn ngang toàn trang, menu không chìm |
+| 768 × 1024 | Header `nav` fixed 59px; nút **Menu** còn dùng ở breakpoint tablet; chiều rộng tài liệu 753px bằng client width 753px | Không tràn ngang toàn trang |
+| 1440 × 1000 | Header `nav` fixed 59px; điều hướng ngang hiển thị, nút Menu ẩn; chiều rộng tài liệu 1425px bằng client width 1425px | Desktop navigator hoạt động, không tràn ngang toàn trang |
+
+Phạm vi bằng chứng này chỉ là navigator và màn Kho Fanpage. Nó **không** thay thế QA live cho `/sales`, `/sales-orders`, `/daily-reports`, `/account` hoặc các màn được đổi UI về sau. Không nhập/sửa/xóa dữ liệu khi kiểm tra.
 
 ## Quyết định không suy diễn
 
