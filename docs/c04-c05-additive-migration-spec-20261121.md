@@ -33,6 +33,17 @@ Kiểm tra hiện có: `git diff --check` và 51 Node tests pass. SQL rollback t
 
 ## Pha B — vòng đời kho và giao từng Page
 
+### Mô hình aggregate kiểm thử trước khi đổi database
+
+`order-delivery-state.mjs` là mô hình thuần, có test hồi quy, dùng để khóa semantics trước khi RPC/schema được thay thế. Nó chuẩn hóa trạng thái legacy `reserved` thành `allocated`, `external_sold`/`inhouse_transferred` thành `delivered`; `released`/`replaced` không được tính như Page đang giao.
+
+- `completed` chỉ khi số Page `delivered` bằng quantity yêu cầu.
+- Có Page đã delivered nhưng còn Page chưa giao, nợ hoặc failed thì `partial_delivered`.
+- Thiếu Page chưa phân bổ là `page_debt`; không lấy số tồn kho 0 làm lỗi checkout.
+- Khi đủ Page đã phân bổ nhưng có `delivery_failed` và chưa giao Page nào thì `failed`; không được tự chuyển completed.
+
+Đây là contract test, **không** làm API production trả trạng thái mới cho đến khi Pha B migration/RPC được kiểm thử rollback trên local hoặc staging.
+
 ### State additive
 
 1. Inventory item: thêm `withdrawn`, `expired`, `retired`; không tái dùng `damaged`.
