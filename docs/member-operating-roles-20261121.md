@@ -92,6 +92,7 @@ Schema hiện có chỉ có `viewer`, `analyst`, `operator`, `manager`, `platfor
 | Kho tổng | Kho tổng phân theo **nhánh sản phẩm**; capability kho luôn đi cùng scope branch, không phải một quyền kho chung không giới hạn. | Bổ sung product branch vào catalog/item/grant, migration/backfill và test cross-branch deny trước khi bật. |
 | Tài sản Inhouse | Asset manager xem đầy đủ thông tin tài sản thuộc mình/nhánh mình. Tổng quản lý có grant `inhouse_assets.manage_all` được quản lý toàn bộ tài sản Inhouse. | Tách `manage_all` rõ ràng khỏi role manager; thông tin payout nhạy cảm vẫn theo capability payout riêng. |
 | Hàng ngừng bán/hết hạn | Hàng bị rút bán hoặc hết hạn nằm ở danh sách riêng, còn lịch sử/chi phí giữ nguyên. Muốn ghi nhận **hủy hẳn/retire** phải là manager đúng branch có capability `sales_inventory.retire` hoặc platform/super admin. Không xóa cứng. | Thêm state `withdrawn`/`expired`/`retired` và ledger reason; `retired` không được quay lại bán, không sinh doanh thu. |
+| Bán khi thiếu kho | Cho phép tạo đơn ở mọi mức tồn kho, kể cả bằng 0. Hệ thống chỉ phân bổ Page thực có; phần thiếu phải là **nợ Page** hiển thị rõ, không được báo đã có hàng hoặc tự hoàn tất. | Không dùng tồn kho để chặn checkout. Tính `allocated/debt/delivered` từ từng Page của đơn, không cho UI tự đặt trạng thái tổng. |
 
 ### Thiết kế trạng thái kho bổ sung
 
@@ -102,6 +103,29 @@ Schema hiện có chỉ có `viewer`, `analyst`, `operator`, `manager`, `platfor
 | `retired` | Hủy ghi sổ vĩnh viễn, tách danh sách vận hành | Manager có `retire` trong branch; platform/super admin | Không; chỉ correction break-glass có audit |
 
 Hai trạng thái đầu không phải `damaged`: `damaged` ghi nhận hỏng/loss theo write-off, còn `retired` là quyết định quản trị vòng đời. Đơn đã reserve/paid/completed không được retire bằng thao tác kho thường; phải đi qua luồng release/reconciliation/warranty phù hợp.
+
+### Giao hàng ngoài hệ thống và đơn nhiều Page
+
+Mỗi Page phân bổ cho đơn là một dòng giao hàng độc lập, vì quyền Facebook được cấp ở bên ngoài hệ thống. Mô hình đích:
+
+| Trạng thái dòng Page | Ý nghĩa | Ai cập nhật |
+| --- | --- | --- |
+| `debt` | Chưa có Page để phân bổ; đơn vẫn hợp lệ nhưng phải hiển thị nợ | Hệ thống từ kết quả allocation |
+| `allocated` | Đã giữ đúng mã Page, chưa bắt đầu cấp quyền | Hệ thống/RPC allocation |
+| `handover_started` | Sale đã bắt đầu thao tác giao ngoài hệ thống | Sale assignee có capability + order scope |
+| `delivered` | Sale xác nhận đã cấp xong quyền cho đúng Profile snapshot của khách | Sale assignee; actor/time/note/evidence audit |
+| `delivery_failed` | Không giao được hoặc Page lỗi; chờ đổi/bảo hành | Sale/kho theo capability; không tự sinh doanh thu mới |
+
+Trạng thái đơn được **tính từ các dòng**, không tự tick:
+
+- Có ít nhất một `debt` → `page_debt`, dù các Page khác đã giao.
+- Không nợ nhưng còn `allocated`/`handover_started` → `allocated` hoặc `granting`.
+- Có Page `delivered` và còn Page chưa giao/nợ → `partial_delivered`.
+- Chỉ khi tất cả Page yêu cầu là `delivered` mới → `completed`.
+
+Màn hình đơn phải hiển thị rõ: số lượng yêu cầu, đã phân bổ, đang giao, đã giao, nợ và lỗi; có lọc **nợ cả đơn**, **nợ một phần**, **đang giao**. Không được dùng trạng thái thanh toán `paid` làm bằng chứng đã giao, và không được dùng một checkbox cấp đơn để đánh dấu mọi Page đã giao.
+
+Quy tắc này chỉ nói về **tồn kho bằng 0/thiếu Page**. Chính sách tổng tiền thanh toán bằng 0 là quy tắc khác, vẫn áp dụng flow xác minh đơn 0đ đã chốt.
 
 ### Việc còn cần chốt
 
