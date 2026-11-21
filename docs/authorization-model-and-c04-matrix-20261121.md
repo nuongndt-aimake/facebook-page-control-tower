@@ -1,6 +1,6 @@
 # Mô hình phân quyền hai lớp và ma trận C-04
 
-> **Trạng thái: Đang dùng làm thiết kế kiểm soát.** Ngày: 2026-11-21.  
+> **Trạng thái: Đang dùng làm thiết kế kiểm soát.** Ngày: 2026-11-21.
 > Phạm vi: mọi route/API/RPC của money.aiecom.vn. Tài liệu này không tự cấp quyền, không thay RLS và không thay đổi dữ liệu production.
 
 ## 1. Quyết định nền tảng
